@@ -253,7 +253,7 @@ typedef struct {
     // These functions are not interposed.  They're here because
     // we've seen applications override the weak glibc implementation,
     // where our library needs to use the glibc instance.
-    // setenv was overriden in bash.
+    // setenv was overridden in bash.
     int (*setenv)(const char *name, const char *value, int overwrite);
 } interposed_funcs_t;
 

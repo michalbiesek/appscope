@@ -29,7 +29,7 @@ getTime(void) {
 
     /*
      * Newer CPUs support a second TSC read instruction.
-     * The new instruction, rdtscp, performes a serialization
+     * The new instruction, rdtscp, performs a serialization
      * instruction before calling RDTSC. Specifically, rdtscp
      * performs a cpuid instruction then an rdtsc. This is
      * intended to flush the instruction pipeline befiore

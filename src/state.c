@@ -2193,7 +2193,7 @@ doClose(int fd, const char *func)
         resetHttp(&ninfo->http);
     }
 
-    // Check both file desriptor tables
+    // Check both file descriptor tables
     if ((fsinfo = getFSEntry(fd)) != NULL) {
 
         doUpdateState(FS_CLOSE, fd, 0, func, NULL);
