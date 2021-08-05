@@ -12,6 +12,7 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #endif // __LINUX__
+#include <dirent.h>
 #include <signal.h>
 #include "../contrib/tls/tls.h"
 #include <stdarg.h>
@@ -83,6 +84,7 @@ typedef struct {
     off_t (*ftello)(FILE *);
     int (*fgetpos)(FILE *, fpos_t *);
     int (*fsetpos)(FILE *, const fpos_t *);
+    struct dirent *(*readdir)(DIR *);
     void (*rewind)(FILE *);
     int (*stat)(const char *, struct stat *);
     int (*lstat)(const char *, struct stat *);

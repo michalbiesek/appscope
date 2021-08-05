@@ -167,7 +167,8 @@ static got_list_t inject_hook_list[] = {
     {"fseek", NULL, &g_fn.fseek},
     {"fseeko", NULL, &g_fn.fseeko},
     {"ftell", NULL, &g_fn.ftell},
-    {"ftello", NULL, &g_fn.ftello},
+    {"ftello", NULL, &g_fn.ftello},    
+    {"readdir", NULL, &g_fn.readdir},
     {"rewind", NULL, &g_fn.rewind},
     {"fsetpos", NULL, &g_fn.fsetpos},
     {"fgetpos", NULL, &g_fn.fgetpos},
@@ -3493,6 +3494,17 @@ ftello(FILE *stream)
     doSeek(fileno(stream), (rc != -1), "ftello"); 
 
     return rc;
+}
+
+EXPORTON struct dirent *
+readdir(DIR *dirp)
+{
+    struct dirent *next_dentry;
+
+    WRAP_CHECK(readdir, NULL);
+    next_dentry = g_fn.readdir(dirp);
+
+    return next_dentry;
 }
 
 EXPORTON void

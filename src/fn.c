@@ -197,6 +197,7 @@ initFn(void)
     GETADDR(g_fn.fstatvfs, "fstatvfs");
     GETADDR(g_fn.access, "access");
     GETADDR(g_fn.faccessat, "faccessat");
+    GETADDR(g_fn.readdir, "readdir");
     GETADDR(g_fn.rewind, "rewind");
     GETADDR(g_fn.fcntl, "fcntl");
     GETADDR(g_fn.fcntl64, "fcntl64");
