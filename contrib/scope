@@ -1,0 +1,11 @@
+
+# -*- shell-script -*-
+# bash completion script for scope
+# Taken from git.git's completion script.
+
+type scope &> dev_null &&
+_scope()
+{
+
+}
+complete -o default -F _scope -o nospace scope
