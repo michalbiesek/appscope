@@ -475,6 +475,9 @@ osIsFilePresent(pid_t pid, const char *path)
     if (!g_fn.__xstat) {
         return -1;
     }
+#ifndef _STAT_VER
+#define _STAT_VER 1 
+#endif
 
     if (g_fn.__xstat(_STAT_VER, path, &sb) != 0) {
         return -1;
