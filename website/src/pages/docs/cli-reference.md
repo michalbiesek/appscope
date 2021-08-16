@@ -24,6 +24,7 @@ Usage:
   scope [command]
 
 Available Commands:
+  completion  Generate completion code for specified shell
   dash        Display scope dashboard
   events      Output events for a session
   extract     Output instrumenting library files to <dir>
@@ -46,6 +47,25 @@ As noted just above, to see a specific command's help or its required parameters
 
 …or: 
 `./scope help <command> [flags]`.
+
+### completion
+---
+
+Generate the completion code for specified shell.
+
+#### Usage
+
+`scope completion [bash|zsh][ flags]`
+
+#### Examples
+
+`scope completion bash`
+
+#### Flags
+
+```
+  -h, --help     help for completion
+```
 
 ### dash
 ---

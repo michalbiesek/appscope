@@ -44,6 +44,7 @@ RUN apt-get update && \
         $GOLANG \
         autoconf \
         automake \
+        bash-completion \
         cmake \
         curl \
         emacs \
