@@ -280,8 +280,9 @@ yaml_file_read_handler(void *data, unsigned char *buffer, size_t size,
     static size_t (*ni_fread)(void *, size_t, size_t, FILE *);
     if (!ni_fread) ni_fread = dlsym(RTLD_NEXT, "fread");
     if (!ni_fread) return 0;
-
+ 
     *size_read = ni_fread(buffer, 1, size, parser->input.file);
+
     return !ferror(parser->input.file);
 }
 
@@ -453,7 +454,7 @@ yaml_file_write_handler(void *data, unsigned char *buffer, size_t size)
     static size_t (*ni_fwrite)(const void *, size_t, size_t, FILE *);
     if (!ni_fwrite) ni_fwrite = dlsym(RTLD_NEXT, "fwrite");
     if (!ni_fwrite) return 0;
-
+ 
     return (ni_fwrite(buffer, 1, size, emitter->output.file) == size);
 }
 /*
