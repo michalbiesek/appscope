@@ -19,6 +19,9 @@
 #define CHANNEL "_channel"
 #define ID "id"
 
+#define BINARY_DATA_MSG "Binary data detected---truncated"
+#define DEFAULT_BINARY_DATA_SAMPLE_SIZE (16U)
+
 typedef struct {
     char *buf;
     size_t bufsize;
@@ -827,6 +830,20 @@ destroyInternalLogEvent(log_event_t **eventptr)
     *eventptr = NULL;
 }
 
+static bool
+is_data_binary(const void *buf, size_t count)
+{
+    const char* b_buf = (const char *)buf;
+    size_t min_len = (count < DEFAULT_BINARY_DATA_SAMPLE_SIZE) ? count : DEFAULT_BINARY_DATA_SAMPLE_SIZE;
+    size_t i;
+    for (i = 0; i < min_len; i++) {
+        if (!isprint(b_buf[i]) && (!isspace(b_buf[i]))) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 int
 ctlSendLog(ctl_t *ctl, int fd, const char *path, const void *buf, size_t count, uint64_t uid, proc_id_t *proc)
 {
@@ -1020,6 +1037,16 @@ ctlFlushLog(ctl_t *ctl)
 
             // Append the current event data onto the stream buffer
             if (stmbuf->stream) {
+                if (is_data_binary(event->data, event->datalen)) {
+                    // Print binary data msg only once
+                    if (stmbuf->tot_size == 0) {
+                        memcpy(event->data, BINARY_DATA_MSG, sizeof(BINARY_DATA_MSG));
+                        event->datalen = sizeof(BINARY_DATA_MSG);
+                    } else {
+                        goto destroy_log_event;
+                    }
+                }
+
                 size_t actual = g_fn.fwrite(event->data, 1, event->datalen, stmbuf->stream);
                 stmbuf->tot_size += actual;
                 if (event->datalen != actual) {
@@ -1029,8 +1056,8 @@ ctlFlushLog(ctl_t *ctl)
                 }
             }
         }
-
-        destroyInternalLogEvent(&event);
+        destroy_log_event:
+            destroyInternalLogEvent(&event);
     }
 }
 
