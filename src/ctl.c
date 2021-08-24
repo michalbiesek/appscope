@@ -787,21 +787,20 @@ ctlPostEvent(ctl_t *ctl, char *event)
 }
 
 static log_event_t *
-createInternalLogEvent(int fd, const char *path, const void *buf, size_t count, uint64_t uid, proc_id_t *proc, watch_t logType, regex_t *valfilter)
+createInternalLogEvent(int fd, const char *path, const void *buf, size_t count, uint64_t uid, proc_id_t *proc, watch_t logType, regex_t *valfilter, bool is_binary)
 {
     log_event_t *event = calloc(1, sizeof(*event));
-    char *data = malloc(count);
+    char *data = !is_binary ? malloc(count) : NULL;
     char *src = strdup(path);
 
-    if (!event || !data || !path) {
+    if (!event || (!data && !is_binary) || !path) {
         if (event) free(event);
         if (data) free(data);
         if (src) free(src);
         DBG("event = %p, data = %p, src = %p", event, data, src);
         return NULL;
     }
-
-    memcpy(data, buf, count);
+    if (!is_binary) memcpy(data, buf, count);
 
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -863,13 +862,14 @@ ctlSendLog(ctl_t *ctl, int fd, const char *path, const void *buf, size_t count, 
         return 0;
     }
 
+    // TODO: Update this comment
     // We can't run the value filter on what might be raw binary data.
     // Grab the correct one for our logType, and send a pointer of
     // it to be used later, after we've created a string from the data.
     filter = evtFormatValueFilter(ctl->evt, logType);
 
     log_event_t *logevent;
-    logevent = createInternalLogEvent(fd, path, buf, count, uid, proc, logType, filter);
+    logevent = createInternalLogEvent(fd, path, buf, count, uid, proc, logType, filter, is_data_binary(buf, count));
 
     if (cbufPut(ctl->log.ringbuf, (uint64_t)logevent) == -1) {
         // Full; drop and ignore
@@ -1037,22 +1037,20 @@ ctlFlushLog(ctl_t *ctl)
 
             // Append the current event data onto the stream buffer
             if (stmbuf->stream) {
-                if (is_data_binary(event->data, event->datalen)) {
-                    // Print binary data msg only once
-                    if (stmbuf->tot_size == 0) {
-                        memcpy(event->data, BINARY_DATA_MSG, sizeof(BINARY_DATA_MSG));
-                        event->datalen = sizeof(BINARY_DATA_MSG);
-                    } else {
-                        goto destroy_log_event;
-                    }
-                }
 
-                size_t actual = g_fn.fwrite(event->data, 1, event->datalen, stmbuf->stream);
+                // Print binary data msg only once
+                if ((!event->data) && (stmbuf->tot_size != 0)){
+                        goto destroy_log_event;
+                }
+                size_t datalen = (event->data) ? event->datalen : sizeof(BINARY_DATA_MSG);
+                char* data = (event->data) ? event->data : BINARY_DATA_MSG;
+
+                size_t actual = g_fn.fwrite(data, 1, datalen, stmbuf->stream);
                 stmbuf->tot_size += actual;
-                if (event->datalen != actual) {
+                if (datalen != actual) {
                     DBG("log buffer write error for fd %d, path %s. tried to "
                         "buffer %zu, but only buffered %zu", event->fd, event->id.path,
-                        event->datalen, actual);
+                        datalen, actual);
                 }
             }
         }
