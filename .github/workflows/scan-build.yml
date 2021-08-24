@@ -1,0 +1,45 @@
+name: Scan Build
+on: 
+  push:
+  pull_request:
+    branches:
+      - 'main'
+      - 'master'
+      - 'releases/*'
+
+jobs:
+  scan:
+    runs-on: ubuntu-18.04
+
+    env:
+      artifact-directory: scan-result
+      CCACHE_COMPRESS: 1
+      CCACHE_TEMPDIR: /tmp/.ccache-temp
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Ccache setup
+        uses: actions/cache@v2.1.6
+        with:
+          path: ~/.ccache
+          key: ccache-static-build-${{ github.sha }}
+          restore-keys: ccache-static-build-${{ github.sha }}
+
+      - name: Setup Environment
+        run: |
+          sudo apt update
+          sudo apt install ccache clang-9 clang-tools-9
+
+      - name: Perform Scan-build
+        run: |
+          ccache --max-size=150M
+          scan-build-9 -o ../${{env.artifact-directory}} --exclude contrib make
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Scan Results
+          path: ${{env.artifact-directory}}/
