@@ -8,10 +8,10 @@
             "name": "(gdb) curl x86_64 w/preload",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/usr/bin/curl",
+            "program": "/usr/bin/cat",
             //"args": ["--http2-prior-knowledge", "http://nghttp2.org/robots.txt"],
             //"args": ["http://nghttp2.org/robots.txt"],
-            "args": ["-s", "-o", "/dev/null", "--http1.1", "https://www.google.com/"],
+            "args": ["/home/michalbiesek/Git/hello_world/main.c"],
             //"args": ["-s", "-o", "/dev/null", "http://www.google.com/"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -75,14 +75,15 @@
             ]
         },
         {
-            "name": "(gdb) ldscope curl aarch64",
+            "name": "(gdb) UnitTest",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/linux/aarch64/ldscope",
-            "args": ["curl", "--http2-prior-knowledge", "nghttp2.org/robots.txt"],
+            "program": "${workspaceFolder}/test/linux/reporttest",
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [ ],
+            "environment": [
+                { "name":"LD_LIBRARY_PATH", "value":"contrib/build/cmocka/src/"}
+            ],
             "externalConsole": false,
             "MIMode": "gdb",
             "setupCommands": [

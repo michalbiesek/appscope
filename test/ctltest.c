@@ -681,6 +681,17 @@ ctlDelProtocol(void** state)
     destroyReq(&req);
 }
 
+// static void
+// ctlFlushLog(void** state)
+// {
+//   ctl_t* ctl = ctlCreate();
+//   assert_non_null(ctl);
+
+//   // ctlSendLog
+//   // ctlFlushLog
+//   ctlDestroy(&ctl);
+// }
+
 int
 main(int argc, char* argv[])
 {

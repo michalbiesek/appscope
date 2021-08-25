@@ -420,6 +420,17 @@ doWriteFileNoSummarization(void** state)
 }
 
 static void
+doReadFileBinaryData(void** state)
+{
+    char buf[5] = "hey.\n";
+
+    clearTestData();
+    doWrite(STDOUT_FILENO, 987, 1, buf, sizeof(buf), "writeFunc", BUF, 0);
+    doEvent();
+    int i = 0;
+}
+
+static void
 doWriteFileSummarizedOpenCloseNotSummarized(void** state)
 {
     char* buf = "hey.\n";
@@ -1645,44 +1656,45 @@ main(int argc, char* argv[])
 
     // Run tests
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(initStateDoesNotCrash),
-        cmocka_unit_test(doReadFileNoSummarization),
-        cmocka_unit_test(doReadFileSummarizedOpenCloseNotSummarized),
-        cmocka_unit_test(doReadFileFullSummarization),
-        cmocka_unit_test(doWriteFileNoSummarization),
-        cmocka_unit_test(doWriteFileSummarizedOpenCloseNotSummarized),
-        cmocka_unit_test(doWriteFileFullSummarization),
-        cmocka_unit_test(doRecvNoSummarization),
-        cmocka_unit_test(doRecvSummarizedOpenCloseNotSummarized),
-        cmocka_unit_test(doRecvFullSummarization),
-        cmocka_unit_test(doSendNoSummarization),
-        cmocka_unit_test(doSendSummarizedOpenCloseNotSummarized),
-        cmocka_unit_test(doSendFullSummarization),
-        cmocka_unit_test(doSeekNoSummarization),
-        cmocka_unit_test(doSeekSummarization),
-#ifdef __LINUX__
-        cmocka_unit_test(doStatPathNoSummarization),
-        cmocka_unit_test(doStatPathSummarization),
-        cmocka_unit_test(doStatFdNoSummarization),
-        cmocka_unit_test(doStatFdSummarization),
-#endif // __LINUX__
-        cmocka_unit_test(doDNSSendNoDNSSummarization),
-        cmocka_unit_test(doDNSSendDNSSummarization),
-        cmocka_unit_test(doFSConnectionErrorNoSummarization),
-        cmocka_unit_test(doFSConnectionErrorSummarization),
-        cmocka_unit_test(doNetConnectionErrorNoSummarization),
-        cmocka_unit_test(doNetConnectionErrorSummarization),
-        cmocka_unit_test(doFSReadWriteErrorNoSummarization),
-        cmocka_unit_test(doFSReadWriteErrorSummarization),
-        cmocka_unit_test(doNetRxTxErrorNoSummarization),
-        cmocka_unit_test(doNetRxTxErrorSummarization),
-#ifdef __LINUX__
-        cmocka_unit_test(doStatErrNoSummarization),
-        cmocka_unit_test(doStatErrSummarization),
-#endif // __LINUX__
-        cmocka_unit_test(doDNSErrNoSummarization),
-        cmocka_unit_test(doDNSErrSummarization),
-        cmocka_unit_test(dbgHasNoUnexpectedFailures),
+//         cmocka_unit_test(initStateDoesNotCrash),
+//         cmocka_unit_test(doReadFileNoSummarization),
+//         cmocka_unit_test(doReadFileSummarizedOpenCloseNotSummarized),
+//         cmocka_unit_test(doReadFileFullSummarization),
+           cmocka_unit_test(doReadFileBinaryData),
+//         cmocka_unit_test(doWriteFileNoSummarization),
+//         cmocka_unit_test(doWriteFileSummarizedOpenCloseNotSummarized),
+//         cmocka_unit_test(doWriteFileFullSummarization),
+//         cmocka_unit_test(doRecvNoSummarization),
+//         cmocka_unit_test(doRecvSummarizedOpenCloseNotSummarized),
+//         cmocka_unit_test(doRecvFullSummarization),
+//         cmocka_unit_test(doSendNoSummarization),
+//         cmocka_unit_test(doSendSummarizedOpenCloseNotSummarized),
+//         cmocka_unit_test(doSendFullSummarization),
+//         cmocka_unit_test(doSeekNoSummarization),
+//         cmocka_unit_test(doSeekSummarization),
+// #ifdef __LINUX__
+//         cmocka_unit_test(doStatPathNoSummarization),
+//         cmocka_unit_test(doStatPathSummarization),
+//         cmocka_unit_test(doStatFdNoSummarization),
+//         cmocka_unit_test(doStatFdSummarization),
+// #endif // __LINUX__
+//         cmocka_unit_test(doDNSSendNoDNSSummarization),
+//         cmocka_unit_test(doDNSSendDNSSummarization),
+//         cmocka_unit_test(doFSConnectionErrorNoSummarization),
+//         cmocka_unit_test(doFSConnectionErrorSummarization),
+//         cmocka_unit_test(doNetConnectionErrorNoSummarization),
+//         cmocka_unit_test(doNetConnectionErrorSummarization),
+//         cmocka_unit_test(doFSReadWriteErrorNoSummarization),
+//         cmocka_unit_test(doFSReadWriteErrorSummarization),
+//         cmocka_unit_test(doNetRxTxErrorNoSummarization),
+//         cmocka_unit_test(doNetRxTxErrorSummarization),
+// #ifdef __LINUX__
+//         cmocka_unit_test(doStatErrNoSummarization),
+//         cmocka_unit_test(doStatErrSummarization),
+// #endif // __LINUX__
+//         cmocka_unit_test(doDNSErrNoSummarization),
+//         cmocka_unit_test(doDNSErrSummarization),
+//         cmocka_unit_test(dbgHasNoUnexpectedFailures),
     };
     int test_errors = cmocka_run_group_tests(tests, countTestSetup, countTestTeardown);
     return pre_init_errors || test_errors;

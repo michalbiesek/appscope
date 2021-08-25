@@ -124,7 +124,7 @@ metric:
     #   8   disable filesystem seek metric aggregation
     #   9   disable filesystem read/write and network send/recv metric aggregation
     #
-    verbosity : 4
+    verbosity : 9
 
     # Additional tags added to metrics and events
     #

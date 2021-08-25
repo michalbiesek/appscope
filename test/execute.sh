@@ -62,28 +62,28 @@ fi
 # if any errors occurred.  ERR maintains this state.
 declare -i ERR=0
 
-run_test test/${OS}/cfgutilstest
-run_test test/${OS}/cfgtest
-run_test test/${OS}/transporttest
-run_test test/${OS}/logtest
-run_test test/${OS}/mtctest
-run_test test/${OS}/evtformattest
-run_test test/${OS}/ctltest
-run_test test/${OS}/mtcformattest
-run_test test/${OS}/circbuftest
-run_test test/${OS}/linklisttest
-run_test test/${OS}/comtest
-run_test test/${OS}/dbgtest
-run_test test/${OS}/searchtest
-run_test test/${OS}/httpstatetest
+# run_test test/${OS}/cfgutilstest
+# run_test test/${OS}/cfgtest
+# run_test test/${OS}/transporttest
+# run_test test/${OS}/logtest
+# run_test test/${OS}/mtctest
+# run_test test/${OS}/evtformattest
+# run_test test/${OS}/ctltest
+# run_test test/${OS}/mtcformattest
+# run_test test/${OS}/circbuftest
+# run_test test/${OS}/linklisttest
+# run_test test/${OS}/comtest
+# run_test test/${OS}/dbgtest
+# run_test test/${OS}/searchtest
+# run_test test/${OS}/httpstatetest
 if [ "${OS}" = "linux" ]; then
-    run_test test/${OS}/glibcvertest
+    # run_test test/${OS}/glibcvertest
     run_test test/${OS}/reporttest
-    run_test test/${OS}/javabcitest
-    run_test test/${OS}/httpheadertest
+    # run_test test/${OS}/javabcitest
+    # run_test test/${OS}/httpheadertest
 fi
-run_test test/${OS}/httpaggtest
-run_test test/${OS}/selfinterposetest
+# run_test test/${OS}/httpaggtest
+# run_test test/${OS}/selfinterposetest
 
 if [ "${OS}" = "linux" ]; then
     SAVEVARS=$ENVARS
