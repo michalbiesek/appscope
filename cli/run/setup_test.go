@@ -55,12 +55,12 @@ func TestCreateLdscope(t *testing.T) {
 func TestCreateAll(t *testing.T) {
 	os.MkdirAll(".foo", 0755)
 	CreateAll(".foo")
-	files := []string{"ldscope", "libscope.so", "scope.yml", "scope_protocol.yml"}
-	perms := []os.FileMode{0755, 0755, 0644, 0644}
-	for i, f := range files {
+	files_permMap := map[string]os.FileMode{"ldscope": 0755, "libscope.so": 0755,
+		"scope.yml": 0644, "scope_protocol.yml": 0644}
+	for f, permission := range files_permMap {
 		path := fmt.Sprintf(".foo/%s", f)
 		stat, _ := os.Stat(path)
-		assert.Equal(t, stat.Mode(), perms[i])
+		assert.Equal(t, stat.Mode(), permission)
 		wb, _ := Asset(fmt.Sprintf("build/%s", f))
 		hash1 := md5.Sum(wb)
 		fb, _ := ioutil.ReadFile(path)

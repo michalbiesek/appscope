@@ -67,14 +67,14 @@ func environNoScope() []string {
 
 // CreateAll outputs all bundled files to a given path
 func CreateAll(path string) error {
-	files := []string{"ldscope", "libscope.so", "scope.yml", "scope_protocol.yml"}
-	perms := []os.FileMode{0755, 0755, 0644, 0644}
-	for i, f := range files {
+	files_permMap := map[string]os.FileMode{"ldscope": 0755, "libscope.so": 0755,
+		"scope.yml": 0644, "scope_protocol.yml": 0644}
+	for f, permission := range files_permMap {
 		b, err := Asset(fmt.Sprintf("build/%s", f))
 		if err != nil {
 			return err
 		}
-		err = ioutil.WriteFile(filepath.Join(path, f), b, perms[i])
+		err = ioutil.WriteFile(filepath.Join(path, f), b, permission)
 		if err != nil {
 			return err
 		}
