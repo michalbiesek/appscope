@@ -59,9 +59,14 @@ void                 dbgAddLine(const char* key, const char* fmt, ...);
 // logging utilities
 //
 
+//TODO: call this for sysprint
+#define PRINTF_FORMAT(fmt_id, arg_id) __attribute__((format(printf, (fmt_id), (arg_id))))
+
 extern log_t *g_log;
 extern proc_id_t g_proc;
+extern bool g_constructor_init_done;
 
 void scopeLog(const char *, int, cfg_log_level_t);
+void scopeLogVar(int, cfg_log_level_t, const char*, ...) PRINTF_FORMAT(3,4);
 
 #endif // __DBG_H__

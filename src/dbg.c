@@ -32,6 +32,7 @@ struct _dbg_t {
 dbg_t *g_dbg = NULL;
 log_t *g_log = NULL;
 proc_id_t g_proc = {0};
+bool g_constructor_init_done;
 
 
 void
@@ -261,6 +262,12 @@ dbgAddLine(const char *key, const char *fmt, ...)
 // scope executable.
 void __attribute__((weak))
 scopeLog(const char *msg, int fd, cfg_log_level_t level)
+{
+    return;
+}
+
+void __attribute__((weak))
+scopeLogVar(int fd, cfg_log_level_t level, const char *format, ...)
 {
     return;
 }

@@ -1520,6 +1520,10 @@ init(void)
     }
 
     osInitJavaAgent();
+    scopeLogVar(-1, CFG_LOG_ERROR, "Scope log var Before constructor was initialized %d ", 500);
+    g_constructor_init_done = TRUE;
+    scopeLogVar(-1, CFG_LOG_ERROR, "Scope log var After constructor was initialized %d ", 1000);
+    scopeLog("Scope log after constructor", -1 , CFG_LOG_ERROR);
 }
 
 EXPORTON int
@@ -4701,7 +4705,7 @@ getentropy(void *buffer, size_t length)
  *
  * To debug:
  * 1) ensure that the value of CDBG_ADDR + CDBG_SIZE represents a
- * viable unused address space. Adjust as ncessary.
+ * viable unused address space. Adjust as necessary.
  * 2) set g_cdbg to CDBG_ENABLE
  * 3) adjust the (level == CFG_LOG_DEBUG) clause as desired
  * 4) build libscope & run your test
@@ -4755,6 +4759,53 @@ scopeLog(const char *msg, int fd, cfg_log_level_t level)
         snprintf(buf, sizeof(buf), "Scope: %s(pid:%d): %s\n", g_proc.procname, g_proc.pid, msg);
     }
     logSend(g_log, buf, level);
+}
+
+static char scope_log_var_buf[4096];
+
+void
+scopeLogVar(int fd, cfg_log_level_t level, const char *format, ...)
+{
+    char *b;
+
+    if (!g_constructor_init_done) {
+        b = scope_log_var_buf + snprintf(scope_log_var_buf, sizeof(scope_log_var_buf), "Constructor: ");
+        size_t blen = sizeof(scope_log_var_buf) + (scope_log_var_buf - b) - 1;
+        va_list args;
+        va_start(args, format);
+        int len = vsnprintf(b, blen, format, args);
+        va_end(args);
+        //detect overflow ???
+
+        sprintf(b + len, "\n");
+        b += len + 1;
+
+        scope_write(STDERR_FILENO, scope_log_var_buf, b - scope_log_var_buf);
+        return;
+    }
+
+    //not supported yet get outta here
+    cfg_log_level_t cfg_level = logLevel(g_log);
+    if ((cfg_level == CFG_LOG_NONE) || (cfg_level > level)) return;
+    if (!g_log || !g_proc.procname[0]) return;
+
+
+    b = scope_log_var_buf + snprintf(scope_log_var_buf, sizeof(scope_log_var_buf), "Scope: %s(pid:%d): ", g_proc.procname, g_proc.pid);
+    size_t blen = sizeof(scope_log_var_buf) + (scope_log_var_buf - b) - 1;
+    if (fd != -1 ) {
+        b += snprintf(b, blen, "fd:%d ", fd);
+        blen = sizeof(scope_log_var_buf) + (scope_log_var_buf - b) - 1;
+        //detect overflow ???
+    }
+    va_list args;
+    va_start(args, format);
+    int len = vsnprintf(b, blen, format, args);
+    va_end(args);
+
+    sprintf(b + len, "\n");
+    b += len + 1;
+
+    logSend(g_log, scope_log_var_buf, level);
 }
 
 /*
