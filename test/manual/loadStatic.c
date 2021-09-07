@@ -385,6 +385,7 @@ set_go(char *buf, int argc, char **argv, char **env, Elf64_Addr laddr)
                    PROT_READ | PROT_WRITE,
                    MAP_PRIVATE | MAP_ANONYMOUS | MAP_GROWSDOWN,
                    -1, (off_t)NULL)) == MAP_FAILED) {
+        munmap(heap, HEAP_SIZE);
         perror("set_go:mmap");
         return -1;
     }
