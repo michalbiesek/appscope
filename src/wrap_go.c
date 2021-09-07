@@ -632,7 +632,7 @@ dumb_thread(void *arg)
  * There are 2 go_switch() functions that accomplish the
  * same thing. They take different approaches. We want to 
  * see what effect an approach has on performance and reliability.
- * We'll likley get to one instance as we gain experience. 
+ * We'll likely get to one instance as we gain experience. 
  *
  * These go_switch() functions are meant to support
  * static and dynamic apps at the same time. It depends
