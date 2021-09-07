@@ -350,6 +350,7 @@ set_go(char *buf, int argc, const char **argv, const char **env, Elf64_Addr phad
     start = ehdr->e_entry;
 
     if (arch_prctl(ARCH_GET_FS, (unsigned long)&scope_fs) == -1) {
+        munmap(sp, STACK_SIZE);
         scopeLog("set_go:arch_prctl", -1, CFG_LOG_ERROR);
         return -1;
     }
