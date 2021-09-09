@@ -188,7 +188,8 @@ doGotcha(struct link_map *lm, got_list_t *hook, Elf64_Rela *rel, Elf64_Sym *sym,
          * symbol table at the program header table level. This is not needed at
          * runtime as the symbol lookup always go through the hash table; ELF64_R_SYM.
          */
-        if (!strcmp(sym[ELF64_R_SYM(rel[i].r_info)].st_name + str, hook->symbol)) {
+            scopeLog(CFG_LOG_INFO, "\t\t\t (doGotcha) elf_st_name %s symbol %s", sym[ELF64_R_SYM(rel[i].r_info)].st_name + str, hook->symbol);
+            if (!strcmp(sym[ELF64_R_SYM(rel[i].r_info)].st_name + str, hook->symbol)) {
             uint64_t *gfn = hook->gfn;
             uint64_t *gaddr = (uint64_t *)(rel[i].r_offset + lm->l_addr);
             int page_size = getpagesize();

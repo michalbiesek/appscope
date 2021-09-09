@@ -1158,14 +1158,57 @@ static size_t __stdio_write(struct MUSL_IO_FILE *, const unsigned char *, size_t
 static long scope_syscall(long, ...);
 #endif
 
+static inline bool
+is_lib_in_full_path(const char* path_name, const char* lib_name, size_t lib_name_length)
+{
+    size_t path_length = strlen(path_name);
+    if (path_length > lib_name_length && !strcmp(path_name + path_length - lib_name_length, lib_name)) {
+        return TRUE;
+    }
+    return FALSE;
+}
+
 static int 
 findLibscopePath(struct dl_phdr_info *info, size_t size, void *data)
 {
-    int len = strlen(info->dlpi_name);
-    int libscope_so_len = 11;
-
-    if(len > libscope_so_len && !strcmp(info->dlpi_name + len - libscope_so_len, "libscope.so")) {
+    if (is_lib_in_full_path(info->dlpi_name, "libscope.so", sizeof("libscope.so") - 1)) {
         *(char **)data = (char *) info->dlpi_name;
+        return 1;
+    }
+    return 0;
+}
+
+static int 
+findLibnetPath(struct dl_phdr_info *info, size_t size, void *data)
+{
+    ///usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/libnet.so
+    if (is_lib_in_full_path(info->dlpi_name, "libnet.so", sizeof("libnet.so") - 1)) {
+        *(char **)data = (char *) info->dlpi_name;
+        scopeLog(CFG_LOG_INFO, "\tfindLibnetPath name=%s", info->dlpi_name);
+        return 1;
+    }
+    return 0;
+}
+
+static int 
+findLibjliPath(struct dl_phdr_info *info, size_t size, void *data)
+{
+    ///usr/lib/jvm/java-7-openjdk-amd64/jre/bin/../lib/amd64/jli/libjli.so
+    if (is_lib_in_full_path(info->dlpi_name, "libjli.so", sizeof("libjli.so") - 1)) {
+        *(char **)data = (char *) info->dlpi_name;
+        scopeLog(CFG_LOG_INFO, "\tfindLibjliPath name=%s", info->dlpi_name);
+        return 1;
+    }
+    return 0;
+}
+
+static int 
+findLibcPath(struct dl_phdr_info *info, size_t size, void *data)
+{
+    ///usr/lib/jvm/java-7-openjdk-amd64/jre/bin/../lib/amd64/jli/libjli.so
+    if (is_lib_in_full_path(info->dlpi_name, "libc.so.6", sizeof("libc.so.6") - 1)) {
+        *(char **)data = (char *) info->dlpi_name;
+        scopeLog(CFG_LOG_INFO, "\tfindLibjliPath name=%s", info->dlpi_name);
         return 1;
     }
     return 0;
@@ -1190,28 +1233,112 @@ hookInject()
         if (libscopeHandle == NULL) {
             return FALSE;
         }
+            void *handle = g_fn.dlopen(0, RTLD_LAZY);
+            if (handle == NULL) {
+                dlclose(libscopeHandle);
+                return FALSE;
+            }
 
-        void *handle = g_fn.dlopen(0, RTLD_LAZY);
-        if (handle == NULL) {
-            dlclose(libscopeHandle);
-            return FALSE;
-        }
+            // Get the link map and ELF sections in advance of something matching
+            if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) &&
+                (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
+                scopeLog(CFG_LOG_INFO, "\t(hookInject_0) Elf Section library name:  %s", lm->l_name);
 
-        // Get the link map and ELF sections in advance of something matching
-        if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) &&
-            (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
+                for (int i=0; inject_hook_list[i].symbol; i++) {
+                    addr = dlsym(libscopeHandle, inject_hook_list[i].symbol);
 
-            for (int i=0; inject_hook_list[i].symbol; i++) {
-                addr = dlsym(libscopeHandle, inject_hook_list[i].symbol);
-                
-                inject_hook_list[i].func = addr;
-                if ((dlsym(handle, inject_hook_list[i].symbol)) &&
-                    (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, 1) != -1)) {
-                    scopeLog(CFG_LOG_DEBUG, "\tGOT patched %s", inject_hook_list[i].symbol);
+                    inject_hook_list[i].func = addr;
+                    scopeLog(CFG_LOG_INFO, "\t\t(hookInject_0) symbol:  %s", inject_hook_list[i].symbol);
+                    // We don't succeed with doGotcha -> below
+                    if ((dlsym(handle, inject_hook_list[i].symbol)) &&
+                        (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, 1) != -1)) {
+                        scopeLog(CFG_LOG_INFO, "\t\t\t\tGOT_0 patched %s", inject_hook_list[i].symbol);
+                    }
                 }
             }
-        }
-        dlclose(handle);
+
+            dlclose(handle);
+
+            if (dl_iterate_phdr(findLibnetPath, &full_path)) {
+                void *handle = g_fn.dlopen(full_path, RTLD_LAZY);
+                if (handle == NULL) {
+                    dlclose(libscopeHandle);
+                    return FALSE;
+                }
+                // Get the link map and ELF sections in advance of something matching
+                if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) &&
+                    (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
+                    scopeLog(CFG_LOG_INFO, "\t(hookInject_1) Elf Section library name:  %s", lm->l_name);
+
+                    for (int i=0; inject_hook_list[i].symbol; i++) {
+                        addr = dlsym(libscopeHandle, inject_hook_list[i].symbol);
+
+                        inject_hook_list[i].func = addr;
+                        scopeLog(CFG_LOG_INFO, "\t\t(hookInject_1) symbol:  %s", inject_hook_list[i].symbol);
+                        // We don't succeed with doGotcha -> below
+                        if ((dlsym(handle, inject_hook_list[i].symbol)) &&
+                            (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, 1) != -1)) {
+                            scopeLog(CFG_LOG_INFO, "\t\t\t\tGOT_1 patched %s", inject_hook_list[i].symbol);
+                        }
+                    }
+                }
+                dlclose(handle);
+            }
+
+
+            if (dl_iterate_phdr(findLibjliPath, &full_path)) {
+                void *handle = g_fn.dlopen(full_path, RTLD_LAZY);
+                if (handle == NULL) {
+                    dlclose(libscopeHandle);
+                    return FALSE;
+                }
+                // Get the link map and ELF sections in advance of something matching
+                if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) &&
+                    (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
+                    scopeLog(CFG_LOG_INFO, "\t(hookInject_2) Elf Section library name:  %s", lm->l_name);
+
+                    for (int i=0; inject_hook_list[i].symbol; i++) {
+                        addr = dlsym(libscopeHandle, inject_hook_list[i].symbol);
+
+                        inject_hook_list[i].func = addr;
+                        scopeLog(CFG_LOG_INFO, "\t\t(hookInject_2) symbol:  %s", inject_hook_list[i].symbol);
+                        // We don't succeed with doGotcha -> below
+                        if ((dlsym(handle, inject_hook_list[i].symbol)) &&
+                            (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, 1) != -1)) {
+                            scopeLog(CFG_LOG_INFO, "\t\t\t\tGOT_2 patched %s", inject_hook_list[i].symbol);
+                        }
+                    }
+                }
+                dlclose(handle);
+            }
+
+            if (dl_iterate_phdr(findLibcPath, &full_path)) {
+                void *handle = g_fn.dlopen(full_path, RTLD_LAZY);
+                if (handle == NULL) {
+                    dlclose(libscopeHandle);
+                    return FALSE;
+                }
+                // Get the link map and ELF sections in advance of something matching
+                if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) &&
+                    (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
+                    scopeLog(CFG_LOG_INFO, "\t(hookInject_3) Elf Section library name:  %s", lm->l_name);
+
+                    for (int i=0; inject_hook_list[i].symbol; i++) {
+                        addr = dlsym(libscopeHandle, inject_hook_list[i].symbol);
+
+                        inject_hook_list[i].func = addr;
+                        scopeLog(CFG_LOG_INFO, "\t\t(hookInject_3) symbol:  %s", inject_hook_list[i].symbol);
+                        // We don't succeed with doGotcha -> below
+                        if ((dlsym(handle, inject_hook_list[i].symbol)) &&
+                            (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, 1) != -1)) {
+                            scopeLog(CFG_LOG_INFO, "\t\t\t\tGOT_3 patched %s", inject_hook_list[i].symbol);
+                        }
+                    }
+                }
+                dlclose(handle);
+            }
+
+        scopeLog(CFG_LOG_INFO, "RETURN TRUE");
         dlclose(libscopeHandle);
         return TRUE;
     }
