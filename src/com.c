@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include <string.h>
-
+#define UNW_LOCAL_ONLY
+#include <libunwind.h>
 #include "com.h"
 #include "dbg.h"
 #include "utils.h"
@@ -95,6 +96,16 @@ reportProcessStart(ctl_t *ctl, bool init, which_transport_t who)
         // 3) Log it at startup, provided the loglevel is set to allow it
         scopeLog(CFG_LOG_INFO, "Constructor (Scope Version: " SCOPE_VER ")");
         scopeLog(CFG_LOG_INFO, "command w/args: %s", g_proc.cmd);
+        unw_cursor_t cursor; unw_context_t uc;
+        unw_word_t ip, sp;
+
+        //   unw_getcontext(&uc);
+        //   unw_init_local(&cursor, &uc);
+        //   while (unw_step(&cursor) > 0) {
+        //     unw_get_reg(&cursor, UNW_REG_IP, &ip);
+        //     unw_get_reg(&cursor, UNW_REG_SP, &sp);
+        //     printf ("ip = %lx, sp = %lx\n", (long) ip, (long) sp);
+        //   }
 
         msgLogConfig(g_cfg.staticfg);
 
