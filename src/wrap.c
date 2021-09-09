@@ -267,6 +267,7 @@ findSymbol(struct dl_phdr_info *info, size_t size, void *data)
 }
 
 #define WRAP_CHECK(func, rc)                                           \
+    scopeLog(CFG_LOG_ERROR, "WRAP_CHECK: "#func"\n");                  \
     if (g_fn.func == NULL ) {                                          \
        if (!g_ctl) {                                                   \
          if ((g_fn.func = scope_dlsym(RTLD_NEXT, #func, func)) == NULL) {  \
@@ -286,6 +287,7 @@ findSymbol(struct dl_phdr_info *info, size_t size, void *data)
     doThread();
 
 #define WRAP_CHECK_VOID(func)                                          \
+    scopeLog(CFG_LOG_ERROR, "WRAP_CHECK_VOID: "#func"\n");             \
     if (g_fn.func == NULL ) {                                          \
        if (!g_ctl) {                                                   \
          if ((g_fn.func = scope_dlsym(RTLD_NEXT, #func, func)) == NULL) {  \
@@ -305,6 +307,7 @@ findSymbol(struct dl_phdr_info *info, size_t size, void *data)
     doThread();
 
 #define SYMBOL_LOADED(func) ({                                         \
+    scopeLog(CFG_LOG_ERROR, "SYMBOL_LOADED: "#func"\n");                  \
     int retval;                                                        \
     if (g_fn.func == NULL) {                                           \
         param_t param = {.in_symbol = #func, .out_addr = NULL,         \
@@ -1109,7 +1112,8 @@ findLibSym(struct dl_phdr_info *info, size_t size, void *data)
 {
     find_sym_t *find = (find_sym_t *)data;
     *(find->out_addr) = NULL;
-
+    scopeLog(CFG_LOG_ERROR, "findLibSym dlpi_name %s", info->dlpi_name);
+    scopeLog(CFG_LOG_ERROR, "findLibSym library %s", find->library);
     if (strstr(info->dlpi_name, find->library)) {
 
         void *handle = g_fn.dlopen(info->dlpi_name, RTLD_NOW);
@@ -1161,6 +1165,7 @@ static long scope_syscall(long, ...);
 static int 
 findLibscopePath(struct dl_phdr_info *info, size_t size, void *data)
 {
+    scopeLog(CFG_LOG_ERROR, "findLibscopePath %s", info->dlpi_name);
     int len = strlen(info->dlpi_name);
     int libscope_so_len = 11;
 
@@ -1184,6 +1189,7 @@ hookInject()
     char *str = NULL;
     int rsz = 0;
     struct link_map *lm;
+    scopeLog(CFG_LOG_ERROR, "hookInject");
 
     if (dl_iterate_phdr(findLibscopePath, &full_path)) {
         void *libscopeHandle = g_fn.dlopen(full_path, RTLD_NOW);
@@ -1267,6 +1273,7 @@ initHook(int attachedFlag)
     }
 
 #ifdef __FUNCHOOK__
+    scopeLog(CFG_LOG_ERROR, "initHook");
     if (dl_iterate_phdr(findLibscopePath, &full_path)) {
         void *handle = g_fn.dlopen(full_path, RTLD_NOW);
         if (handle == NULL) {
@@ -1471,7 +1478,8 @@ init(void)
     int attachedFlag = 0;
     initEnv(&attachedFlag);
     // logging inside constructor start from this line
-    g_constructor_debug_enabled = checkEnv("SCOPE_ALLOW_CONSTRUCT_DBG", "true");
+    g_constructor_debug_enabled = TRUE;
+    scopeLog(CFG_LOG_ERROR, "constructor debug_enabled");
 
     initState();
 

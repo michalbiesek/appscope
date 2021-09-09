@@ -250,6 +250,7 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
 static int 
 findLib(struct dl_phdr_info *info, size_t size, void *data)
 {
+    scopeLog(CFG_LOG_ERROR, "findLib %s", info->dlpi_name);
     if (strstr(info->dlpi_name, "libc.so") != NULL ||
         strstr(info->dlpi_name, "ld-musl") != NULL) {
         char libpath[PATH_MAX];
@@ -269,7 +270,7 @@ injectScope(int pid, char* path)
     void *dlopenAddr = NULL;
     libdl_info_t info;
     int glibc = TRUE;
-   
+    scopeLog(CFG_LOG_ERROR, "injectScope");
     if (!dl_iterate_phdr(findLib, &info)) {
         fprintf(stderr, "error: failed to find local libc\n");
         return EXIT_FAILURE;
