@@ -57,8 +57,8 @@ fluentbit_unix_file() {
     # start fluentbit
     docker build fluentbit/ -t tests-fluentbit > /dev/null
     docker run -d --rm -v test_output:/test_output tests-fluentbit \
-        fluent-bit -R /test/parsers.conf \
-        -i syslog -p "Mode=unix_tcp" -p "Path=/tmp/abstest" -p "Parser=json" \
+        fluent-bit \
+        -i appscope -p "Path=/tmp/abstest" \
         -o file -p "Format=plain" -p "Path=/test_output/" -p "File=fluent.out"
     sleep 3
 
@@ -123,8 +123,8 @@ fluentbit_unix_logstream() {
     # start fluentbit
     docker build fluentbit/ -t tests-fluentbit > /dev/null
     docker run -d --rm -v test_output:/test_output tests-fluentbit \
-        fluent-bit -R /test/parsers.conf \
-        -i syslog -p "Mode=unix_tcp" -p "Path=/tmp/abstest" -p "Parser=json" \
+        fluent-bit \
+        -i appscope -p "Path=/tmp/abstest" \
         -o logstream -p "Port=10090" -p "auth_token=hello"
     sleep 3
 
