@@ -101,6 +101,9 @@ fluentbit_unix_file() {
     docker stop tests-ab
     docker stop tests-fluentbit
 
+    # cleanup
+    rm -rf test_output/
+
     endtest
 }
 
@@ -164,6 +167,9 @@ fluentbit_unix_logstream() {
     docker stop tests-ab
     docker stop tests-fluentbit
     docker stop tests-logstream
+
+    # cleanup
+    rm -rf test_output/
 
     endtest
 }
