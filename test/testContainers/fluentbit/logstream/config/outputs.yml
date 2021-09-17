@@ -1,5 +1,5 @@
 outputs:
-  tmp:
+  test_output:
     systemFields:
       - cribl_pipe
     addIdToStagePath: true
@@ -14,5 +14,5 @@ outputs:
     maxOpenFiles: 100
     onBackpressure: block
     type: filesystem
-    destPath: /tmp/out
+    destPath: /test_output
     stagePath: /tmp/out/.staging

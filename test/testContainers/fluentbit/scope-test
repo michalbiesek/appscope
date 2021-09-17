@@ -29,20 +29,6 @@ endtest(){
     echo ""
 }
 
-wait_for_port() {
-    TIMEOUT=${2:-60}
-    while ! netstat -an | grep -w ${1} >/dev/null 2>&1; do
-        sleep 1
-        ((TIMEOUT=TIMEOUT-1))
-        if [ $TIMEOUT -le 0 ]; then
-            echo >&2 "warn: timed out waiting for port ${1} listener"
-            netstat -an | grep -w LISTEN >&2
-            return
-        fi
-    done
-    echo 1
-}
-
 wait_for_files() {
     TIMEOUT=${2:-60}
     while ! compgen -G "${1}" > /dev/null; do
@@ -125,32 +111,43 @@ fluentbit_unix_file() {
 # Assert on number of http events received
 fluentbit_unix_logstream() {
     starttest "Fluentbit_unix->Logstream_$1_Scope_$2_Requests"
-    DEST=/tmp/out/tcpjson:in_tcp_json
-    rm -rf ${DEST}
-    # start nginx with modified config
-    sed -i "s/worker_processes\ auto/worker_processes\ $1/" /etc/nginx/nginx.conf
-    SCOPE_HOME=/opt/test/conf_2 ldscope nginx
-    # sleep to allow nginx to start up
-    sleep 2
+
+    # start logstream
+    docker build logstream/ -t tests-logstream > /dev/null
+    docker run -d --rm tests-logstream
+    sleep 10
+
     # start fluentbit
-    /opt/td-agent-bit/bin/td-agent-bit -R /opt/test/fluentbit/parsers.conf -i syslog -p "Mode=unix_tcp" -p "Path=/tmp/abstest" -p "Parser=json" -o tcp -p "Port=10070" -p "Format=json_lines" -p "json_date_key=false" -d
-    # sleep to allow fluentbit to start
-    sleep 2
-    # change perms on unix socket file to allow non-root to write to it
-    chmod 666 /tmp/abstest
-    # run ab benchmark test
-    ab -n $2 -c 1 http://127.0.0.1/ > /dev/null 2>&1
-    # sleep to wait for ab to complete
-    sleep 15
-    if [ "$(wait_for_files "${DEST}/CriblOut-*.json")" ]; then
-        found=$(grep '"source":"http-req"' ${DEST}/CriblOut-*.json | wc -l)
+    docker build fluentbit/ -t tests-fluentbit > /dev/null
+    docker run -d --rm -v test_output:/test_output tests-fluentbit \
+        fluent-bit -R /test/parsers.conf \
+        -i syslog -p "Mode=unix_tcp" -p "Path=/tmp/abstest" -p "Parser=json" \
+        -o logstream -p "Port=10090" -p "auth_token=hello"
+    sleep 3
+
+    # start scoped nginx 
+    sed -i "s/worker_processes\ auto/worker_processes\ $1/" nginx/config/nginx.conf
+    docker build nginx/ -t tests-nginx > /dev/null
+    docker run -d --rm tests-nginx \
+        -e SCOPE_HOME=/test/conf_unix.yml \
+        ldscope nginx \
+    sleep 3
+
+    # start ab
+    docker run -d --rm jordi/ab -t tests-ab \
+        -c 1 -n $2 http://127.0.0.1:8080/
+    sleep 10
+
+    # validate output
+    if [ "$(wait_for_files "test_output/appscope:in_appscope/CriblOut-*.json")" ]; then
+        found=$(grep '"source":"http-req"' test_output/appscope:in_appscope/CriblOut-*.json | wc -l)
         if [ $found -eq $2 ] ; then 
             echo "PASS: No missing http request events"
         else
             echo "FAIL: Missing http request events: expected: $2, got: $found, dropped: $(($2-found))"
             ERR+=1
         fi
-        found=$(grep '"source":"http-resp"' ${DEST}/CriblOut-*.json | wc -l)
+        found=$(grep '"source":"http-resp"' test_output/appscope:in_appscope/CriblOut-*.json | wc -l)
         if [ $found -eq $2 ] ; then 
             echo "PASS: No missing http response events"
         else
@@ -161,11 +158,13 @@ fluentbit_unix_logstream() {
         echo "FAIL: no output files"
         ERR+=1
     fi
-    # kill processes
-    kill `pidof td-agent-bit`
-    nginx -s quit
-    # sleep to allow nginx and fluentbit to close (2+6 secs)
-    sleep 8
+
+    # stop containers
+    docker stop tests-nginx
+    docker stop tests-ab
+    docker stop tests-fluentbit
+    docker stop tests-logstream
+
     endtest
 }
 

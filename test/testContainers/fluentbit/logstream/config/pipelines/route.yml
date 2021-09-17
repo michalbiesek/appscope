@@ -2,15 +2,15 @@ id: default
 groups: {}
 routes:
   - id: hrn4bd
-    name: tcpjson
+    name: appscope
     final: false
     disabled: false
     pipeline: passthru
     description: ""
     clones:
       - {}
-    filter: __inputId=='tcpjson:in_tcp_json'
-    output: tmp
+    filter: __inputId=='appscope:in_appscope'
+    output: test_output
   - id: default
     name: default
     final: true
