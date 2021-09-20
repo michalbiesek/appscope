@@ -326,7 +326,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
 
     if (strcmp(name, "sun/nio/ch/SocketChannelImpl") == 0) {
 
-        scopeLog(CFG_LOG_INFO, "installing Java SSL hooks for SocketChannelImpl class...");
+        scopeLog(CFG_LOG_INFO, "installing Java SSL hooks for SocketChannelImpl class... ");
         java_class_t *classInfo = javaReadClass(class_data);
 
         int methodIndex = javaFindMethodIndex(classInfo, "read", "(Ljava/nio/ByteBuffer;)I");

@@ -598,6 +598,7 @@ initJavaAgent() {
 void
 osInitJavaAgent(void)
 {
+    scopeLog(CFG_LOG_ERROR, "\t(osInitJavaAgent)");
     initJavaAgent();
 }
 

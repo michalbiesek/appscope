@@ -32,7 +32,7 @@ RUN mkdir -p /opt/javassl
 COPY ./java/SSLSocketClient.java /opt/javassl/SSLSocketClient.java
 RUN javac -d /opt/javassl/ /opt/javassl/SSLSocketClient.java
 
-ENV SCOPE_LOG_LEVEL=info
+ENV SCOPE_LOG_LEVEL=debug
 ENV SCOPE_METRIC_VERBOSITY=4
 ENV SCOPE_EVENT_LOGFILE=false
 ENV SCOPE_EVENT_CONSOLE=false

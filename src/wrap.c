@@ -1109,7 +1109,7 @@ findLibSym(struct dl_phdr_info *info, size_t size, void *data)
 {
     find_sym_t *find = (find_sym_t *)data;
     *(find->out_addr) = NULL;
-
+    scopeLog(CFG_LOG_ERROR, "\t(findLibSym) dlpi_name %s library %s", info->dlpi_name, find->library);
     if (strstr(info->dlpi_name, find->library)) {
 
         void *handle = g_fn.dlopen(info->dlpi_name, RTLD_NOW);
@@ -1233,6 +1233,8 @@ hookInjectLibrary(int (*find_lib) (struct dl_phdr_info *info, size_t size, void 
         return FALSE;
     }
 
+    scopeLog(CFG_LOG_ERROR, "\thookInjectLibrary %s", full_lib_path);
+
     void *handle = g_fn.dlopen(full_lib_path, RTLD_LAZY);
     if (handle == NULL) {
         return FALSE;
@@ -1245,7 +1247,7 @@ hookInjectLibrary(int (*find_lib) (struct dl_phdr_info *info, size_t size, void 
             inject_hook_list[i].func = addr;
             if ((dlsym(handle, inject_hook_list[i].symbol)) &&
                 (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, 1) != -1)) {
-                scopeLog(CFG_LOG_DEBUG, "\tGOT patched %s", inject_hook_list[i].symbol);
+                scopeLog(CFG_LOG_ERROR, "\tGOT patched %s", inject_hook_list[i].symbol);
             }
         }
     }
@@ -1334,6 +1336,7 @@ initHook(int attachedFlag)
     }
 
 #ifdef __FUNCHOOK__
+    scopeLog(CFG_LOG_ERROR, "\t(initHook) __FUNCHOOK__");
     if (dl_iterate_phdr(findLibscopePath, &full_path)) {
         void *handle = g_fn.dlopen(full_path, RTLD_NOW);
         if (handle == NULL) {
@@ -1538,7 +1541,7 @@ init(void)
     int attachedFlag = 0;
     initEnv(&attachedFlag);
     // logging inside constructor start from this line
-    g_constructor_debug_enabled = checkEnv("SCOPE_ALLOW_CONSTRUCT_DBG", "true");
+    g_constructor_debug_enabled = TRUE;
 
     initState();
 
@@ -2271,6 +2274,8 @@ __fxstat(int ver, int fd, struct stat *stat_buf)
 EXPORTON int
 __fxstat64(int ver, int fd, struct stat64 * stat_buf)
 {
+    scopeLog(CFG_LOG_ERROR, "__fxstat64 wrapper detected");
+
     WRAP_CHECK(__fxstat64, -1);
     int rc = g_fn.__fxstat64(ver, fd, stat_buf);
 
@@ -3351,7 +3356,7 @@ dlopen(const char *filename, int flags)
     if (flags & RTLD_NODELETE) strcat(fbuf, "RTLD_NODELETE|");
     if (flags & RTLD_NOLOAD) strcat(fbuf, "RTLD_NOLOAD|");
     if (flags & RTLD_DEEPBIND) strcat(fbuf, "RTLD_DEEPBIND|");
-    scopeLog(CFG_LOG_DEBUG, "dlopen called for %s with %s", filename, fbuf);
+    scopeLog(CFG_LOG_INFO, "\t(dlopen) called for %s with %s", filename, fbuf);
 
     WRAP_CHECK(dlopen, NULL);
 
@@ -3371,13 +3376,13 @@ dlopen(const char *filename, int flags)
         // Get the link map and ELF sections in advance of something matching
         if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) &&
             (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
-            scopeLog(CFG_LOG_DEBUG, "\tlibrary:  %s", lm->l_name);
+            scopeLog(CFG_LOG_INFO, "\t(dlopen) library:  %s", lm->l_name);
 
             // for each symbol in the list try to hook
             for (i=0; hook_list[i].symbol; i++) {
                 if ((dlsym(handle, hook_list[i].symbol)) &&
                     (doGotcha(lm, (got_list_t *)&hook_list[i], rel, sym, str, rsz, 0) != -1)) {
-                    scopeLog(CFG_LOG_DEBUG, "\tdlopen interposed  %s", hook_list[i].symbol);
+                    scopeLog(CFG_LOG_INFO, "\t(dlopen) interposed  %s", hook_list[i].symbol);
                 }
             }
         }
@@ -4265,6 +4270,7 @@ listen(int sockfd, int backlog)
 EXPORTON int
 accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
+    scopeLog(CFG_LOG_ERROR, "accept wrapper detected");
     int sd;
 
     WRAP_CHECK(accept, -1);

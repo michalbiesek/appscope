@@ -1051,6 +1051,7 @@ extractPayload(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
 static void
 detectTLS(int sockfd, net_info *net, void *buf, size_t len, metric_t src, src_data_t dtype)
 {
+    scopeLog(CFG_LOG_ERROR, "detected TLS");
     int rc;
     unsigned char *data = buf;
     unsigned int ptype;

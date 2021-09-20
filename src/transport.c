@@ -705,6 +705,7 @@ freeAddressList(transport_t *trans)
 static int
 getAddressList(transport_t *trans)
 {
+    scopeLog(CFG_LOG_ERROR, "getAddressList");
     // Don't leak; clean up any prior data
     freeAddressList(trans);
 
@@ -760,6 +761,7 @@ getNextAddressListEntry(transport_t *trans)
 static int
 socketConnectionStart(transport_t *trans)
 {
+    scopeLog(CFG_LOG_ERROR, "socketConnectionStart");
     // Get a list of addresses to try if we don't have a current list
     // or have exhausted the entries in a current list.
     if (!trans->net.addr.list || !trans->net.addr.next) {

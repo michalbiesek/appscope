@@ -172,7 +172,6 @@ int
 doGotcha(struct link_map *lm, got_list_t *hook, Elf64_Rela *rel, Elf64_Sym *sym, char *str, int rsz, int attach)
 {
     int i, match = -1;
-
     for (i = 0; i < rsz / sizeof(Elf64_Rela); i++) {
         /*
          * Index into the dynamic symbol table (not the 'symbol' table)
@@ -223,13 +222,13 @@ doGotcha(struct link_map *lm, got_list_t *hook, Elf64_Rela *rel, Elf64_Sym *sym,
             if (!attach) *gfn = *gaddr;
             uint64_t prev = *gaddr;
             *gaddr = (uint64_t)hook->func;
-            scopeLog(CFG_LOG_DEBUG, "%s:%d sym=%s offset 0x%lx GOT entry %p saddr 0x%lx, prev=0x%lx, curr=%p",
+            scopeLog(CFG_LOG_INFO, "\t\t (doGotcha) %s:%d sym=%s offset 0x%lx GOT entry %p saddr 0x%lx, prev=0x%lx, curr=%p",
                         __FUNCTION__, __LINE__, hook->symbol, rel[i].r_offset, gaddr, saddr, prev, hook->func);
 
             if ((prot & PROT_WRITE) == 0) {
                 // if we didn't mod above leave prot settings as is
                 if (mprotect((void *)saddr, (size_t)16, prot) == -1) {
-                    scopeLog(CFG_LOG_DEBUG, "doGotcha: mprotect failed");
+                    scopeLog(CFG_LOG_INFO, "doGotcha: mprotect failed");
                     return -1;
                 }
             }
