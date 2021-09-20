@@ -1109,7 +1109,7 @@ findLibSym(struct dl_phdr_info *info, size_t size, void *data)
 {
     find_sym_t *find = (find_sym_t *)data;
     *(find->out_addr) = NULL;
-
+    scopeLog(CFG_LOG_ERROR, "\t(findLibSym) dlpi_name %s library %s", info->dlpi_name, find->library);
     if (strstr(info->dlpi_name, find->library)) {
 
         void *handle = g_fn.dlopen(info->dlpi_name, RTLD_NOW);
@@ -1218,6 +1218,74 @@ findLibJvmPath(struct dl_phdr_info *info, size_t size, void *data)
     return 0;
 }
 
+static int 
+findLibJavaPath(struct dl_phdr_info *info, size_t size, void *data)
+{
+    if (is_lib_in_full_path(info->dlpi_name, "libjava.so", sizeof("libjava.so") - 1)) {
+        *(char **)data = (char *) info->dlpi_name;
+        return 1;
+    }
+    return 0;
+}
+
+static int 
+findLibVerifyPath(struct dl_phdr_info *info, size_t size, void *data)
+{
+    if (is_lib_in_full_path(info->dlpi_name, "libverify.so", sizeof("libverify.so") - 1)) {
+        *(char **)data = (char *) info->dlpi_name;
+        return 1;
+    }
+    return 0;
+}
+
+static int 
+findLibZipPath(struct dl_phdr_info *info, size_t size, void *data)
+{
+    if (is_lib_in_full_path(info->dlpi_name, "libzip.so", sizeof("libzip.so") - 1)) {
+        *(char **)data = (char *) info->dlpi_name;
+        return 1;
+    }
+    return 0;
+}
+
+static int 
+findLibSoftToknPath(struct dl_phdr_info *info, size_t size, void *data)
+{
+    if (is_lib_in_full_path(info->dlpi_name, "libsoftokn3.so", sizeof("libsoftokn3.so") - 1)) {
+        *(char **)data = (char *) info->dlpi_name;
+        return 1;
+    }
+    return 0;
+}
+
+
+static int 
+findLibFreeBLPrivPath(struct dl_phdr_info *info, size_t size, void *data)
+{
+    if (is_lib_in_full_path(info->dlpi_name, "libfreeblpriv3.so", sizeof("libfreeblpriv3.so") - 1)) {
+        *(char **)data = (char *) info->dlpi_name;
+        return 1;
+    }
+    return 0;
+}
+
+static int 
+findLibManagementPath(struct dl_phdr_info *info, size_t size, void *data)
+{
+    if (is_lib_in_full_path(info->dlpi_name, "libmanagement.so", sizeof("libmanagement.so") - 1)) {
+        *(char **)data = (char *) info->dlpi_name;
+        return 1;
+    }
+    return 0;
+}
+
+static int
+printAllSoStatus(struct dl_phdr_info *info, size_t size, void *data)
+{
+   scopeLog(CFG_LOG_ERROR, "\tShared Object Library name=%s (%d segments)", info->dlpi_name, info->dlpi_phnum);
+   return 0;
+}
+
 static bool
 hookInjectLibrary(int (*find_lib) (struct dl_phdr_info *info, size_t size, void *data), void* libscopeHandle)
 {
@@ -1232,6 +1300,11 @@ hookInjectLibrary(int (*find_lib) (struct dl_phdr_info *info, size_t size, void 
     if (find_lib && !dl_iterate_phdr(find_lib, &full_lib_path)) {
         return FALSE;
     }
+    if(find_lib) {
+        dl_iterate_phdr(printAllSoStatus, &full_lib_path);
+    }
+
+    scopeLog(CFG_LOG_ERROR, "\thookInjectLibrary %s", full_lib_path);
 
     void *handle = g_fn.dlopen(full_lib_path, RTLD_LAZY);
     if (handle == NULL) {
@@ -1245,7 +1318,7 @@ hookInjectLibrary(int (*find_lib) (struct dl_phdr_info *info, size_t size, void 
             inject_hook_list[i].func = addr;
             if ((dlsym(handle, inject_hook_list[i].symbol)) &&
                 (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, 1) != -1)) {
-                scopeLog(CFG_LOG_DEBUG, "\tGOT patched %s", inject_hook_list[i].symbol);
+                scopeLog(CFG_LOG_ERROR, "\tGOT patched %s", inject_hook_list[i].symbol);
             }
         }
     }
@@ -1274,10 +1347,11 @@ hookInject()
         }
 
         // Optional Java Libraries
-        // hookInjectLibrary(findLibNetPath, libscopeHandle);
-        // hookInjectLibrary(findLibJliPath, libscopeHandle);
-        // hookInjectLibrary(findLibNioPath, libscopeHandle);
+        hookInjectLibrary(findLibNetPath, libscopeHandle);
+        hookInjectLibrary(findLibJliPath, libscopeHandle);
+        hookInjectLibrary(findLibNioPath, libscopeHandle);
         hookInjectLibrary(findLibJvmPath, libscopeHandle);
+        hookInjectLibrary(findLibJavaPath, libscopeHandle);
         
         dlclose(libscopeHandle);
         return TRUE;
@@ -1334,6 +1408,7 @@ initHook(int attachedFlag)
     }
 
 #ifdef __FUNCHOOK__
+    scopeLog(CFG_LOG_ERROR, "\t(initHook) __FUNCHOOK__");
     if (dl_iterate_phdr(findLibscopePath, &full_path)) {
         void *handle = g_fn.dlopen(full_path, RTLD_NOW);
         if (handle == NULL) {
@@ -1538,7 +1613,7 @@ init(void)
     int attachedFlag = 0;
     initEnv(&attachedFlag);
     // logging inside constructor start from this line
-    g_constructor_debug_enabled = checkEnv("SCOPE_ALLOW_CONSTRUCT_DBG", "true");
+    g_constructor_debug_enabled = TRUE;
 
     initState();
 
@@ -3351,7 +3426,7 @@ dlopen(const char *filename, int flags)
     if (flags & RTLD_NODELETE) strcat(fbuf, "RTLD_NODELETE|");
     if (flags & RTLD_NOLOAD) strcat(fbuf, "RTLD_NOLOAD|");
     if (flags & RTLD_DEEPBIND) strcat(fbuf, "RTLD_DEEPBIND|");
-    scopeLog(CFG_LOG_DEBUG, "dlopen called for %s with %s", filename, fbuf);
+    scopeLog(CFG_LOG_ERROR, "\t(dlopen) called for %s with %s", filename, fbuf);
 
     WRAP_CHECK(dlopen, NULL);
 
@@ -3371,13 +3446,13 @@ dlopen(const char *filename, int flags)
         // Get the link map and ELF sections in advance of something matching
         if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) &&
             (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
-            scopeLog(CFG_LOG_DEBUG, "\tlibrary:  %s", lm->l_name);
+            scopeLog(CFG_LOG_ERROR, "\t(dlopen) library:  %s", lm->l_name);
 
             // for each symbol in the list try to hook
             for (i=0; hook_list[i].symbol; i++) {
                 if ((dlsym(handle, hook_list[i].symbol)) &&
                     (doGotcha(lm, (got_list_t *)&hook_list[i], rel, sym, str, rsz, 0) != -1)) {
-                    scopeLog(CFG_LOG_DEBUG, "\tdlopen interposed  %s", hook_list[i].symbol);
+                    scopeLog(CFG_LOG_ERROR, "\t(dlopen) interposed  %s", hook_list[i].symbol);
                 }
             }
         }

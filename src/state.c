@@ -9,6 +9,8 @@
 #include <sys/stat.h>
 #include <dlfcn.h>
 #include <fcntl.h>
+#include <execinfo.h>
+#include <stdio.h>
 
 #include "atomic.h"
 #include "com.h"
@@ -1051,6 +1053,7 @@ extractPayload(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
 static void
 detectTLS(int sockfd, net_info *net, void *buf, size_t len, metric_t src, src_data_t dtype)
 {
+    scopeLog(CFG_LOG_ERROR, "detected TLS");
     int rc;
     unsigned char *data = buf;
     unsigned int ptype;
@@ -1394,6 +1397,22 @@ doBlockConnection(int fd, const struct sockaddr *addr_arg)
 void
 doSetConnection(int sd, const struct sockaddr *addr, socklen_t len, control_type_t endp)
 {
+    scopeLog(CFG_LOG_ERROR, " CONNECTION_OPEN doSetConnection");
+    {
+        void *array[10];
+        char **strings;
+        int size, i;
+        size = backtrace (array, 10);
+        strings = backtrace_symbols (array, size);
+        if (strings != NULL)
+        {
+            scopeLog (CFG_LOG_ERROR, "BACKTRACE Obtained %d stack frames.\n", size);
+            for (i = 0; i < size; i++)
+                scopeLog (CFG_LOG_ERROR, "%s\n", strings[i]);
+        }
+        free (strings);
+    }
+
     net_info *net;
 
     if (!addr || (len <= 0)) {
@@ -1447,6 +1466,7 @@ doSetAddrs(int sockfd)
         if (net->addrSetUnix == TRUE) return 0;
         doUnixEndpoint(sockfd, net);
         net->addrSetUnix = TRUE;
+        scopeLog(CFG_LOG_ERROR, " CONNECTION_OPEN doSetAddrs");
         doUpdateState(CONNECTION_OPEN, sockfd, 1, NULL, NULL);
         return 0;
     }
@@ -2160,6 +2180,8 @@ doDupSock(int oldfd, int newfd)
     g_netinfo[newfd].startTime = 0ULL;
     g_netinfo[newfd].totalDuration = (counters_element_t){.mtc=0, .evt=0};
     g_netinfo[newfd].numDuration = (counters_element_t){.mtc=0, .evt=0};
+
+    scopeLog(CFG_LOG_ERROR, " CONNECTION_OPEN doDupSock");
 
     doUpdateState(CONNECTION_OPEN, newfd, 1, "dup", NULL);
     return 0;

@@ -2074,6 +2074,7 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
 
     case CONNECTION_OPEN:
     {
+        scopeLog(CFG_LOG_ERROR, "CONNECTION_OPEN, doNetOpenEvent");
         doNetOpenEvent(net);
         break;
     }

@@ -12,6 +12,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/un.h>
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "dbg.h"
 #include "scopetypes.h"
@@ -137,6 +141,7 @@ placeDescriptor(int fd, transport_t *t)
     }
 
     int i, dupfd;
+    scopeLog(CFG_LOG_ERROR, "placeDescriptor %d", fd);
 
     for (i = next_fd_to_try; i >= DEFAULT_MIN_FD; i--) {
         if ((g_fn.fcntl(i, F_GETFD) == -1) && (errno == EBADF)) {
@@ -705,6 +710,7 @@ freeAddressList(transport_t *trans)
 static int
 getAddressList(transport_t *trans)
 {
+    scopeLog(CFG_LOG_ERROR, "getAddressList");
     // Don't leak; clean up any prior data
     freeAddressList(trans);
 
@@ -760,6 +766,21 @@ getNextAddressListEntry(transport_t *trans)
 static int
 socketConnectionStart(transport_t *trans)
 {
+    scopeLog(CFG_LOG_ERROR, "socketConnectionStart");
+    {
+        void *array[10];
+        char **strings;
+        int size, i;
+        size = backtrace (array, 10);
+        strings = backtrace_symbols (array, size);
+        if (strings != NULL)
+        {
+            scopeLog (CFG_LOG_ERROR, "BACKTRACE Obtained %d stack frames.\n", size);
+            for (i = 0; i < size; i++)
+                scopeLog (CFG_LOG_ERROR, "%s\n", strings[i]);
+        }
+        free (strings);
+    }
     // Get a list of addresses to try if we don't have a current list
     // or have exhausted the entries in a current list.
     if (!trans->net.addr.list || !trans->net.addr.next) {
