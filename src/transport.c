@@ -767,20 +767,7 @@ static int
 socketConnectionStart(transport_t *trans)
 {
     scopeLog(CFG_LOG_ERROR, "socketConnectionStart");
-    {
-        void *array[10];
-        char **strings;
-        int size, i;
-        size = backtrace (array, 10);
-        strings = backtrace_symbols (array, size);
-        if (strings != NULL)
-        {
-            scopeLog (CFG_LOG_ERROR, "BACKTRACE Obtained %d stack frames.\n", size);
-            for (i = 0; i < size; i++)
-                scopeLog (CFG_LOG_ERROR, "%s\n", strings[i]);
-        }
-        free (strings);
-    }
+
     // Get a list of addresses to try if we don't have a current list
     // or have exhausted the entries in a current list.
     if (!trans->net.addr.list || !trans->net.addr.next) {

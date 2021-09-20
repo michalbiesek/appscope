@@ -1109,7 +1109,6 @@ findLibSym(struct dl_phdr_info *info, size_t size, void *data)
 {
     find_sym_t *find = (find_sym_t *)data;
     *(find->out_addr) = NULL;
-    scopeLog(CFG_LOG_ERROR, "\t(findLibSym) dlpi_name %s library %s", info->dlpi_name, find->library);
     if (strstr(info->dlpi_name, find->library)) {
 
         void *handle = g_fn.dlopen(info->dlpi_name, RTLD_NOW);
@@ -1300,9 +1299,9 @@ hookInjectLibrary(int (*find_lib) (struct dl_phdr_info *info, size_t size, void 
     if (find_lib && !dl_iterate_phdr(find_lib, &full_lib_path)) {
         return FALSE;
     }
-    if(find_lib) {
-        dl_iterate_phdr(printAllSoStatus, &full_lib_path);
-    }
+    // if(find_lib) {
+    //     dl_iterate_phdr(printAllSoStatus, &full_lib_path);
+    // }
 
     scopeLog(CFG_LOG_ERROR, "\thookInjectLibrary %s", full_lib_path);
 
@@ -1347,11 +1346,11 @@ hookInject()
         }
 
         // Optional Java Libraries
-        hookInjectLibrary(findLibNetPath, libscopeHandle);
-        hookInjectLibrary(findLibJliPath, libscopeHandle);
-        hookInjectLibrary(findLibNioPath, libscopeHandle);
+        // hookInjectLibrary(findLibNetPath, libscopeHandle);
+        // hookInjectLibrary(findLibJliPath, libscopeHandle);
+        // hookInjectLibrary(findLibNioPath, libscopeHandle);
         hookInjectLibrary(findLibJvmPath, libscopeHandle);
-        hookInjectLibrary(findLibJavaPath, libscopeHandle);
+        // hookInjectLibrary(findLibJavaPath, libscopeHandle);
         
         dlclose(libscopeHandle);
         return TRUE;
