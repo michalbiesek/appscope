@@ -4,6 +4,10 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <sys/poll.h>
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #ifdef __LINUX__
 #include <sys/prctl.h>
@@ -756,10 +760,16 @@ doThread()
      * initialized. This check is intended to ensure that we don't
      * start the thread until after we have our config.
      */
-    if (!g_ctl) return;
+    if (!g_ctl) {
+        // scopeLog(CFG_LOG_ERROR, "doThread g_ctl FALSE");
+        return;
+    }
 
     // Create one thread at most
-    if (g_thread.once == TRUE) return;
+    if (g_thread.once == TRUE){
+        // scopeLog(CFG_LOG_ERROR, "doThread g_thread.once TRUE");
+        return;
+    } 
 
     /*
      * g_thread.startTime is the start time, set in the constructor.
@@ -1352,7 +1362,11 @@ hookInject()
         hookInjectLibrary(findLibNioPath, libscopeHandle);
         hookInjectLibrary(findLibJvmPath, libscopeHandle);
         hookInjectLibrary(findLibJavaPath, libscopeHandle);
-        
+        hookInjectLibrary(findLibZipPath, libscopeHandle);
+        hookInjectLibrary(findLibVerifyPath, libscopeHandle );
+        hookInjectLibrary(findLibSoftToknPath, libscopeHandle );
+        hookInjectLibrary(findLibFreeBLPrivPath, libscopeHandle );
+        hookInjectLibrary(findLibManagementPath, libscopeHandle );
         dlclose(libscopeHandle);
         return TRUE;
     }
@@ -2734,6 +2748,28 @@ scope_syscall(long number, ...)
         doClose(fArgs.arg[0], "sysclose");
         return rc;
     }
+    // case SYS_accept:
+    // {
+    //     int sd;
+
+    //     sd = g_fn.syscall(number, fArgs.arg[0], fArgs.arg[1], fArgs.arg[2]);
+
+    //     if ((sd != -1) && (doBlockConnection(fArgs.arg[0], NULL) == 1)) {
+    //         if (g_fn.close) g_fn.close(sd);
+    //         errno = ECONNABORTED;
+    //         return -1;
+    //     }
+
+    //     if (sd != -1) {
+    //         doAccept(sd,(struct sockaddr *)fArgs.arg[1],
+    //                  (socklen_t *)fArgs.arg[2], "accept");
+    //     } else {
+    //         doUpdateState(NET_ERR_CONN, fArgs.arg[0], (ssize_t)0, "accept", "nopath");
+    //     }
+
+    //     return sd;
+    // }
+
     case SYS_accept4:
     {
         long rc;
@@ -4341,16 +4377,46 @@ EXPORTON int
 accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
     int sd;
-
+    scopeLog(CFG_LOG_ERROR, "EXPORTON accept start:%d thread_id %ld", sockfd, pthread_self());
+    {
+        void *array[10];
+        char **strings;
+        int size, i;
+        size = backtrace (array, 10);
+        strings = backtrace_symbols (array, size);
+        if (strings != NULL)
+        {
+            scopeLog (CFG_LOG_ERROR, "BACKTRACE accept_1 Obtained %d stack frames.\n", size);
+            for (i = 0; i < size; i++)
+                scopeLog (CFG_LOG_ERROR, "%s\n", strings[i]);
+        }
+        free (strings);
+    }
+    scopeLog(CFG_LOG_ERROR, "EXPORTON accept BEFORE WRAP_CHECK thread_id %ld", pthread_self());
     WRAP_CHECK(accept, -1);
-    sd = g_fn.accept(sockfd, addr, addrlen);
 
+    sd = g_fn.accept(sockfd, addr, addrlen);
+    scopeLog(CFG_LOG_ERROR, "EXPORTON accept g_fn.accept:%d thread_id %ld", sd,  pthread_self());
+    {
+        void *array[10];
+        char **strings;
+        int size, i;
+        size = backtrace (array, 10);
+        strings = backtrace_symbols (array, size);
+        if (strings != NULL)
+        {
+            scopeLog (CFG_LOG_ERROR, "BACKTRACE accept_2 Obtained %d stack frames.\n", size);
+            for (i = 0; i < size; i++)
+                scopeLog (CFG_LOG_ERROR, "%s\n", strings[i]);
+        }
+        free (strings);
+    }
     if ((sd != -1) && (doBlockConnection(sockfd, NULL) == 1)) {
         if (g_fn.close) g_fn.close(sd);
         errno = ECONNABORTED;
         return -1;
     }
-
+    scopeLog(CFG_LOG_ERROR, "EXPORTON accept begin do_accept:%d thread_id %ld", sockfd,  pthread_self());
     if (sd != -1) {
         doAccept(sd, addr, addrlen, "accept");
     } else {
@@ -4391,6 +4457,7 @@ bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
     WRAP_CHECK(bind, -1);
     rc = g_fn.bind(sockfd, addr, addrlen);
     if (rc != -1) { 
+        scopeLog(CFG_LOG_ERROR, "bind line 4394 sockfd %d thread_id %ld", sockfd, pthread_self());
         doSetConnection(sockfd, addr, addrlen, LOCAL);
         scopeLog(CFG_LOG_DEBUG, "fd:%d bind", sockfd);
     } else {
@@ -4413,6 +4480,7 @@ connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 
     rc = g_fn.connect(sockfd, addr, addrlen);
     if (rc != -1) {
+        scopeLog(CFG_LOG_ERROR, "fd:%d connect", sockfd);
         doSetConnection(sockfd, addr, addrlen, REMOTE);
         doUpdateState(NET_CONNECTIONS, sockfd, 1, "connect", NULL);
 
@@ -4454,7 +4522,7 @@ internal_sendto(int sockfd, const void *buf, size_t len, int flags,
     WRAP_CHECK(sendto, -1);
     rc = g_fn.sendto(sockfd, buf, len, flags, dest_addr, addrlen);
     if (rc != -1) {
-        scopeLog(CFG_LOG_TRACE, "fd:%d sendto", sockfd);
+        scopeLog(CFG_LOG_ERROR, "fd:%d sendto", sockfd);
         doSetConnection(sockfd, dest_addr, addrlen, REMOTE);
 
         if (remotePortIsDNS(sockfd)) {
@@ -4485,7 +4553,7 @@ sendmsg(int sockfd, const struct msghdr *msg, int flags)
     WRAP_CHECK(sendmsg, -1);
     rc = g_fn.sendmsg(sockfd, msg, flags);
     if (rc != -1) {
-        scopeLog(CFG_LOG_TRACE, "fd:%d sendmsg", sockfd);
+        scopeLog(CFG_LOG_ERROR, "fd:%d sendmsg", sockfd);
 
         // For UDP connections the msg is a remote addr
         if (msg && !sockIsTCP(sockfd)) {
@@ -4520,7 +4588,7 @@ internal_sendmmsg(int sockfd, struct mmsghdr *msgvec, unsigned int vlen, int fla
     WRAP_CHECK(sendmmsg, -1);
     rc = g_fn.sendmmsg(sockfd, msgvec, vlen, flags);
     if (rc != -1) {
-        scopeLog(CFG_LOG_TRACE, "fd:%d sendmmsg", sockfd);
+        scopeLog(CFG_LOG_ERROR, "fd:%d sendmmsg", sockfd);
 
         // For UDP connections the msg is a remote addr
         if (!sockIsTCP(sockfd)) {
@@ -4654,7 +4722,7 @@ recvmsg(int sockfd, struct msghdr *msg, int flags)
     WRAP_CHECK(recvmsg, -1);
     rc = g_fn.recvmsg(sockfd, msg, flags);
     if (rc != -1) {
-        scopeLog(CFG_LOG_TRACE, "fd:%d recvmsg", sockfd);
+        scopeLog(CFG_LOG_ERROR, "fd:%d recvmsg", sockfd);
 
         // For UDP connections the msg is a remote addr
         if (msg) {
@@ -4690,7 +4758,7 @@ recvmmsg(int sockfd, struct mmsghdr *msgvec, unsigned int vlen,
     WRAP_CHECK(recvmmsg, -1);
     rc = g_fn.recvmmsg(sockfd, msgvec, vlen, flags, timeout);
     if (rc != -1) {
-        scopeLog(CFG_LOG_TRACE, "fd:%d recvmmsg", sockfd);
+        scopeLog(CFG_LOG_ERROR, "fd:%d recvmmsg", sockfd);
 
         // For UDP connections the msg is a remote addr
         if (msgvec) {

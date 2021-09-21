@@ -1397,7 +1397,7 @@ doBlockConnection(int fd, const struct sockaddr *addr_arg)
 void
 doSetConnection(int sd, const struct sockaddr *addr, socklen_t len, control_type_t endp)
 {
-    scopeLog(CFG_LOG_ERROR, " CONNECTION_OPEN doSetConnection");
+    // scopeLog(CFG_LOG_ERROR, " CONNECTION_OPEN doSetConnection sd %d addr %s len %d endp %d",sd, addr, len,endp);
     {
         void *array[10];
         char **strings;
@@ -1466,7 +1466,7 @@ doSetAddrs(int sockfd)
         if (net->addrSetUnix == TRUE) return 0;
         doUnixEndpoint(sockfd, net);
         net->addrSetUnix = TRUE;
-        scopeLog(CFG_LOG_ERROR, " CONNECTION_OPEN doSetAddrs");
+        // scopeLog(CFG_LOG_ERROR, " CONNECTION_OPEN doSetAddrs");
         doUpdateState(CONNECTION_OPEN, sockfd, 1, NULL, NULL);
         return 0;
     }
@@ -1474,12 +1474,14 @@ doSetAddrs(int sockfd)
     if ((net->type == SOCK_STREAM) || (net->type == SOCK_DGRAM)) {
         if ((net->type == SOCK_STREAM) && (net->addrSetLocal == FALSE)) {
             if (getsockname(sockfd, (struct sockaddr *)&addr, &addrlen) != -1) {
+                scopeLog(CFG_LOG_ERROR, "CONNECTION_OPEN doSetAddrs line 1477");
                 doSetConnection(sockfd, (struct sockaddr *)&addr, addrlen, LOCAL);
             }
         }
 
         if ((net->type == SOCK_STREAM) && (net->addrSetRemote == FALSE)) {
             if (getpeername(sockfd, (struct sockaddr *)&addr, &addrlen) != -1) {
+                scopeLog(CFG_LOG_ERROR, "CONNECTION_OPEN doSetAddrs line 1484");
                 doSetConnection(sockfd, (struct sockaddr *)&addr, addrlen, REMOTE);
             }
         }
@@ -1514,6 +1516,7 @@ doAddNewSock(int sockfd)
             // is RAW a viable default?
             addSock(sockfd, SOCK_RAW, addr.ss_family);
         }
+        scopeLog(CFG_LOG_ERROR, "CONNECTION_OPEN doAddNewSock line 1518");
         doSetConnection(sockfd, (struct sockaddr *)&addr, addrlen, LOCAL);
     } else {
         addSock(sockfd, SOCK_RAW, 0);
@@ -1521,6 +1524,7 @@ doAddNewSock(int sockfd)
 
     addrlen = sizeof(addr);
     if (getpeername(sockfd, (struct sockaddr *)&addr, &addrlen) != -1) {
+        scopeLog(CFG_LOG_ERROR, "CONNECTION_OPEN doSetAddrs line 1527");
         doSetConnection(sockfd, (struct sockaddr *)&addr, addrlen, REMOTE);
     }
 
@@ -1962,7 +1966,7 @@ doSend(int sockfd, ssize_t rc, const void *buf, size_t len, src_data_t src)
 void
 doAccept(int sd, struct sockaddr *addr, socklen_t *addrlen, char *func)
 {
-    scopeLog(CFG_LOG_DEBUG, "fd:%d %s", sd, func);
+    scopeLog(CFG_LOG_ERROR, "doAccept fd:%d %s", sd, func);
     if (addr) {
         addSock(sd, SOCK_STREAM, addr->sa_family);
     } else {
