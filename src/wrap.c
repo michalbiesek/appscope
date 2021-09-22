@@ -1171,7 +1171,40 @@ findLibscopePath(struct dl_phdr_info *info, size_t size, void *data)
     return 0;
 }
 
-/**
+static int
+hookSharedObjs(struct dl_phdr_info *info, size_t size, void *data)
+{
+    if (!info || !data) return FALSE;
+
+    struct link_map *lm;
+    void *addr = NULL;
+    Elf64_Sym *sym = NULL;
+    Elf64_Rela *rel = NULL;
+    char *str = NULL;
+    int rsz = 0;
+    void *libscopeHandle = data;
+    void *handle = g_fn.dlopen(info->dlpi_name, RTLD_LAZY);
+    if (handle == NULL) return FALSE;
+
+    // Get the link map and ELF sections in advance of something matching
+    if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) && (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
+        for (int i=0; inject_hook_list[i].symbol; i++) {
+            addr = dlsym(libscopeHandle, inject_hook_list[i].symbol);
+            inject_hook_list[i].func = addr;
+
+            if ((dlsym(handle, inject_hook_list[i].symbol)) &&
+                (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, 1) != -1)) {
+                    scopeLog(CFG_LOG_DEBUG, "\tGOT patched %s from shared obj %s",
+                             inject_hook_list[i].symbol, info->dlpi_name);
+            }
+        }
+    }
+
+    dlclose(handle);
+    return FALSE;
+}
+
+/*
  * Called when injected to perform GOT hooking.
  */ 
 static bool
@@ -1212,6 +1245,11 @@ hookInject()
             }
         }
         dlclose(handle);
+
+        if (dl_iterate_phdr(hookSharedObjs, libscopeHandle) == FALSE) {
+            scopeLog("No shared objs to hook", -1, CFG_LOG_DEBUG);
+        }
+
         dlclose(libscopeHandle);
         return TRUE;
     }
@@ -1310,7 +1348,7 @@ initHook(int attachedFlag)
         ((g_ismusl == TRUE) && (g_fn.sendto || g_fn.recvfrom))) {
         funchook = funchook_create();
 
-        if (logLevel(g_log) <= CFG_LOG_DEBUG) {
+        if (logLevel(g_log) <= CFG_LOG_TRACE) {
             // TODO: add some mechanism to get the config'd log file path
             funchook_set_debug_file(DEFAULT_LOG_PATH);
         }
@@ -1333,7 +1371,7 @@ initHook(int attachedFlag)
         if (g_fn.syscall) {
             rc = funchook_prepare(funchook, (void**)&g_fn.syscall, scope_syscall);
         }
-
+#if 0 //DR: TODO: come back to this
         if ((g_ismusl == TRUE) && g_fn.sendto) {
             rc = funchook_prepare(funchook, (void**)&g_fn.sendto, internal_sendto);
         }
@@ -1341,7 +1379,7 @@ initHook(int attachedFlag)
         if ((g_ismusl == TRUE) && g_fn.recvfrom) {
             rc = funchook_prepare(funchook, (void**)&g_fn.recvfrom, internal_recvfrom);
         }
-
+#endif
         // libmusl
         // Note that both stdout & stderr objects point to the same write function.
         // They are init'd with a static object. After the first write the
