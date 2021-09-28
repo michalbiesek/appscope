@@ -603,7 +603,7 @@ JNIEXPORT jint JNICALL
 Agent_OnAttach(JavaVM *jvm, char *options, void *reserved) 
 {
     scopeLog(CFG_LOG_ERROR, "Agent_OnAttach called");
-    return JNI_OK;
+    return Agent_OnLoad(jvm, options, reserved);
 }
 
 // This overrides a weak definition in src/linux/os.c
@@ -637,5 +637,43 @@ initJavaAgent() {
             scopeLog(CFG_LOG_ERROR, "ERROR: Could not set JAVA_TOOL_OPTIONS failed\n");
         }
         free(buf);
+    } else {
+        JavaVM *jniVM;
+        jsize nVMs;
+        jint res;
+        JNIEnv* jniEnv;
+
+        scopeLog(CFG_LOG_ERROR, "initJavaAgent method attach variant start");
+
+        res = JNI_GetCreatedJavaVMs((JavaVM * *)& jniVM, 1, &nVMs);
+        if (res != JNI_OK) {
+            scopeLog(CFG_LOG_ERROR, "[DEBUG] Fetching JVMs failed...\n");
+            return;
+        }
+        scopeLog(CFG_LOG_ERROR, "JNI_GetCreatedJavaVMs get No virtual machines: %d",  nVMs);
+
+
+        // scopeLog(CFG_LOG_ERROR, "initJavaAgent start AttachCurrentThread");
+        // res = (*jniVM)->AttachCurrentThread(jniVM, (void **)&jniEnv, NULL);
+        // if (res != JNI_OK) {
+        //     scopeLog(CFG_LOG_ERROR, "initJavaAgent failed AttachCurrentThread");
+        //     return;
+        // }
+
+        scopeLog(CFG_LOG_ERROR, "initJavaAgent start GetEnv");
+        res = (*jniVM)->GetEnv(jniVM, (void **) &jniEnv, JNI_VERSION_1_8);
+        if (res != JNI_OK) {
+            scopeLog(CFG_LOG_ERROR, "GetEnv failed GetEnv");
+            return;
+        }
+
+        // scopeLog(CFG_LOG_ERROR, "initJavaAgent start DetachCurrentThread");
+        // res = (*jniVM)->DetachCurrentThread(jniVM);
+        // if (res != JNI_OK) {
+        //     scopeLog(CFG_LOG_ERROR, "initJavaAgent failed DetachCurrentThread");
+        //     return;
+        // }
+        scopeLog(CFG_LOG_ERROR, "initJavaAgent method attach variant ended");
+
     }
 }
