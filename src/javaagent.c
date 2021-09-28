@@ -599,6 +599,13 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved)
     return JNI_OK;
 }
 
+JNIEXPORT jint JNICALL 
+Agent_OnAttach(JavaVM *jvm, char *options, void *reserved) 
+{
+    scopeLog(CFG_LOG_ERROR, "Agent_OnAttach called");
+    return JNI_OK;
+}
+
 // This overrides a weak definition in src/linux/os.c
 void
 initJavaAgent() {
