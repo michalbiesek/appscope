@@ -599,6 +599,12 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved)
     return JNI_OK;
 }
 
+JNIEXPORT jint JNICALL 
+Agent_OnAttach(JavaVM *jvm, char *options, void *reserved) 
+{
+    return Agent_OnLoad(jvm, options, reserved);
+}
+
 // This overrides a weak definition in src/linux/os.c
 void
 initJavaAgent() {
@@ -630,5 +636,41 @@ initJavaAgent() {
             scopeLog(CFG_LOG_ERROR, "ERROR: Could not set JAVA_TOOL_OPTIONS failed\n");
         }
         free(buf);
+    } else {
+        // TODO: AgentRunner logic
+        // JavaVM *jniVM;
+        // jsize nVMs;
+        // jint resEnv;
+        // JNIEnv* jniEnv;
+
+        // scopeLog(CFG_LOG_ERROR, "initJavaAgent method attach variant start");
+
+        // if (JNI_GetCreatedJavaVMs((JavaVM * *)& jniVM, 1, &nVMs) != JNI_OK || nVMs == 0) {
+        //     scopeLog(CFG_LOG_ERROR, "[DEBUG] Fetching JVMs failed...\n");
+        //     return;
+        // }
+        // scopeLog(CFG_LOG_ERROR, "JNI_GetCreatedJavaVMs get No virtual machines: %d",  nVMs);
+
+
+        // scopeLog(CFG_LOG_ERROR, "initJavaAgent start GetEnv");
+        // resEnv = (*jniVM)->GetEnv(jniVM, (void **) &jniEnv, JNI_VERSION_1_6);
+        // if (resEnv == JNI_EDETACHED) {
+        //     scopeLog(CFG_LOG_ERROR, "initJavaAgent start AttachCurrentThread");
+        //     if ((*jniVM)->AttachCurrentThread(jniVM, (void **)&jniEnv, NULL) != JNI_OK) {
+        //         scopeLog(CFG_LOG_ERROR, "initJavaAgent failed AttachCurrentThread");
+        //         return;
+        //     }
+        // }
+        // scopeLog(CFG_LOG_ERROR, "initJavaAgent start JavaAgentLoadPath");
+        // JavaAgentLoadPath(jniEnv);
+
+        // scopeLog(CFG_LOG_ERROR, "initJavaAgent start DetachCurrentThread");
+	    // if (resEnv == JNI_EDETACHED) {
+        //     if ((*jniVM)->DetachCurrentThread(jniVM) != JNI_OK) {
+        //         scopeLog(CFG_LOG_ERROR, "initJavaAgent failed DetachCurrentThread");
+        //         return;
+        //     }
+        // }
+        // scopeLog(CFG_LOG_ERROR, "initJavaAgent method attach variant ended");
     }
 }
