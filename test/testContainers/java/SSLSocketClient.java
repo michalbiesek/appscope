@@ -12,10 +12,22 @@ public class SSLSocketClient {
 
     public static void main(String[] args) throws Exception {
         try {
+            SSLSocket socket = null;
             SSLSocketFactory factory =
                 (SSLSocketFactory)SSLSocketFactory.getDefault();
-            SSLSocket socket =
-                (SSLSocket)factory.createSocket("localhost", 8443);
+            boolean scanning = true;
+            while(scanning) {
+                try {
+                    socket = (SSLSocket)factory.createSocket("localhost", 8443);
+                    scanning = false;
+                } catch(ConnectException e) {
+                    try {
+                        Thread.sleep(2000);//2 seconds
+                    } catch(InterruptedException ie){
+                        ie.printStackTrace();
+                    }
+                }
+            }
 
             /*
              * send http request
