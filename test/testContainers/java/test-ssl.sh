@@ -144,6 +144,36 @@ endtest
 
 /opt/tomcat/bin/catalina.sh stop
 
+starttest Tomcat-attach
+/opt/tomcat/bin/catalina.sh run &
+sleep 1
+ldscope --attach `pidof java`
+evaltest
+
+until [ "`curl $CURL_PARAMS  -k --silent --connect-timeout 1 -I https://localhost:8443 | grep 'Coyote'`" != "" ];
+do
+    echo waiting for tomcat...
+    sleep 1
+done
+
+sleep 2
+
+grep -q '"proc":"java"' $EVT_FILE > /dev/null
+ERR+=$?
+
+grep '"net_peer_ip":"127.0.0.1"' $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -E '"net_peer_port":"[0-9]+"' $EVT_FILE > /dev/null
+ERR+=$?
+
+evalPayload
+ERR+=$?
+
+endtest
+
+/opt/tomcat/bin/catalina.sh stop
+
 unset SCOPE_PAYLOAD_ENABLE
 unset SCOPE_PAYLOAD_HEADER
 

@@ -1541,7 +1541,6 @@ init(void)
         // enable a timer/signal.
         threadInit();
     }
-
     osInitJavaAgent();
 }
 
