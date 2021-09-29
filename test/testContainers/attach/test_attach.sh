@@ -45,7 +45,6 @@ endtest(){
 # Top
 #
 starttest Top
-#rm -f $EVT_FILE 2> /dev/null
 
 top -b -d 1 > /dev/null &
 sleep 1
@@ -68,7 +67,7 @@ endtest
 # Python3 Web Server
 #
 starttest Python3
-#rm -f $EVT_FILE > /dev/null
+
 python3 -m http.server 2> /dev/null &
 sleep 1
 ldscope --attach `pidof python3`

@@ -1,14 +1,6 @@
-FROM ubuntu:20.04
+FROM alpine:latest
 
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt update \
-    && apt install -y \
-      emacs \
-      gdb \
-      lsof \
-      vim \
-      curl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add bash curl python3
 
 # Tests
 COPY ./attach/test_attach.sh /opt/test/bin/test_attach.sh
@@ -22,6 +14,7 @@ ENV SCOPE_EVENT_HTTP=true
 ENV SCOPE_EVENT_NET=true
 ENV SCOPE_EVENT_FS=true
 ENV SCOPE_EVENT_DEST=file:///opt/test-runner/logs/events.log
+ENV SCOPE_ALLOW_MUSL_ATTACH=true
 
 ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
 COPY scope-profile.sh /etc/profile.d/scope.sh
@@ -40,4 +33,3 @@ COPY attach/scope-test /usr/local/scope/scope-test
 COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["test"]
-
