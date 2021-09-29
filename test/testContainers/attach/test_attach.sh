@@ -89,6 +89,33 @@ ERR+=$?
 kill -9 `pidof python3` > /dev/null
 endtest
 
+#
+# Java HTTP Server
+#
+starttest java
+cd /opt/java_http
+java SimpleHttpServer 2> /dev/null &
+sleep 1
+ldscope --attach `pidof java`
+curl http://localhost:8000/status
+sleep 1
+evaltest
+
+grep -q '"proc":"java"' $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -q http-req $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -q http-resp $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -q http-metric $EVT_FILE > /dev/null
+ERR+=$?
+
+kill -9 `pidof java`
+
+endtest
 
 if (( $FAILED_TEST_COUNT == 0 )); then
     echo ""

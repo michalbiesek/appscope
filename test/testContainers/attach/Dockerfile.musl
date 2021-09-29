@@ -1,9 +1,13 @@
 FROM alpine:latest
 
-RUN apk add bash curl python3
+RUN apk add bash curl openjdk11 python3
 
 # Tests
 COPY ./attach/test_attach.sh /opt/test/bin/test_attach.sh
+
+RUN mkdir -p /opt/java_http
+COPY ./attach/SimpleHttpServer.java /opt/java_http/SimpleHttpServer.java
+RUN javac -d /opt/java_http/ /opt/java_http/SimpleHttpServer.java
 
 ENV SCOPE_LOG_LEVEL=error
 ENV SCOPE_METRIC_VERBOSITY=4
