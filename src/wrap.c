@@ -1567,7 +1567,7 @@ open(const char *pathname, int flags, ...)
 
     WRAP_CHECK(open, -1);
     LOAD_FUNC_ARGS_VALIST(fArgs, flags);
-
+    scopeLog(CFG_LOG_ERROR,"open %s", pathname);
     fd = g_fn.open(pathname, flags, fArgs.arg[0]);
     if (fd != -1) {
         doOpen(fd, pathname, FD, "open");
@@ -1619,7 +1619,9 @@ fopen(const char *pathname, const char *mode)
     FILE *stream;
 
     WRAP_CHECK(fopen, NULL);
+    scopeLog(CFG_LOG_ERROR, "fopen before g_fn pathname(%s), mode(%s) ", pathname, mode);
     stream = g_fn.fopen(pathname, mode);
+    scopeLog(CFG_LOG_ERROR, "fopen after g_fn pathname(%s), mode(%s) fileno(%d)", pathname, mode, fileno(stream));
     if (stream != NULL) {
         // This check for /proc/self/maps is because we want to avoid
         // reporting that our funchook library opens /proc/self/maps
@@ -3363,8 +3365,9 @@ _exit(int status)
 EXPORTON int
 close(int fd)
 {
+    scopeLog(CFG_LOG_ERROR, "close before g_fn");
     WRAP_CHECK(close, -1);
-
+    scopeLog(CFG_LOG_ERROR, "close after g_fn");
     if (isAnAppScopeConnection(fd)) return 0;
 
     int rc = g_fn.close(fd);
@@ -3377,14 +3380,19 @@ close(int fd)
 EXPORTON int
 fclose(FILE *stream)
 {
+    scopeLog(CFG_LOG_ERROR, "fclose before g_fn");
     WRAP_CHECK(fclose, EOF);
+    scopeLog(CFG_LOG_ERROR, "fclose after g_fn");
     int fd = fileno(stream);
+    scopeLog(CFG_LOG_ERROR, "fclose before isAnAppScopeConnection %d", fd);
 
     if (isAnAppScopeConnection(fd)) return 0;
+    scopeLog(CFG_LOG_ERROR, "fclose after isAnAppScopeConnection %d", fd);
 
     int rc = g_fn.fclose(stream);
-
+    scopeLog(CFG_LOG_ERROR, "fclose return from g_fn.fclose rc %d", rc);
     doCloseAndReportFailures(fd, (rc != EOF), "fclose");
+    scopeLog(CFG_LOG_ERROR, "fclose doCloseAndReportFailures");
 
     return rc;
 }
@@ -3864,6 +3872,7 @@ fread_unlocked(void *ptr, size_t size, size_t nmemb, FILE *stream)
 EXPORTON char *
 fgets(char *s, int n, FILE *stream)
 {
+    scopeLog(CFG_LOG_ERROR, "fgets before WRAP_CHECK");
     WRAP_CHECK(fgets, NULL);
     uint64_t initialTime = getTime();
 
@@ -3893,11 +3902,12 @@ fgets_unlocked(char *s, int n, FILE *stream)
 {
     WRAP_CHECK(fgets_unlocked, NULL);
     uint64_t initialTime = getTime();
+    scopeLog(CFG_LOG_ERROR, "fgets_unlocked before g_fn s(%s), n(%d) ", s, n);
 
     char* rc = g_fn.fgets_unlocked(s, n, stream);
-
+    scopeLog(CFG_LOG_ERROR, "fgets_unlocked after g_fn s(%s), n(%d) fileno(%d)", s, n, fileno(stream));
     doRead(fileno(stream), initialTime, (rc != NULL), NULL, n, "fgets_unlocked", NONE, 0);
-
+    scopeLog(CFG_LOG_ERROR, "fgets_unlocked return rc(%s)", rc);
     return rc;
 }
 
