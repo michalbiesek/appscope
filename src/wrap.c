@@ -221,6 +221,7 @@ static got_list_t inject_hook_list[] = {
     {"recv", NULL, &g_fn.recv},
     {"recvfrom", NULL, &g_fn.recvfrom},
     {"recvmsg", NULL, &g_fn.recvmsg},
+    {"snprintf", NULL, &g_fn.snprintf},
     {NULL, NULL, NULL}
 };
 
@@ -4742,6 +4743,19 @@ getentropy(void *buffer, size_t length)
 #endif
 }
 
+EXPORTON int 
+snprintf(char *str, size_t size, const char *format, ...)
+{
+    // scopeLog(CFG_LOG_DEBUG, "snprintf str(%s) size(%zu)", str, size);
+    struct FuncArgs fArgs;
+
+    WRAP_CHECK(snprintf, -1);
+    LOAD_FUNC_ARGS_VALIST(fArgs, format);
+    return g_fn.snprintf(str, size, format, fArgs.arg[0], fArgs.arg[1], fArgs.arg[2],
+                        fArgs.arg[3], fArgs.arg[4], fArgs.arg[5],
+                        fArgs.arg[6], fArgs.arg[7], fArgs.arg[8], fArgs.arg[9]);
+
+}
 #define LOG_BUF_SIZE 4096
 
 // This overrides a weak definition in src/dbg.c

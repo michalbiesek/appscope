@@ -38,10 +38,10 @@ typedef struct {
 extern int close$NOCANCEL(int);
 extern int guarded_close_np(int, void *);
 
-// struct to hold the next 6 numeric (int/ptr etc) variadic arguments
+// struct to hold the next 10 numeric (int/ptr etc) variadic arguments
 // use LOAD_FUNC_ARGS_VALIST to populate this structure
 struct FuncArgs{
-    uint64_t arg[6]; // pick the first 6 args
+    uint64_t arg[10]; // pick the first 10 args
 };
 
 #define LOAD_FUNC_ARGS_VALIST(a, lastNamedArg)  \
@@ -54,6 +54,10 @@ struct FuncArgs{
         a.arg[3] = va_arg(__args, uint64_t);    \
         a.arg[4] = va_arg(__args, uint64_t);    \
         a.arg[5] = va_arg(__args, uint64_t);    \
+        a.arg[6] = va_arg(__args, uint64_t);    \
+        a.arg[7] = va_arg(__args, uint64_t);    \
+        a.arg[8] = va_arg(__args, uint64_t);    \
+        a.arg[9] = va_arg(__args, uint64_t);    \
         va_end(__args);                         \
     }while(0)
 
