@@ -232,6 +232,7 @@ typedef struct {
                           void *(*)(void *), void *);
     int (*getentropy)(void *, size_t);
     int (*snprintf)(char *str, size_t size, const char *format, ...);
+    char *(*stpcpy)(char *dest, const char *src);
     void (*__ctype_init)(void);
     int (*__register_atfork)(void (*) (void), void (*) (void), void (*) (void), void *);
 #endif // __LINUX__

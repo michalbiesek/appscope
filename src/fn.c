@@ -298,6 +298,7 @@ initFn(void)
     GETADDR(g_fn.pthread_create, "pthread_create");
     GETADDR(g_fn.getentropy, "getentropy");
     GETADDR(g_fn.snprintf, "snprintf");
+    GETADDR(g_fn.stpcpy, "stpcpy");
     GETADDR(g_fn.__ctype_init, "__ctype_init");
     GETADDR(g_fn.__register_atfork, "__register_atfork");
     GETADDR(g_fn.epoll_wait, "epoll_wait");

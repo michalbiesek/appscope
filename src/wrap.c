@@ -222,6 +222,7 @@ static got_list_t inject_hook_list[] = {
     {"recvfrom", NULL, &g_fn.recvfrom},
     {"recvmsg", NULL, &g_fn.recvmsg},
     {"snprintf", NULL, &g_fn.snprintf},
+    {"stpcpy", NULL, &g_fn.stpcpy},
     {NULL, NULL, NULL}
 };
 
@@ -4756,6 +4757,17 @@ snprintf(char *str, size_t size, const char *format, ...)
                         fArgs.arg[6], fArgs.arg[7], fArgs.arg[8], fArgs.arg[9]);
 
 }
+
+EXPORTON char*
+stpcpy(char *dest, const char *src)
+{
+    WRAP_CHECK(stpcpy, NULL);
+
+    char* ret = g_fn.stpcpy(dest, src);
+
+    return ret;
+}
+
 #define LOG_BUF_SIZE 4096
 
 // This overrides a weak definition in src/dbg.c
