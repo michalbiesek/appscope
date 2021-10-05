@@ -1,11 +1,12 @@
 FROM alpine:latest
 
-RUN apk add bash cgdb curl gdb gcc libexecinfo linux-headers make musl-dev nano ncurses-dev openjdk11 python3
+RUN apk add bash cgdb curl gdb gcc libexecinfo linux-headers make musl-dev nano ncurses-dev openjdk11 python3 wget
 
 # Tests
 COPY ./attach/test_attach.sh /opt/test/bin/test_attach.sh
 COPY ./attach/test_dbg.sh /opt/test/bin/test_dbg.sh
 COPY ./attach/test_rel.sh /opt/test/bin/test_rel.sh
+
 
 RUN mkdir -p /opt/java_http
 COPY ./attach/SimpleHttpServer.java /opt/java_http/SimpleHttpServer.java
@@ -26,7 +27,9 @@ ENV SCOPE_ALLOW_MUSL_ATTACH=true
 ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
 COPY scope-profile.sh /etc/profile.d/scope.sh
 COPY gdbinit /root/.gdbinit
-# add sed ?
+
+RUN wget -O ~/.gdbinit-gef.py -q https://github.com/hugsy/gef/raw/master/gef.py
+RUN echo source ~/.gdbinit-gef.py >> /root/.gdbinit
 
 RUN  mkdir /usr/local/scope && \
      mkdir /usr/local/scope/bin && \
