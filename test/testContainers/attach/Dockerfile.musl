@@ -1,15 +1,17 @@
 FROM alpine:latest
 
-RUN apk add bash curl gdb openjdk11 python3
+RUN apk add bash cgdb curl gdb gcc libexecinfo linux-headers make musl-dev nano ncurses-dev openjdk11 python3
 
 # Tests
 COPY ./attach/test_attach.sh /opt/test/bin/test_attach.sh
+COPY ./attach/test_dbg.sh /opt/test/bin/test_dbg.sh
+COPY ./attach/test_rel.sh /opt/test/bin/test_rel.sh
 
 RUN mkdir -p /opt/java_http
 COPY ./attach/SimpleHttpServer.java /opt/java_http/SimpleHttpServer.java
 RUN javac -d /opt/java_http/ /opt/java_http/SimpleHttpServer.java
 
-ENV SCOPE_LOG_LEVEL=debug
+ENV SCOPE_LOG_LEVEL=trace
 ENV SCOPE_METRIC_VERBOSITY=4
 ENV SCOPE_EVENT_LOGFILE=true
 ENV SCOPE_EVENT_CONSOLE=true
@@ -24,6 +26,7 @@ ENV SCOPE_ALLOW_MUSL_ATTACH=true
 ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
 COPY scope-profile.sh /etc/profile.d/scope.sh
 COPY gdbinit /root/.gdbinit
+# add sed ?
 
 RUN  mkdir /usr/local/scope && \
      mkdir /usr/local/scope/bin && \
@@ -34,6 +37,22 @@ RUN  mkdir /usr/local/scope && \
      ln -s /opt/appscope/lib/linux/$(uname -m)/libscope.so /usr/local/scope/lib/libscope.so
 
 COPY attach/scope-test /usr/local/scope/scope-test
+
+COPY attach/busybox-1.33.1.tar.bz2 /busybox-1.33.1.tar.bz2
+# ADD https://busybox.net/downloads/busybox-1.33.1.tar.bz2 /busybox-1.33.tar.bz2
+
+RUN mkdir -p /opt/busybox-1.33.1
+# COPY ./attach/.config /opt/busybox-1.33.1/.config
+
+RUN tar -xvjf busybox-1.33.1.tar.bz2 --directory /opt/ && \
+    rm busybox-1.33.1.tar.bz2
+    # cd /opt/busybox-1.33.1 && \
+    # make -j$(nproc)
+
+# RUN tar -xvjf busybox-1.33.1.tar.bz2 --directory /opt/ && \
+#     rm busybox-1.33.1.tar.bz2 && \
+#     cd /opt/busybox-1.33.1 && \
+#     make -j$(nproc)
 
 COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]
