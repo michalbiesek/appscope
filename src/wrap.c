@@ -1203,6 +1203,8 @@ hookSharedObjs(struct dl_phdr_info *info, size_t size, void *data)
             return FALSE;
         }
         libname = info->dlpi_name;
+    } else if (info->dlpi_name[0] != '\0'){
+        return FALSE;
     }
 
     void *handle = g_fn.dlopen(libname, RTLD_LAZY);

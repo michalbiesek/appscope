@@ -1,6 +1,9 @@
 FROM alpine:latest
 
-RUN apk add bash cgdb curl gdb gcc libexecinfo linux-headers make musl-dev nano ncurses-dev openjdk11 python3 wget
+RUN apk add bash cgdb cmake curl file gdb gcc libexecinfo linux-headers make musl-dev nano ncurses-dev openjdk11 python3 py3-pip wget
+RUN pip install capstone
+RUN pip install ropper
+RUN pip install unicorn
 
 # Tests
 COPY ./attach/test_attach.sh /opt/test/bin/test_attach.sh
