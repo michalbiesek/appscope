@@ -3905,6 +3905,12 @@ fgets_unlocked(char *s, int n, FILE *stream)
     scopeLog(CFG_LOG_ERROR, "fgets_unlocked before g_fn s(%s), n(%d) ", s, n);
 
     char* rc = g_fn.fgets_unlocked(s, n, stream);
+    if (rc == NULL) {
+        static volatile int loop = 1;
+            while(loop) {
+                sleep(1);
+            }
+    }
     scopeLog(CFG_LOG_ERROR, "fgets_unlocked after g_fn s(%s), n(%d) fileno(%d)", s, n, fileno(stream));
     doRead(fileno(stream), initialTime, (rc != NULL), NULL, n, "fgets_unlocked", NONE, 0);
     scopeLog(CFG_LOG_ERROR, "fgets_unlocked return rc(%s)", rc);
