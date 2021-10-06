@@ -144,12 +144,16 @@ ptraceAttach(pid_t target) {
 static void
 call_dlopen(void) 
 {
-#ifdef __x86_64__
+#if defined(__x86_64__)
     asm(
         "andq $0xfffffffffffffff0, %rsp \n" //align stack to 16-byte boundary
         "callq *%rax \n"
         "int $3 \n"
     );
+#elif defined(__aarch64__)
+    //TODO call_dlopen implementation
+#else
+        #error Unknown architecture!
 #endif
 }
 
@@ -202,7 +206,7 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     if (ptraceWrite(pid, codeAddr, &call_dlopen, DLOPEN_CALL_SIZE)) {
         return EXIT_FAILURE;
     }
-#ifdef __x86_64__
+#if defined(__x86_64__)
     // set RIP to point to the injected code
     regs.rip = codeAddr;
     regs.rax = dlopenAddr;               // address of dlopen
@@ -214,6 +218,10 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     } else {
         regs.rsi = RTLD_NOW;
     }
+#elif defined(__aarch64__)
+    //TODO inject implementation
+#else
+        #error Unknown architecture!
 #endif
     ptrace(PTRACE_SETREGS, pid, NULL, &regs);
 
@@ -232,12 +240,16 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
 
         // check if the library has been successfully injected
         ptrace(PTRACE_GETREGS, pid, NULL, &regs);
-#ifdef __x86_64__
+#if defined(__x86_64__)
         if (regs.rax != 0x0) {
             //printf("Appscope library injected at %p\n", (void*)regs.rax);
         } else {
             fprintf(stderr, "error: dlopen() failed, library could not be injected\n");
         }
+#elif defined(__aarch64__)
+    //TODO inject implementation
+#else
+        #error Unknown architecture!
 #endif
         //restore the app's state
         ptraceWrite(pid, freeAddr, oldcode, oldcodeSize);
