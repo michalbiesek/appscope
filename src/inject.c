@@ -159,7 +159,7 @@ static int
 inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
 {
     struct user_regs_struct oldregs, regs;
-    unsigned char *oldcode;
+    void *oldcode;
     int status;
     uint64_t freeAddr, codeAddr;
     int libpathLen;
@@ -182,7 +182,12 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     // back up the code
     libpathLen = strlen(path) + 1;
     oldcodeSize = (DLOPEN_CALL_SIZE) + libpathLen;
-    oldcode = (unsigned char *)malloc(oldcodeSize);
+    oldcode = malloc(oldcodeSize);
+    if (!oldcode) {
+        fprintf(stderr, "error: malloc failed\n");
+        return EXIT_FAILURE;
+    }
+
     if (ptraceRead(pid, freeAddr, oldcode, oldcodeSize)) {
         return EXIT_FAILURE;
     }
