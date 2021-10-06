@@ -48,17 +48,12 @@ COPY attach/busybox-1.33.1.tar.bz2 /busybox-1.33.1.tar.bz2
 # ADD https://busybox.net/downloads/busybox-1.33.1.tar.bz2 /busybox-1.33.tar.bz2
 
 RUN mkdir -p /opt/busybox-1.33.1
-# COPY ./attach/.config /opt/busybox-1.33.1/.config
+COPY ./attach/.config /opt/busybox-1.33.1/.config
 
 RUN tar -xvjf busybox-1.33.1.tar.bz2 --directory /opt/ && \
-    rm busybox-1.33.1.tar.bz2
-    # cd /opt/busybox-1.33.1 && \
-    # make -j$(nproc)
-
-# RUN tar -xvjf busybox-1.33.1.tar.bz2 --directory /opt/ && \
-#     rm busybox-1.33.1.tar.bz2 && \
-#     cd /opt/busybox-1.33.1 && \
-#     make -j$(nproc)
+    rm busybox-1.33.1.tar.bz2 && \
+    cd /opt/busybox-1.33.1 && \
+    make -j$(nproc)
 
 COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]
