@@ -141,7 +141,7 @@ ptraceAttach(pid_t target) {
     return EXIT_SUCCESS;
 }
 
-static void 
+static void
 call_dlopen(void) 
 {
 #ifdef __x86_64__
@@ -153,7 +153,8 @@ call_dlopen(void)
 #endif
 }
 
-static void call_dlopen_end() {}
+// Size of dlopen text segment
+#define DLOPEN_CALL_SIZE (18)
 
 static int 
 inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
@@ -178,10 +179,10 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     if (!freeAddr) {
         return EXIT_FAILURE;
     }
-    
+
     // back up the code
     libpathLen = strlen(path) + 1;
-    oldcodeSize = (call_dlopen_end - call_dlopen) + libpathLen;
+    oldcodeSize = DLOPEN_CALL_SIZE + libpathLen;
     oldcode = (unsigned char *)malloc(oldcodeSize);
     if (ptraceRead(pid, freeAddr, oldcode, oldcodeSize)) {
         return EXIT_FAILURE;
@@ -194,7 +195,7 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
 
     // inject the code right after the library path
     codeAddr = freeAddr + libpathLen + 1;
-    if (ptraceWrite(pid, codeAddr, &call_dlopen, call_dlopen_end - call_dlopen)) {
+    if (ptraceWrite(pid, codeAddr, &call_dlopen, DLOPEN_CALL_SIZE)) {
         return EXIT_FAILURE;
     }
 #ifdef __x86_64__
