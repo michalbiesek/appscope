@@ -31,6 +31,8 @@
 #define PTRACE_SETREGS PTRACE_SETREGSET
 #endif
 
+
+#define WORD_ALIGN(val) (((val) + 8) & (-8))
 typedef struct {
     char *path;
     uint64_t addr;
@@ -162,7 +164,7 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     unsigned char *oldcode;
     int status;
     uint64_t freeAddr, codeAddr;
-    int libpathLen;
+    int libpathLen, call_dlopen_size;
     ptrdiff_t oldcodeSize;
 
     if (ptraceAttach(pid)) {
@@ -178,11 +180,16 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     if (!freeAddr) {
         return EXIT_FAILURE;
     }
-    
+
     // back up the code
-    libpathLen = strlen(path) + 1;
-    oldcodeSize = (call_dlopen_end - call_dlopen) + libpathLen;
+    libpathLen = WORD_ALIGN(strlen(path) + 1);
+    call_dlopen_size = WORD_ALIGN(call_dlopen_end - call_dlopen);
+    oldcodeSize = libpathLen + call_dlopen_size;
     oldcode = (unsigned char *)malloc(oldcodeSize);
+    if(!oldcode) {
+        return EXIT_FAILURE;
+    }
+
     if (ptraceRead(pid, freeAddr, oldcode, oldcodeSize)) {
         return EXIT_FAILURE;
     }
@@ -194,7 +201,7 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
 
     // inject the code right after the library path
     codeAddr = freeAddr + libpathLen + 1;
-    if (ptraceWrite(pid, codeAddr, &call_dlopen, call_dlopen_end - call_dlopen)) {
+    if (ptraceWrite(pid, codeAddr, &call_dlopen, call_dlopen_size)) {
         return EXIT_FAILURE;
     }
 #ifdef __x86_64__
