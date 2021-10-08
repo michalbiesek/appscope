@@ -174,4 +174,22 @@ services:
       dockerfile: ./console/Dockerfile
     <<: *scope-common
 
+  write-glibc:
+    image: ghcr.io/criblio/appscope-test-write-glibc:${TAG:?Missing TAG environment variable}
+    build:
+      cache_from: 
+        - ghcr.io/criblio/appscope-test-write-glibc:${TAG:?Missing TAG environment variable}
+      context: .
+      dockerfile: ./write/Dockerfile.glibc
+    <<: *scope-common
+
+  write-musl:
+    image: ghcr.io/criblio/appscope-test-write-musl:${TAG:?Missing TAG environment variable}
+    build:
+      cache_from: 
+        - ghcr.io/criblio/appscope-test-write-musl:${TAG:?Missing TAG environment variable}
+      context: .
+      dockerfile: ./write/Dockerfile.musl
+    <<: *scope-common
+
 # vim: ts=2 sw=2 et :
