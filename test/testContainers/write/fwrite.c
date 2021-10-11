@@ -12,9 +12,9 @@ int main () {
    fp = fopen(TEST_FILE,"w");
    if (!fp)
       return EXIT_FAILURE;
-
+   
    fwrite(str , sizeof(char), sizeof(str), fp);
-
+   // fflush(fp);
    fclose(fp);
    unlink(TEST_FILE);
    return EXIT_SUCCESS;
