@@ -136,7 +136,8 @@ getElf(char *path)
        strncmp((char *)&elf->e_ident[EI_MAG1], "ELF", 3) ||
        (elf->e_ident[EI_CLASS] != ELFCLASS64) ||
        (elf->e_ident[EI_DATA] != ELFDATA2LSB) ||
-       (elf->e_machine != EM_X86_64)) {
+       ((elf->e_machine != EM_X86_64) &&
+       (elf->e_machine != EM_AARCH64) )) {
         scopeLog(CFG_LOG_ERROR, "fd:%d %s:%d ERROR: %s is not a viable ELF file\n",
                     fd, __FUNCTION__, __LINE__, path);
         goto out;

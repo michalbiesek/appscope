@@ -6,7 +6,7 @@ RUN mkdir -p /opt/fwrite
 COPY ./write/fwrite.c /opt/fwrite/fwrite.c
 RUN gcc -g -o /opt/fwrite/fwrite /opt/fwrite/fwrite.c
 
-ENV SCOPE_LOG_LEVEL=trace
+ENV SCOPE_LOG_LEVEL=error
 ENV SCOPE_METRIC_VERBOSITY=4
 ENV SCOPE_EVENT_LOGFILE=true
 ENV SCOPE_EVENT_CONSOLE=true

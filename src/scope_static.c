@@ -143,7 +143,7 @@ set_library(void)
     buf = mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
                PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, (off_t)NULL);
     if (buf == MAP_FAILED) {
-        perror("set_loader:mmap");
+        perror("set_library:mmap");
         close(fd);
         return -1;
     }
@@ -178,7 +178,7 @@ set_library(void)
                     if (depstr && strstr(depstr, "ld-linux")) {
                         char newdep[PATH_MAX];
                         if (get_dir("/lib/ld-musl", newdep, sizeof(newdep)) == -1) break;
-                        if (strlen(depstr) >= (strlen(newdep) + 1)) {
+                        if (strlen(depstr) >= strlen(newdep)) {
                             strncpy(depstr, newdep, strlen(newdep) + 1);
                             found = 1;
                             break;
@@ -207,7 +207,7 @@ set_library(void)
             perror("set_library:write");
         }
     } else {
-        fprintf(stderr, "WARNING: can't locate or set the loader string in %s\n", libpath);
+        fprintf(stderr, "WARNING: can't locate or set the library string in %s\n", libpath);
     }
 
     close(fd);
@@ -280,7 +280,7 @@ set_loader(char *exe)
 
             closedir(dirp);
 
-            if (name && (strlen(exld) > (strlen(dir) + 1))) {
+            if (name && (strlen(exld) >= (strlen(dir)))) {
                 if (g_debug) printf("%s:%d exe ld.so: %s to %s\n", __FUNCTION__, __LINE__, exld, dir);
                 strncpy(exld, dir, strlen(dir) + 1);
                 found = 1;
@@ -399,10 +399,8 @@ do_musl(char *exld, char *ldscope)
         return;
     }
 
-#ifdef __x86_64__
     set_loader(ldscope);
     set_library();
-#endif
 
     if (ldso) free(ldso);
     if (lpath) free(lpath);
@@ -1100,17 +1098,17 @@ main(int argc, char **argv, char **env)
         return EXIT_FAILURE;
     }
 
-    if (is_musl && ubuf.machine && (strstr(ubuf.machine, "aarch64") != NULL)) {
-        strncpy(path, "/lib/", 8);
-        if (get_dir("/lib/ld-", path + strlen(path), sizeof(path) - strlen(path)) == -1) {
-            fprintf(stderr, "ERROR: can't get the path for ld-musl");
-            return EXIT_FAILURE;
-        }
+    // if (is_musl && ubuf.machine && (strstr(ubuf.machine, "aarch64") != NULL)) {
+    //     strncpy(path, "/lib/", 8);
+    //     if (get_dir("/lib/ld-", path + strlen(path), sizeof(path) - strlen(path)) == -1) {
+    //         fprintf(stderr, "ERROR: can't get the path for ld-musl");
+    //         return EXIT_FAILURE;
+    //     }
 
-        execve(path, execArgv, environ);
-    } else {
-        execve(libdirGetLoader(), execArgv, environ);
-    }
+    //     execve(path, execArgv, environ);
+    // } else {
+    execve(libdirGetLoader(), execArgv, environ);
+    // }
 
     free(execArgv);
     perror("execve failed");
