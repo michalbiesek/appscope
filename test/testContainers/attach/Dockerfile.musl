@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-RUN apk add bash curl gdb openjdk11 python3
+RUN apk add bash cmake curl file gcc gdb linux-headers make musl-dbg musl-dev openjdk11 python3 py-pip wget
 
 # Tests
 COPY ./attach/test_attach.sh /opt/test/bin/test_attach.sh
@@ -19,10 +19,14 @@ ENV SCOPE_EVENT_NET=true
 ENV SCOPE_EVENT_FS=true
 ENV SCOPE_LOG_DEST=file:///opt/test-runner/logs/scope.log
 ENV SCOPE_EVENT_DEST=file:///opt/test-runner/logs/events.log
+ENV LC_CTYPE=C.UTF-8
 
 ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
 COPY scope-profile.sh /etc/profile.d/scope.sh
 COPY gdbinit /root/.gdbinit
+RUN wget -O ~/.gdbinit-gef.py -q https://github.com/hugsy/gef/raw/master/gef.py && \
+    echo source ~/.gdbinit-gef.py >> /root/.gdbinit
+RUN pip3 install capstone unicorn ropper
 
 RUN  mkdir /usr/local/scope && \
      mkdir /usr/local/scope/bin && \
