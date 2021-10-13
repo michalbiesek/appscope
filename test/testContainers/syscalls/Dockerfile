@@ -3,18 +3,21 @@ FROM centos:7
 RUN yum -y update && \
     yum -y install centos-release-scl && \
     yum -y groupinstall "Development Tools" && \
-    yum -y install libtool flex-devel devtoolset-7 wget automake rh-python38 python-virtualenv && \
-    yum -y install vim emacs gdb tcpdump lsof && \
+    yum -y install cgdb libtool flex-devel devtoolset-7 wget automake rh-python38 python-virtualenv && \
+    yum -y install vim emacs gdb tcpdump lsof strace && \
     yum clean all
 
-RUN mkdir -p /opt/test-runner/logs/ /opt/test
+RUN mkdir -p /opt/test-runner/logs/ /opt/test /opt/ltp-debug-test
+
+COPY ./syscalls/send02.c /opt/ltp-debug-test
 
 RUN cd /opt/test && \
       wget https://github.com/linux-test-project/ltp/archive/refs/tags/20210524.zip && \
       unzip 20210524.zip && \
       rm -f 20210524.zip && \
       mv ltp-20210524 ltp && \
-    cd /opt/test/ltp && \
+      cd /opt/test/ltp && \
+      cp /opt/ltp-debug-test/send02.c /opt/test/ltp/testcases/kernel/syscalls/send/send02.c && \
       make autotools && \
       ./configure && \
       make -j
@@ -45,8 +48,15 @@ COPY ./syscalls/syscall_tests_conf.json /opt/test-runner/syscall_tests_conf.json
 RUN sed -i 's/\basync\b/is_async/g' /opt/test-runner/lib/python3.8/site-packages/kafka/producer/*.py
 
 ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
+ENV LC_CTYPE=C.UTF-8
 COPY scope-profile.sh /etc/profile.d/scope.sh
 COPY gdbinit /root/.gdbinit
+
+RUN  mkdir -p /opt/cgdb && \
+     cd /opt/cgdb && \
+     wget https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/c/cgdb-0.6.8-1.el7.x86_64.rpm && \
+     yum -y install cgdb-0.6.8-1.el7.x86_64.rpm
+
 RUN  mkdir /usr/local/scope && \
      mkdir /usr/local/scope/bin && \
      mkdir /usr/local/scope/lib && \

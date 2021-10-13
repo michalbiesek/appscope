@@ -1,9 +1,11 @@
 FROM alpine:latest
 
-RUN apk add bash python3 py3-pip wget
+RUN apk add bash cmake curl file gcc gdb linux-headers make musl-dbg musl-dev python3 py3-pip strace wget
 RUN pip3 install virtualenv
 
-RUN mkdir -p /opt/test-runner/logs/ /opt/test
+RUN mkdir -p /opt/test-runner/logs/ /opt/test  /opt/ltp-debug-test
+
+COPY ./syscalls/send02.c /opt/ltp-debug-test
 
 RUN cd /opt/test && \
       wget https://github.com/linux-test-project/ltp/archive/refs/tags/20210927.zip && \
@@ -11,6 +13,7 @@ RUN cd /opt/test && \
       rm -f 20210927.zip && \
       mv ltp-20210927 ltp && \
       cd /opt/test/ltp && \
+      cp /opt/ltp-debug-test/send02.c /opt/test/ltp/testcases/kernel/syscalls/send/send02.c && \
       ./ci/alpine.sh && \
       make autotools && \
       ./configure && \
@@ -40,6 +43,7 @@ COPY ./syscalls/syscall_tests_conf.json /opt/test-runner/syscall_tests_conf.json
 # # # Switching to Python 3.8 required this hack. Not sure where the kafka packages are coming from.
 RUN sed -i 's/\basync\b/is_async/g' /opt/test-runner/lib/python3.9/site-packages/kafka/producer/*.py
 
+ENV LC_CTYPE=C.UTF-8
 ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
 COPY scope-profile.sh /etc/profile.d/scope.sh
 COPY gdbinit /root/.gdbinit
@@ -49,7 +53,9 @@ RUN  mkdir /usr/local/scope && \
      ln -s /opt/appscope/bin/linux/$(uname -m)/scope /usr/local/scope/bin/scope && \
      ln -s /opt/appscope/bin/linux/$(uname -m)/ldscope /usr/local/scope/bin/ldscope && \
      ln -s /opt/appscope/lib/linux/$(uname -m)/libscope.so /usr/local/scope/lib/libscope.so
-
+RUN wget -O ~/.gdbinit-gef.py -q https://github.com/hugsy/gef/raw/master/gef.py && \
+    echo source ~/.gdbinit-gef.py >> /root/.gdbinit
+RUN pip3 install capstone unicorn ropper
 COPY ./syscalls/scope-test /usr/local/scope/
 
 COPY docker-entrypoint.sh /

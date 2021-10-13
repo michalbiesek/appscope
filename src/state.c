@@ -951,11 +951,14 @@ setProtocolByType(int sockfd, protocol_def_t *protoDef, net_info *net, char *buf
         ret = ret || setProtocol(sockfd, protoDef, net, buf, len);
     } else if (dtype == MSG) {
         // buffer is a msghdr for sendmsg/recvmsg
+        scopeLogError("setProtocolByType MSG");
         int i;
         struct msghdr *msg = (struct msghdr *)buf;
         struct iovec *iov;
+        scopeLogError("setProtocolByType msg->msg_iovlen(%zu)", msg->msg_iovlen);
         for (i = 0; i < msg->msg_iovlen; i++) {
             iov = &msg->msg_iov[i];
+            scopeLogError("setProtocolByType iov(%p), iov->iov_base(%p), iov->iov_len(%zu)", iov, iov->iov_base, iov->iov_len);
             if (iov && iov->iov_base && (iov->iov_len > 0)) {
                 // check every vector?
                 ret = ret || setProtocol(sockfd, protoDef, net, iov->iov_base, iov->iov_len);
@@ -1204,7 +1207,7 @@ doProtocol(uint64_t id, int sockfd, void *buf, size_t len, metric_t src, src_dat
     net_info *net = getNetEntry(sockfd);    // first try by descriptor
     if (!net) net = getChannelNetEntry(id); // fallback to using channel ID
 
-    scopeLogHexDebug(buf, len > 64 ? 64 : len, // limit hexdump to 64
+    scopeLogHex(CFG_LOG_DEBUG, buf, len > 64 ? 64 : len, // limit hexdump to 64
             "DEBUG: doProtocol(id=%ld, fd=%d, len=%ld, src=%s, dtyp=%s) TLS=%s PROTO=%s",
             id, sockfd, len,
             src == NETRX ? "NETRX" :
