@@ -5,7 +5,7 @@
 # The build environment's top level bin/linux/ folder is mounted at
 # /usr/local/scope/bin and lib/linux is at /usr/local/scope/lib. We are
 # preloading the library automatically here.
-set environment LD_PRELOAD=/usr/local/scope/lib/libscope.so
+# set environment LD_PRELOAD=/usr/local/scope/lib/libscope.so
 
 handle SIGUSR2 pass nostop
 set print elements 0

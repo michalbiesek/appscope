@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-RUN apk add bash curl gcc gdb musl-dev
+RUN apk add bash cmake curl file gcc gdb linux-headers make musl-dbg musl-dev python3 py-pip wget
 
 RUN mkdir -p /opt/fwrite
 COPY ./musl/fwrite.c /opt/fwrite/fwrite.c
@@ -16,11 +16,15 @@ ENV SCOPE_EVENT_NET=true
 ENV SCOPE_EVENT_FS=false
 ENV SCOPE_LOG_DEST=file:///opt/test-runner/logs/scope.log
 ENV SCOPE_EVENT_DEST=file:///opt/test-runner/logs/events.log
-ENV SCOPE_ALLOW_MUSL_ATTACH=true
+ENV LC_CTYPE=C.UTF-8
 
 ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
 COPY scope-profile.sh /etc/profile.d/scope.sh
 COPY gdbinit /root/.gdbinit
+
+RUN wget -O ~/.gdbinit-gef.py -q https://github.com/hugsy/gef/raw/master/gef.py && \
+    echo source ~/.gdbinit-gef.py >> /root/.gdbinit
+RUN pip3 install capstone unicorn ropper
 
 RUN  mkdir /usr/local/scope && \
      mkdir /usr/local/scope/bin && \
