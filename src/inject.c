@@ -165,6 +165,11 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     int libpathLen;
     ptrdiff_t oldcodeSize;
 
+    // back up the code
+    libpathLen = strlen(path) + 1;
+    oldcodeSize = (call_dlopen_end - call_dlopen) + libpathLen;
+    oldcode = (unsigned char *)malloc(oldcodeSize);
+
     if (ptraceAttach(pid)) {
         return EXIT_FAILURE;
     }
@@ -179,10 +184,6 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
         return EXIT_FAILURE;
     }
     
-    // back up the code
-    libpathLen = strlen(path) + 1;
-    oldcodeSize = (call_dlopen_end - call_dlopen) + libpathLen;
-    oldcode = (unsigned char *)malloc(oldcodeSize);
     if (ptraceRead(pid, freeAddr, oldcode, oldcodeSize)) {
         return EXIT_FAILURE;
     }

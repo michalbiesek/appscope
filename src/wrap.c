@@ -1475,6 +1475,7 @@ initEnv(int *attachedFlag)
 __attribute__((constructor)) void
 init(void)
 {
+    return;
     // Use dlsym to get addresses for everything in g_fn
     initFn();
 
