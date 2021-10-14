@@ -38,8 +38,8 @@ atomicCasU64(uint64_t* ptr, uint64_t oldval, uint64_t newval)
 #define NEEDEVNULL 1
 #define funcprint sysprint
 //#define funcprint devnull
-//#define patchprint sysprint
-#define patchprint devnull
+#define patchprint sysprint
+// #define patchprint devnull
 
 #define UNDEF_OFFSET (-1)
 go_offsets_t g_go = {.g_to_m=48,                   // 0x30
@@ -570,7 +570,7 @@ initGoHook(elf_buf_t *ebuf)
         }
 
         patchprint ("********************************\n");
-        patchprint ("** %s  %s 0x%lx **\n", go_runtime_version, tap->func_name, orig_func);
+        patchprint ("** %s  %s %p **\n", go_runtime_version, tap->func_name, orig_func);
         patchprint ("********************************\n");
 
         patch_return_addrs(funchook, asm_inst, asm_count, tap);

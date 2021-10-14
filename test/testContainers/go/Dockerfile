@@ -2,14 +2,15 @@ ARG GO_IMAGE_VER=golang:1.14
 FROM $GO_IMAGE_VER
 
 RUN apt-get -o Acquire::Check-Valid-Until=false update && \
-    apt-get install -y vim curl file bsdmainutils
+    apt-get install -y vim curl gdb file bsdmainutils wget python3 python3-pip cmake
 
 COPY ./go/test_go.sh /go
 COPY ./go/test_go_struct.sh /go
 
 RUN mkdir /go/thread
 COPY ./go/thread/fileThread.go /go/thread
-RUN cd /go/thread && CGO_ENABLED=0 go build fileThread.go
+RUN cd /go/thread && CGO_ENABLED=0 go build fileThread.go && \
+    go build -gcflags="-N -l" -o fileThreadDebug fileThread.go
 
 RUN mkdir /go/net
 COPY ./go/net/plainServer.go /go/net
@@ -67,10 +68,16 @@ ENV SCOPE_EVENT_CONSOLE=true
 ENV SCOPE_EVENT_METRIC=true
 ENV SCOPE_EVENT_HTTP=true
 ENV SCOPE_EVENT_DEST=file:///go/events.log
+ENV SCOPE_GO_STRUCT_PATH=file:///go/struct.log
+ENV LC_CTYPE=C.UTF-8
 
 RUN echo "export PATH=/usr/local/scope:/usr/local/scope/bin:${PATH}" >/etc/profile.d/path.sh
 COPY scope-profile.sh /etc/profile.d/scope.sh
 COPY gdbinit /root/.gdbinit
+RUN wget -O ~/.gdbinit-gef.py -q https://github.com/hugsy/gef/raw/master/gef.py && \
+    echo source ~/.gdbinit-gef.py >> /root/.gdbinit
+RUN pip3 install capstone unicorn ropper keystone-engine
+ 
 
 RUN  mkdir /usr/local/scope && \
      mkdir /usr/local/scope/bin && \

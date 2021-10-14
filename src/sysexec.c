@@ -68,7 +68,7 @@ get_file_size(const char *path)
     struct stat sbuf;
 
     if (g_fn.open && (fd = g_fn.open(path, O_RDONLY)) == -1) {
-        scopeLog(CFG_LOG_ERROR, "ERROR: get_file_size:open");
+        scopeLog(CFG_LOG_ERROR, "ERROR: get_file_size:open %s", path);
         return -1;
     }
 
@@ -207,7 +207,7 @@ unmap_all(char *buf, const char **argv)
 
     int flen;
     if ((flen = get_file_size(argv[1])) == -1) {
-        scopeLog(CFG_LOG_ERROR, "ERROR:unmap_all: file size");
+        scopeLog(CFG_LOG_ERROR, "ERROR:unmap_all: file size %s", argv[1]);
         return -1;
     }
 
