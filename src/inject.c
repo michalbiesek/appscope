@@ -166,8 +166,11 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     ptrdiff_t oldcodeSize;
 
     // back up the code
-    libpathLen = strlen(path) + 1;
-    oldcodeSize = (call_dlopen_end - call_dlopen) + libpathLen;
+    // fprintf(stderr, "PATH %s", path);
+    // "/tmp/libscope-0.7.5/libscope.so\x00"
+    // libpathLen = strlen(path) + 1;
+    libpathLen = 33;
+    oldcodeSize = (32) + libpathLen + 8;
     oldcode = (unsigned char *)malloc(oldcodeSize);
 
     if (ptraceAttach(pid)) {
@@ -183,19 +186,28 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     if (!freeAddr) {
         return EXIT_FAILURE;
     }
-    
+    // read the scoped process state
     if (ptraceRead(pid, freeAddr, oldcode, oldcodeSize)) {
+        fprintf(stderr, "error: ptraceRead\n");
         return EXIT_FAILURE;
     }
 
     // write the path to the library 
-    if (ptraceWrite(pid, freeAddr, path, libpathLen)) {
+    if (ptraceWrite(pid, freeAddr, "/tmp/libscope-0.7.5/libscope.so\x00", libpathLen)) {
+        fprintf(stderr, "error: ptraceWrite\n");
+        return EXIT_FAILURE;
+    }
+
+    // write the path to the library 
+    if (ptraceWrite(pid, freeAddr + libpathLen, "\x90\x90\x90\x90\x90\x90\x90", 8)) {
+        fprintf(stderr, "error: ptraceWrite\n");
         return EXIT_FAILURE;
     }
 
     // inject the code right after the library path
-    codeAddr = freeAddr + libpathLen + 1;
-    if (ptraceWrite(pid, codeAddr, &call_dlopen, call_dlopen_end - call_dlopen)) {
+    codeAddr = freeAddr + libpathLen + 8;
+    if (ptraceWrite(pid, codeAddr, &call_dlopen, 32)) {
+        fprintf(stderr, "error: ptraceWrite\n");
         return EXIT_FAILURE;
     }
 #ifdef __x86_64__
