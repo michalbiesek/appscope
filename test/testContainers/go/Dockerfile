@@ -44,7 +44,9 @@ RUN cd /go/net && \
 RUN mkdir /go/signals
 COPY ./go/signals/signalHandler.go /go/signals
 RUN cd /go/signals && \
-    go build -o signalHandlerDynamic signalHandler.go
+    go build -o signalHandlerDynamic signalHandler.go  && \
+    CGO_ENABLED=0 go build -o signalHandlerStatic signalHandler.go && \
+    CGO_ENABLED=0 go build -ldflags="-s -w" -o signalHandlerStaticStripped signalHandler.go
 
 RUN mkdir /go/cgo
 COPY ./go/cgo/Makefile /go/cgo
