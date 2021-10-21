@@ -607,7 +607,7 @@ osInitJavaAgent(void)
  * 7f1b23bd4000-7f1b23bd7000 rw-p 001e3000 08:01 402063 /usr/lib/x86_64-linux-gnu/libc-2.29.so
  */
 int
-osGetPageProt(uint64_t addr)
+osGetPageProt(uint64_t addr, const char* print_sec)
 {
     int prot = -1;
     size_t len = 0;
@@ -645,7 +645,7 @@ osGetPageProt(uint64_t addr)
 
         if ((addr >= addr1) && (addr <= addr2)) {
             char *perms = end + 1;
-            scopeLog(CFG_LOG_DEBUG, "matched 0x%lx to 0x%lx-0x%lx\n\t%c%c%c", addr, addr1, addr2, perms[0], perms[1], perms[2]);
+            scopeLog(CFG_LOG_DEBUG, "Section (%s) matched 0x%lx to 0x%lx-0x%lx\n\t%c%c%c", print_sec, addr, addr1, addr2, perms[0], perms[1], perms[2]);
             prot = 0;
             prot |= perms[0] == 'r' ? PROT_READ : 0;
             prot |= perms[1] == 'w' ? PROT_WRITE : 0;

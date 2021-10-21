@@ -39,7 +39,7 @@ extern int osGetCmdline(pid_t, char **);
 extern bool osThreadInit(void(*handler)(int), unsigned);
 extern int osUnixSockPeer(ino_t);
 extern void osInitJavaAgent(void);
-extern int osGetPageProt(uint64_t);
+extern int osGetPageProt(uint64_t, const char*);
 extern bool osTimerStop(void);
 extern bool osGetCgroup(pid_t, char *, size_t);
 extern char *osGetFileMode(mode_t);

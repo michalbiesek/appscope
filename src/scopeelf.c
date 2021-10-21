@@ -193,15 +193,17 @@ doGotcha(struct link_map *lm, got_list_t *hook, Elf64_Rela *rel, Elf64_Sym *sym,
             uint64_t *gaddr = (uint64_t *)(rel[i].r_offset + lm->l_addr);
             int page_size = getpagesize();
             size_t saddr = ROUND_DOWN((size_t)gaddr, page_size);
-            int prot = osGetPageProt((uint64_t)gaddr);
+            int prot = osGetPageProt((uint64_t)gaddr, "doGotcha");
 
             if (prot != -1) {
                 if ((prot & PROT_WRITE) == 0) {
-                    // mprotect if write perms are not set
+                    // if (!attach) {
                     if (mprotect((void *)saddr, (size_t)16, PROT_WRITE | prot) == -1) {
                         scopeLog(CFG_LOG_DEBUG, "doGotcha: mprotect failed");
                         return -1;
                     }
+                    // }
+                    scopeLog(CFG_LOG_ERROR, "\ndoGotcha: mprotect first time %s addr %p", hook->symbol, hook->func);
                 }
             } else {
                 /*
@@ -225,14 +227,17 @@ doGotcha(struct link_map *lm, got_list_t *hook, Elf64_Rela *rel, Elf64_Sym *sym,
             *gaddr = (uint64_t)hook->func;
             scopeLog(CFG_LOG_DEBUG, "%s:%d sym=%s offset 0x%lx GOT entry %p saddr 0x%lx, prev=0x%lx, curr=%p",
                         __FUNCTION__, __LINE__, hook->symbol, rel[i].r_offset, gaddr, saddr, prev, hook->func);
-
+            // if (!attach) {
             if ((prot & PROT_WRITE) == 0) {
                 // if we didn't mod above leave prot settings as is
                 if (mprotect((void *)saddr, (size_t)16, prot) == -1) {
                     scopeLog(CFG_LOG_DEBUG, "doGotcha: mprotect failed");
                     return -1;
                 }
+                scopeLog(CFG_LOG_ERROR, "\ndoGotcha: mprotect second time %s addr %p", hook->symbol, hook->func);
             }
+            // }
+            // scopeLog(CFG_LOG_ERROR, "\nMatch %s addr %p prev=0x%lx ", hook->symbol, hook->func, prev);
             match = 0;
             break;
         }
@@ -252,19 +257,19 @@ getElfEntries(struct link_map *lm, Elf64_Rela **rel, Elf64_Sym **sym, char **str
         if (dyn->d_tag == DT_SYMTAB) {
             // Note: using osGetPageProt() to determine if the addr is present in the
             // process address space. We don't need the prot value.
-            if (osGetPageProt((uint64_t)dyn->d_un.d_ptr) != -1) {
+            if (osGetPageProt((uint64_t)dyn->d_un.d_ptr, "DT_SYMTAB") != -1) {
                 *sym = (Elf64_Sym *)((char *)(dyn->d_un.d_ptr));
             } else {
                 *sym = (Elf64_Sym *)((char *)(dyn->d_un.d_ptr + lm->l_addr));
             }
         } else if (dyn->d_tag == DT_STRTAB) {
-            if (osGetPageProt((uint64_t)dyn->d_un.d_ptr) != -1) {
+            if (osGetPageProt((uint64_t)dyn->d_un.d_ptr, "DT_STRTAB") != -1) {
                 *str = (char *)(dyn->d_un.d_ptr);
             } else {
                 *str = (char *)(dyn->d_un.d_ptr + lm->l_addr);
             }
         } else if (dyn->d_tag == DT_JMPREL) {
-            if (osGetPageProt((uint64_t)dyn->d_un.d_ptr) != -1) {
+            if (osGetPageProt((uint64_t)dyn->d_un.d_ptr, "DT_JMPREL") != -1) {
                 *rel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr));
             } else {
                 *rel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr + lm->l_addr));
@@ -272,7 +277,7 @@ getElfEntries(struct link_map *lm, Elf64_Rela **rel, Elf64_Sym **sym, char **str
         } else if (dyn->d_tag == DT_PLTRELSZ) {
             *rsz = dyn->d_un.d_val;
         } else if (dyn->d_tag == DT_PLTGOT) {
-            if (osGetPageProt((uint64_t)dyn->d_un.d_ptr) != -1) {
+            if (osGetPageProt((uint64_t)dyn->d_un.d_ptr, "DT_PLTGOT") != -1) {
                 got = (char *)(dyn->d_un.d_ptr);
             } else {
                 got = (char *)(dyn->d_un.d_ptr + lm->l_addr);

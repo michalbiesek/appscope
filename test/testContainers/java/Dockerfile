@@ -51,6 +51,12 @@ ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
 RUN echo "export PATH=${PATH}" >> /etc/profile.d/path.sh
 COPY scope-profile.sh /etc/profile.d/scope.sh
 COPY gdbinit /root/.gdbinit
+ENV LC_CTYPE=C.UTF-8
+
+RUN wget -O ~/.gdbinit-gef.py -q https://github.com/hugsy/gef/raw/master/gef.py && \
+    echo source ~/.gdbinit-gef.py >> /root/.gdbinit
+
+RUN pip3 install capstone unicorn ropper
 
 RUN  mkdir /usr/local/scope && \
      mkdir /usr/local/scope/bin && \

@@ -55,7 +55,7 @@ extern int osGetCmdline(pid_t, char **);
 extern bool osThreadInit(void(*handler)(int), unsigned);
 extern int osUnixSockPeer(ino_t);
 extern void osInitJavaAgent(void);
-extern int osGetPageProt(unsigned long);
+extern int osGetPageProt(unsigned long, const char*);
 extern int osGetExePath(char **);
 extern bool osTimerStop(void);
 extern bool osGetCgroup(pid_t, char *, size_t);

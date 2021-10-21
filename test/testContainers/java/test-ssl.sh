@@ -3,7 +3,7 @@
 # in some cases, the /etc/profile.d isn't loaded so force this
 export PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
 
-DEBUG=0  # set this to 1 to capture the EVT_FILE for each test
+DEBUG=1  # set this to 1 to capture the EVT_FILE for each test
 
 FAILED_TEST_LIST=""
 FAILED_TEST_COUNT=0
@@ -86,58 +86,60 @@ evalPayload(){
 
 
 
-starttest Tomcat
-ldscope /opt/tomcat/bin/catalina.sh run &
-evaltest
+# starttest Tomcat
+# ldscope /opt/tomcat/bin/catalina.sh run &
+# evaltest
 
-until [ "`curl $CURL_PARAMS  -k --silent --connect-timeout 1 -I https://localhost:8443 | grep 'Coyote'`" != "" ];
-do
-    echo waiting for tomcat...
-    sleep 1
-done
+# until [ "`curl $CURL_PARAMS  -k --silent --connect-timeout 1 -I https://localhost:8443 | grep 'Coyote'`" != "" ];
+# do
+#     echo waiting for tomcat...
+#     sleep 1
+# done
 
-sleep 2
-grep http-req $EVT_FILE > /dev/null
-ERR+=$?
+# sleep 2
+# grep http-req $EVT_FILE > /dev/null
+# ERR+=$?
 
-grep http-resp $EVT_FILE > /dev/null
-ERR+=$?
+# grep http-resp $EVT_FILE > /dev/null
+# ERR+=$?
 
-grep '"net_peer_ip":"127.0.0.1"' $EVT_FILE > /dev/null
-ERR+=$?
+# grep '"net_peer_ip":"127.0.0.1"' $EVT_FILE > /dev/null
+# ERR+=$?
 
-grep -E '"net_peer_port":"[0-9]+"' $EVT_FILE > /dev/null
-ERR+=$?
+# grep -E '"net_peer_port":"[0-9]+"' $EVT_FILE > /dev/null
+# ERR+=$?
 
-evalPayload
-ERR+=$?
+# evalPayload
+# ERR+=$?
 
-endtest
+# endtest
 
 
-starttest SSLSocketClient
-cd /opt/javassl
-ldscope java -Djavax.net.ssl.trustStore=/opt/tomcat/certs/tomcat.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=pkcs12 SSLSocketClient > /dev/null
-evaltest
-grep http-req $EVT_FILE > /dev/null
-ERR+=$?
+# starttest SSLSocketClient
+# cd /opt/javassl
+# ldscope java -Djavax.net.ssl.trustStore=/opt/tomcat/certs/tomcat.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=pkcs12 SSLSocketClient > /dev/null
+# SSL_CLIENT_PID=$!
+# evaltest
+# grep http-req $EVT_FILE > /dev/null
+# ERR+=$?
 
-grep http-resp $EVT_FILE > /dev/null
-ERR+=$?
+# grep http-resp $EVT_FILE > /dev/null
+# ERR+=$?
 
-grep '"net_peer_ip":"127.0.0.1"' $EVT_FILE > /dev/null
-ERR+=$?
+# grep '"net_peer_ip":"127.0.0.1"' $EVT_FILE > /dev/null
+# ERR+=$?
 
-grep -E '"net_peer_port":"[0-9]+"' $EVT_FILE > /dev/null
-ERR+=$?
+# grep -E '"net_peer_port":"[0-9]+"' $EVT_FILE > /dev/null
+# ERR+=$?
 
-evalPayload
-ERR+=$?
+# evalPayload
+# ERR+=$?
 
-endtest
+# endtest
 
-/opt/tomcat/bin/catalina.sh stop
-sleep 3
+# kill -9 ${SSL_CLIENT_PID}
+# /opt/tomcat/bin/catalina.sh stop
+# sleep 3
 
 
 if [ "x86_64" = "$(uname -m)" ]; then # x86_64 only

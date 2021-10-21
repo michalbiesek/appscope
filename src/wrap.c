@@ -1169,7 +1169,7 @@ findLibscopePath(struct dl_phdr_info *info, size_t size, void *data)
 
 /*
  * Iterate all shared objects and GOT hook as necessary.
- * Return FALSE in all cases in order to interate all objects.
+ * Return FALSE in all cases in order to iterate all objects.
  * Ignore a set of objects we know we don't want to hook.
  */
 static int
@@ -1185,6 +1185,8 @@ hookSharedObjs(struct dl_phdr_info *info, size_t size, void *data)
     int rsz = 0;
     void *libscopeHandle = data;
     const char *libname = NULL;
+
+    scopeLog(CFG_LOG_ERROR, "hookSharedObjs %s", info->dlpi_name);
 
     // don't attempt to hook libscope.so, libc*.so, ld-*.so
     // where libc*.so is for example libc.so.6 or libc.musl-x86_64.so.1
@@ -1208,11 +1210,13 @@ hookSharedObjs(struct dl_phdr_info *info, size_t size, void *data)
             addr = dlsym(libscopeHandle, inject_hook_list[i].symbol);
             inject_hook_list[i].func = addr;
 
-            if ((dlsym(handle, inject_hook_list[i].symbol)) &&
-                (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, 1) != -1)) {
-                    scopeLog(CFG_LOG_DEBUG, "\tGOT patched %s from shared obj %s",
-                             inject_hook_list[i].symbol, info->dlpi_name);
-            }
+                if (dlsym(handle, inject_hook_list[i].symbol)) {
+                    // scopeLog(CFG_LOG_DEBUG, "Inject before doGotcha func(%p) gfn(%p) symbol(%s)", inject_hook_list[i].func, inject_hook_list[i].gfn, inject_hook_list[i].symbol);
+                    if(doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, 1) != -1) {
+                        scopeLog(CFG_LOG_DEBUG, "\tGOT patched %s from shared obj %s",
+                                inject_hook_list[i].symbol, info->dlpi_name);
+                    }
+                }
         }
     }
 
@@ -1531,8 +1535,8 @@ init(void)
         // enable a timer/signal.
         threadInit();
     }
-
     osInitJavaAgent();
+    scopeLog(CFG_LOG_ERROR, "Constructor finish");
 }
 
 EXPORTON int
