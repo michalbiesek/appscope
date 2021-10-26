@@ -47,7 +47,7 @@ typedef struct {
 static java_global_t g_java = {0};
 
 #define SOCKET_CHANNEL_CLASS ("sun/nio/ch/SocketChannelImpl")
-static jclass socketChannelClassCopy;
+static jclass socketChannelClassCopy = NULL;
 
 #define SSL_ENGINE_CLASS ("sun/security/ssl/SSLEngineImpl")
 #define SSL_ENGINE_ORACLE_CLASS ("com/sun/net/ssl/internal/ssl/SSLEngineImpl")
@@ -212,18 +212,23 @@ initSSLEngineImplGlobals(JNIEnv *jni)
     g_java.mid_SSLEngineImpl_getSession  = (*jni)->GetMethodID(jni, sslEngineImplClass, "getSession", "()Ljavax/net/ssl/SSLSession;");
 
     jclass socketChannelClass = (*jni)->FindClass(jni, SOCKET_CHANNEL_CLASS);
-//    g_java.mid_SocketChannelImpl___read  = (*jni)->GetMethodID(jni, socketChannelClass, "__read", "(Ljava/nio/ByteBuffer;)I");
-//    g_java.mid_SocketChannelImpl___write = (*jni)->GetMethodID(jni, socketChannelClass, "__write", "(Ljava/nio/ByteBuffer;)I");
-//    g_java.mid_SocketChannelImpl_getRemoteAddress  = (*jni)->GetMethodID(jni, socketChannelClass, "getRemoteAddress", "()Ljava/net/SocketAddress;");
-    g_java.mid_SocketChannelImpl___read  = (*jni)->GetMethodID(jni, socketChannelClass, "__read", "(Ljava/nio/ByteBuffer;)I");
-    g_java.mid_SocketChannelImpl___write = (*jni)->GetMethodID(jni, socketChannelClass, "__write", "(Ljava/nio/ByteBuffer;)I");
+    if (socketChannelClassCopy) {
+        g_java.mid_SocketChannelImpl___read  = (*jni)->GetMethodID(jni, socketChannelClassCopy, "read", "(Ljava/nio/ByteBuffer;)I");
+        g_java.mid_SocketChannelImpl___write = (*jni)->GetMethodID(jni, socketChannelClassCopy, "write", "(Ljava/nio/ByteBuffer;)I");
+    } else {
+        g_java.mid_SocketChannelImpl___read  = (*jni)->GetMethodID(jni, socketChannelClass, "__read", "(Ljava/nio/ByteBuffer;)I");
+        g_java.mid_SocketChannelImpl___write = (*jni)->GetMethodID(jni, socketChannelClass, "__write", "(Ljava/nio/ByteBuffer;)I");
+    }
     g_java.mid_SocketChannelImpl_getRemoteAddress  = (*jni)->GetMethodID(jni, socketChannelClass, "getRemoteAddress", "()Ljava/net/SocketAddress;");
+    // g_java.mid_SocketChannelImpl_getRemoteAddress  = (*jni)->GetMethodID(jni, socketChannelClassCopy, "getRemoteAddress", "()Ljava/net/SocketAddress;");
     if (g_java.mid_SocketChannelImpl_getRemoteAddress == NULL) {
         // Open JDK 6
         g_java.mid_SocketChannelImpl_getRemoteAddress  = (*jni)->GetMethodID(jni, socketChannelClass, "remoteAddress", "()Ljava/net/SocketAddress;");
+        // g_java.mid_SocketChannelImpl_getRemoteAddress  = (*jni)->GetMethodID(jni, socketChannelClassCopy, "remoteAddress", "()Ljava/net/SocketAddress;");
         clearJniException(jni);
     }
     g_java.mid_SocketChannelImpl_getFDVal  = (*jni)->GetMethodID(jni, socketChannelClass, "getFDVal", "()I");
+    // g_java.mid_SocketChannelImpl_getFDVal  = (*jni)->GetMethodID(jni, socketChannelClassCopy, "getFDVal", "()I");
 
     jclass byteBufferClass         = (*jni)->FindClass(jni, "java/nio/ByteBuffer");
     jclass bufferClass             = (*jni)->FindClass(jni, "java/nio/Buffer");
@@ -245,6 +250,7 @@ static jclass defineCopyClass(jvmtiEnv *jvmti_env, JNIEnv* jni, jobject loader, 
 {
     int originalNameIndex;
     jclass localClassCopy = NULL;
+    scopeLog(CFG_LOG_ERROR, "defineCopyClass start class_name_base (%s)", class_name_base);
 
     unsigned char *copy_class_data = (unsigned char *)malloc(class_data_len);
     memcpy(copy_class_data, class_data, class_data_len);
@@ -266,7 +272,7 @@ static jclass defineCopyClass(jvmtiEnv *jvmti_env, JNIEnv* jni, jobject loader, 
         scopeLog(CFG_LOG_ERROR, "\nDefineClass error");
     }
 
-    scopeLog(CFG_LOG_ERROR, "defineCopyClass class_name_base (%s) class_name_copy (%s)", class_name_base, class_name_copy);
+    scopeLog(CFG_LOG_ERROR, "defineCopyClass end class_name_base (%s) class_name_copy (%s)", class_name_base, class_name_copy);
     free(class_name_copy);
     javaDestroy(&copyClassInfo);
     free(copy_class_data);
@@ -389,11 +395,13 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
         scopeLog(CFG_LOG_ERROR, "installing Java SSL hooks for SocketChannelImpl class... %s", name);
         java_class_t *classInfo = javaReadClass(class_data);
 
-        socketChannelClassCopy = defineCopyClass(jvmti_env, jni, loader, class_data_len, class_data, name);
-        if (!socketChannelClassCopy) {
-            javaDestroy(&classInfo);
-            scopeLog(CFG_LOG_ERROR, "ERROR: 'defineCopyClass' error %s", name);
-            return;
+        if (class_being_redefined) {
+            socketChannelClassCopy = defineCopyClass(jvmti_env, jni, loader, class_data_len, class_data, name);
+            if (!socketChannelClassCopy) {
+                javaDestroy(&classInfo);
+                scopeLog(CFG_LOG_ERROR, "ERROR: 'defineCopyClass' error %s", name);
+                return;
+            }
         }
 
         int methodIndex = javaFindMethodIndex(classInfo, "read", "(Ljava/nio/ByteBuffer;)I");
@@ -402,7 +410,9 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
             scopeLog(CFG_LOG_ERROR, "ERROR: 'read' method not found in SocketChannelImpl class\n");
             return;
         }
-        javaCopyMethod(classInfo, classInfo->methods[methodIndex], "__read");
+        if (!class_being_redefined) {
+            javaCopyMethod(classInfo, classInfo->methods[methodIndex], "__read");
+        }
         javaConvertMethodToNative(classInfo, methodIndex);
 
         methodIndex = javaFindMethodIndex(classInfo, "write", "(Ljava/nio/ByteBuffer;)I");
@@ -411,7 +421,9 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
             scopeLog(CFG_LOG_ERROR, "ERROR: 'write' method not found in SocketChannelImpl class\n");
             return;
         }
-        javaCopyMethod(classInfo, classInfo->methods[methodIndex], "__write");
+        if (!class_being_redefined) {
+            javaCopyMethod(classInfo, classInfo->methods[methodIndex], "__write");
+        }
         javaConvertMethodToNative(classInfo, methodIndex);
 
         unsigned char *dest;
@@ -466,7 +478,7 @@ Java_sun_nio_ch_SocketChannelImpl_read(JNIEnv *jni, jobject obj, jobject buf)
     initSSLEngineImplGlobals(jni);
     
     saveSocketChannel(jni, obj, buf);
-    
+    scopeLog(CFG_LOG_ERROR, "Java_sun_nio_ch_SocketChannelImpl_read called");
     jint res = (*jni)->CallIntMethod(jni, obj, g_java.mid_SocketChannelImpl___read, buf);
     return res;
 }
