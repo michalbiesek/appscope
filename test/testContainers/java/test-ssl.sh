@@ -3,7 +3,7 @@
 # in some cases, the /etc/profile.d isn't loaded so force this
 export PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
 
-DEBUG=0  # set this to 1 to capture the EVT_FILE for each test
+DEBUG=1  # set this to 1 to capture the EVT_FILE for each test
 
 FAILED_TEST_LIST=""
 FAILED_TEST_COUNT=0
@@ -86,65 +86,105 @@ evalPayload(){
 
 
 
-starttest Tomcat
-ldscope /opt/tomcat/bin/catalina.sh run &
-evaltest
+# starttest Tomcat
+# ldscope /opt/tomcat/bin/catalina.sh run &
+# evaltest
 
-until [ "`curl $CURL_PARAMS  -k --silent --connect-timeout 1 -I https://localhost:8443 | grep 'Coyote'`" != "" ];
-do
-    echo waiting for tomcat...
-    sleep 1
-done
+# until [ "`curl $CURL_PARAMS  -k --silent --connect-timeout 1 -I https://localhost:8443 | grep 'Coyote'`" != "" ];
+# do
+#     echo waiting for tomcat...
+#     sleep 1
+# done
 
-sleep 2
-grep http-req $EVT_FILE > /dev/null
-ERR+=$?
+# sleep 2
+# grep http-req $EVT_FILE > /dev/null
+# ERR+=$?
 
-grep http-resp $EVT_FILE > /dev/null
-ERR+=$?
+# grep http-resp $EVT_FILE > /dev/null
+# ERR+=$?
 
-grep '"net_peer_ip":"127.0.0.1"' $EVT_FILE > /dev/null
-ERR+=$?
+# grep '"net_peer_ip":"127.0.0.1"' $EVT_FILE > /dev/null
+# ERR+=$?
 
-grep -E '"net_peer_port":"[0-9]+"' $EVT_FILE > /dev/null
-ERR+=$?
+# grep -E '"net_peer_port":"[0-9]+"' $EVT_FILE > /dev/null
+# ERR+=$?
 
-evalPayload
-ERR+=$?
+# evalPayload
+# ERR+=$?
 
-endtest
+# endtest
 
 
-starttest SSLSocketClient
-cd /opt/javassl
-ldscope java -Djavax.net.ssl.trustStore=/opt/tomcat/certs/tomcat.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=pkcs12 SSLSocketClient > /dev/null
-evaltest
-grep http-req $EVT_FILE > /dev/null
-ERR+=$?
+# starttest SSLSocketClient
+# cd /opt/javassl
+# ldscope java -Djavax.net.ssl.trustStore=/opt/tomcat/certs/tomcat.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=pkcs12 SSLSocketClient > /dev/null
+# SSL_CLIENT_PID=$!
+# evaltest
+# grep http-req $EVT_FILE > /dev/null
+# ERR+=$?
 
-grep http-resp $EVT_FILE > /dev/null
-ERR+=$?
+# grep http-resp $EVT_FILE > /dev/null
+# ERR+=$?
 
-grep '"net_peer_ip":"127.0.0.1"' $EVT_FILE > /dev/null
-ERR+=$?
+# grep '"net_peer_ip":"127.0.0.1"' $EVT_FILE > /dev/null
+# ERR+=$?
 
-grep -E '"net_peer_port":"[0-9]+"' $EVT_FILE > /dev/null
-ERR+=$?
+# grep -E '"net_peer_port":"[0-9]+"' $EVT_FILE > /dev/null
+# ERR+=$?
 
-evalPayload
-ERR+=$?
+# evalPayload
+# ERR+=$?
 
-endtest
+# endtest
 
-/opt/tomcat/bin/catalina.sh stop
-sleep 3
+# kill -9 ${SSL_CLIENT_PID}
+# /opt/tomcat/bin/catalina.sh stop
+# sleep 3
 
 
 if [ "x86_64" = "$(uname -m)" ]; then # x86_64 only
 #
-# Java HTTP Server
+# Java HTTP Server attach with load class
 #
-starttest java_http
+starttest java_ldscope_http_server
+cd /opt/java_http
+ldscope java SimpleHttpServer 2> /dev/null &
+HTTP_SERVER_PID=$!
+sleep 1
+evaltest
+curl http://localhost:8000/status
+sleep 5
+
+grep -q '"proc":"java"' $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -q http-req $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -q http-resp $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -q fs.open $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -q fs.close $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -q net.conn.open $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -q net.conn.close $EVT_FILE > /dev/null
+ERR+=$?
+
+kill -9 ${HTTP_SERVER_PID}
+
+endtest
+
+
+#
+# Java HTTP Server attach with load class
+#
+starttest java_http_attach_with_load_class
 cd /opt/java_http
 java SimpleHttpServer 2> /dev/null &
 HTTP_SERVER_PID=$!
@@ -178,6 +218,43 @@ ERR+=$?
 kill -9 ${HTTP_SERVER_PID}
 
 endtest
+
+starttest java_http_attach_after_load_class
+cd /opt/java_http
+java SimpleHttpServer 2> /dev/null &
+HTTP_SERVER_PID=$!
+sleep 1
+evaltest
+curl http://localhost:8000/status
+ldscope --attach ${HTTP_SERVER_PID}
+curl http://localhost:8000/status
+sleep 5
+
+grep -q '"proc":"java"' $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -q http-req $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -q http-resp $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -q fs.open $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -q fs.close $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -q net.conn.open $EVT_FILE > /dev/null
+ERR+=$?
+
+grep -q net.conn.close $EVT_FILE > /dev/null
+ERR+=$?
+
+kill -9 ${HTTP_SERVER_PID}
+
+endtest
+
 fi # x86_64 only
 
 unset SCOPE_PAYLOAD_ENABLE

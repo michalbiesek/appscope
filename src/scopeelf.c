@@ -222,7 +222,7 @@ doGotcha(struct link_map *lm, got_list_t *hook, Elf64_Rela *rel, Elf64_Sym *sym,
             if (!attach) *gfn = *gaddr;
             uint64_t prev = *gaddr;
             *gaddr = (uint64_t)hook->func;
-            scopeLog(CFG_LOG_DEBUG, "%s:%d sym=%s offset 0x%lx GOT entry %p saddr 0x%lx, prev=0x%lx, curr=%p",
+            scopeLog(CFG_LOG_TRACE, "%s:%d sym=%s offset 0x%lx GOT entry %p saddr 0x%lx, prev=0x%lx, curr=%p",
                         __FUNCTION__, __LINE__, hook->symbol, rel[i].r_offset, gaddr, saddr, prev, hook->func);
 
             if ((prot & PROT_WRITE) == 0) {

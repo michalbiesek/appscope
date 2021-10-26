@@ -78,7 +78,7 @@ services:
       dockerfile: ./java/Dockerfile
       args:
         JDK_IMAGE: openjdk:8
-        DNLD_HEXDUMP: apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y bsdmainutils
+        DNLD_HEXDUMP: apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y bsdmainutils curl gdb wget python3-pip file
     <<: *scope-common
   java9:
     image: ghcr.io/criblio/appscope-test-java9:${TAG:?Missing TAG environment variable}
@@ -111,7 +111,7 @@ services:
       dockerfile: ./java/Dockerfile
       args:
         JDK_IMAGE: openjdk:11
-        DNLD_HEXDUMP: apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y bsdmainutils
+        DNLD_HEXDUMP: apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y bsdmainutils curl gdb wget python3-pip file
     <<: *scope-common
 
   transport:

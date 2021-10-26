@@ -287,7 +287,7 @@ services:
       dockerfile: ./java/Dockerfile
       args:
         JDK_IMAGE: openjdk:7
-        DNLD_HEXDUMP: apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y bsdmainutils
+        DNLD_HEXDUMP: apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y bsdmainutils wget curl gdb python3-pip file
     <<: *scope-common
   java12:
     image: ghcr.io/criblio/appscope-test-java12:${TAG:?Missing TAG environment variable}
@@ -309,7 +309,7 @@ services:
       dockerfile: ./java/Dockerfile
       args:
         JDK_IMAGE: openjdk:13
-        DNLD_HEXDUMP: yum -y install util-linux
+        DNLD_HEXDUMP: yum -y install gdb util-linux wget curl python3-pip file
     <<: *scope-common
   java14:
     image: ghcr.io/criblio/appscope-test-java14:${TAG:?Missing TAG environment variable}

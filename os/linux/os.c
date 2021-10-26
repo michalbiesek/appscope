@@ -645,7 +645,7 @@ osGetPageProt(uint64_t addr)
 
         if ((addr >= addr1) && (addr < addr2)) {
             char *perms = end + 1;
-            scopeLog(CFG_LOG_DEBUG, "matched 0x%lx to 0x%lx-0x%lx\n\t%c%c%c", addr, addr1, addr2, perms[0], perms[1], perms[2]);
+            scopeLog(CFG_LOG_TRACE, "matched 0x%lx to 0x%lx-0x%lx\n\t%c%c%c", addr, addr1, addr2, perms[0], perms[1], perms[2]);
             prot = 0;
             prot |= perms[0] == 'r' ? PROT_READ : 0;
             prot |= perms[1] == 'w' ? PROT_WRITE : 0;

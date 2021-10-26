@@ -1208,7 +1208,7 @@ hookSharedObjs(struct dl_phdr_info *info, size_t size, void *data)
 
             if ((dlsym(handle, inject_hook_list[i].symbol)) &&
                 (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, 1) != -1)) {
-                    scopeLog(CFG_LOG_DEBUG, "\tGOT patched %s from shared obj %s",
+                    scopeLog(CFG_LOG_TRACE, "\tGOT patched %s from shared obj %s",
                              inject_hook_list[i].symbol, info->dlpi_name);
             }
         }
