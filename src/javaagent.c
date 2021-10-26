@@ -213,8 +213,8 @@ initSSLEngineImplGlobals(JNIEnv *jni)
 
     jclass socketChannelClass = (*jni)->FindClass(jni, SOCKET_CHANNEL_CLASS);
     if (socketChannelClassCopy) {
-        g_java.mid_SocketChannelImpl___read  = (*jni)->GetMethodID(jni, socketChannelClassCopy, "read", "(Ljava/nio/ByteBuffer;)I");
-        g_java.mid_SocketChannelImpl___write = (*jni)->GetMethodID(jni, socketChannelClassCopy, "write", "(Ljava/nio/ByteBuffer;)I");
+        g_java.mid_SocketChannelImpl___read  = (*jni)->GetMethodID(jni, socketChannelClassCopy, "__read", "(Ljava/nio/ByteBuffer;)I");
+        g_java.mid_SocketChannelImpl___write = (*jni)->GetMethodID(jni, socketChannelClassCopy, "__write", "(Ljava/nio/ByteBuffer;)I");
     } else {
         g_java.mid_SocketChannelImpl___read  = (*jni)->GetMethodID(jni, socketChannelClass, "__read", "(Ljava/nio/ByteBuffer;)I");
         g_java.mid_SocketChannelImpl___write = (*jni)->GetMethodID(jni, socketChannelClass, "__write", "(Ljava/nio/ByteBuffer;)I");
@@ -266,6 +266,23 @@ static jclass defineCopyClass(jvmtiEnv *jvmti_env, JNIEnv* jni, jobject loader, 
     unsigned char *dest_copy;
     (*jvmti_env)->Allocate(jvmti_env, copyClassInfo->length, &dest_copy);
     javaWriteClass(dest_copy, copyClassInfo);
+
+    int methodIndex = javaFindMethodIndex(copyClassInfo, "read", "(Ljava/nio/ByteBuffer;)I");
+    if (methodIndex == -1) {
+        javaDestroy(&copyClassInfo);
+        scopeLog(CFG_LOG_ERROR, "ERROR: 'read' method not found in copyClassInfo\n");
+        return localClassCopy;
+    }
+    javaCopyMethod(copyClassInfo, copyClassInfo->methods[methodIndex], "__read");
+
+    methodIndex = javaFindMethodIndex(copyClassInfo, "write", "(Ljava/nio/ByteBuffer;)I");
+    if (methodIndex == -1) {
+        javaDestroy(&copyClassInfo);
+        scopeLog(CFG_LOG_ERROR, "ERROR: 'write' method not found in copyClassInfo\n");
+        return localClassCopy;
+    }
+    javaCopyMethod(copyClassInfo, copyClassInfo->methods[methodIndex], "__write");
+
 
     localClassCopy = (*jni)->DefineClass(jni, class_name_copy, loader, (const signed char *)dest_copy, copyClassInfo->length);
     if (!localClassCopy) {
