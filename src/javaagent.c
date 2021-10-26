@@ -212,6 +212,9 @@ initSSLEngineImplGlobals(JNIEnv *jni)
     g_java.mid_SSLEngineImpl_getSession  = (*jni)->GetMethodID(jni, sslEngineImplClass, "getSession", "()Ljavax/net/ssl/SSLSession;");
 
     jclass socketChannelClass = (*jni)->FindClass(jni, SOCKET_CHANNEL_CLASS);
+//    g_java.mid_SocketChannelImpl___read  = (*jni)->GetMethodID(jni, socketChannelClass, "__read", "(Ljava/nio/ByteBuffer;)I");
+//    g_java.mid_SocketChannelImpl___write = (*jni)->GetMethodID(jni, socketChannelClass, "__write", "(Ljava/nio/ByteBuffer;)I");
+//    g_java.mid_SocketChannelImpl_getRemoteAddress  = (*jni)->GetMethodID(jni, socketChannelClass, "getRemoteAddress", "()Ljava/net/SocketAddress;");
     g_java.mid_SocketChannelImpl___read  = (*jni)->GetMethodID(jni, socketChannelClass, "__read", "(Ljava/nio/ByteBuffer;)I");
     g_java.mid_SocketChannelImpl___write = (*jni)->GetMethodID(jni, socketChannelClass, "__write", "(Ljava/nio/ByteBuffer;)I");
     g_java.mid_SocketChannelImpl_getRemoteAddress  = (*jni)->GetMethodID(jni, socketChannelClass, "getRemoteAddress", "()Ljava/net/SocketAddress;");
@@ -260,10 +263,10 @@ static jclass defineCopyClass(jvmtiEnv *jvmti_env, JNIEnv* jni, jobject loader, 
 
     localClassCopy = (*jni)->DefineClass(jni, class_name_copy, loader, (const signed char *)dest_copy, copyClassInfo->length);
     if (!localClassCopy) {
-        scopeLog(CFG_LOG_ERROR, "\nsocketChannelClassCopy error");
+        scopeLog(CFG_LOG_ERROR, "\nDefineClass error");
     }
 
-    scopeLog(CFG_LOG_ERROR, "defineCopyClass class_name_base (%s) class_name_copy(%s)", class_name_base, class_name_copy);
+    scopeLog(CFG_LOG_ERROR, "defineCopyClass class_name_base (%s) class_name_copy (%s)", class_name_base, class_name_copy);
     free(class_name_copy);
     javaDestroy(&copyClassInfo);
     free(copy_class_data);
@@ -294,12 +297,13 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
     unsigned char** new_class_data) 
 {
     if (name == NULL) return;
-    
+    scopeLog(CFG_LOG_INFO, "ClassFileLoadHookclass... %s", name);
+
     if (strcmp(name, APP_OUTPUT_STREAM_CLASS) == 0 || 
         strcmp(name, APP_OUTPUT_STREAM_ORACLE_CLASS) == 0 ||
         strcmp(name, APP_OUTPUT_STREAM_JDK11_CLASS) == 0) {
 
-        scopeLog(CFG_LOG_INFO, "installing Java SSL hooks for AppOutputStream class...");
+        scopeLog(CFG_LOG_INFO, "installing Java SSL hooks for AppOutputStream class... %s", name);
 
         java_class_t *classInfo = javaReadClass(class_data);
 
@@ -325,7 +329,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
         strcmp(name, APP_INPUT_STREAM_ORACLE_CLASS) == 0 ||
         strcmp(name, APP_INPUT_STREAM_JDK11_CLASS) == 0) {
 
-        scopeLog(CFG_LOG_INFO, "installing Java SSL hooks for AppInputStream class...");
+        scopeLog(CFG_LOG_INFO, "installing Java SSL hooks for AppInputStream class... %s", name);
 
         java_class_t *classInfo = javaReadClass(class_data);
 
@@ -350,7 +354,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
     if (strcmp(name, SSL_ENGINE_CLASS) == 0 || 
         strcmp(name, SSL_ENGINE_ORACLE_CLASS) == 0) {
         
-        scopeLog(CFG_LOG_INFO, "installing Java SSL hooks for SSLEngineImpl class...");
+        scopeLog(CFG_LOG_INFO, "installing Java SSL hooks for SSLEngineImpl class... %s", name);
 
         java_class_t *classInfo = javaReadClass(class_data);
 
@@ -388,7 +392,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
         socketChannelClassCopy = defineCopyClass(jvmti_env, jni, loader, class_data_len, class_data, name);
         if (!socketChannelClassCopy) {
             javaDestroy(&classInfo);
-            scopeLog(CFG_LOG_ERROR, "ERRO: 'defineCopyClass' error %s", name);
+            scopeLog(CFG_LOG_ERROR, "ERROR: 'defineCopyClass' error %s", name);
             return;
         }
 
@@ -422,7 +426,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
     if (strcmp(name, DIRECT_BYTE_BUFFER_CLASS) == 0 ||
         strcmp(name, DIRECT_BYTE_BUFFER_R_CLASS) == 0) {
 
-        scopeLog(CFG_LOG_INFO, "installing Java SSL hooks for java.nio.DirectByteBuffer class...");
+        scopeLog(CFG_LOG_INFO, "installing Java SSL hooks for java.nio.DirectByteBuffer class... %s", name);
         java_class_t *classInfo = javaReadClass(class_data);
 
         // add a private field which will hold the fd used to read/write data for that buffer
@@ -638,6 +642,15 @@ RetransformLoadedClasses(jvmtiEnv *env, JavaVM *jvm) {
             logJvmtiError(env, error, "GetClassSignature() failed");
             return JNI_ERR;
         }
+        if (strstr(sig, SOCKET_CHANNEL_CLASS)) {
+            scopeLog(CFG_LOG_ERROR, "\nBefore calling retransform class %s", sig);
+            error = (*env)->RetransformClasses(env, 1, &classes[i]);
+            if (error != JVMTI_ERROR_NONE) {
+                logJvmtiError(env, error, "RetransformClasses() failed");
+                return JNI_ERR;
+            }
+        }
+
         (*env)->Deallocate(env, (unsigned char*)sig);
     }
 
