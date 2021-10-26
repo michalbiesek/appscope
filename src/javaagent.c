@@ -47,6 +47,8 @@ typedef struct {
 static java_global_t g_java = {0};
 
 #define SOCKET_CHANNEL_CLASS ("sun/nio/ch/SocketChannelImpl")
+static jclass socketChannelClassCopy;
+
 #define SSL_ENGINE_CLASS ("sun/security/ssl/SSLEngineImpl")
 #define SSL_ENGINE_ORACLE_CLASS ("com/sun/net/ssl/internal/ssl/SSLEngineImpl")
 #define APP_INPUT_STREAM_CLASS ("sun/security/ssl/AppInputStream")
@@ -236,6 +238,49 @@ initSSLEngineImplGlobals(JNIEnv *jni)
     }
 }
 
+static jclass defineCopyClass(jvmtiEnv *jvmti_env, JNIEnv* jni, jobject loader, jint class_data_len, const unsigned char* class_data, const char* class_name_base)
+{
+    int originalNameIndex;
+    jclass localClassCopy = NULL;
+
+    unsigned char *copy_class_data = (unsigned char *)malloc(class_data_len);
+    memcpy(copy_class_data, class_data, class_data_len);
+    java_class_t *copyClassInfo = javaReadClass(copy_class_data);
+    if (!copyClassInfo) {
+        scopeLog(CFG_LOG_ERROR, "copyClassInfo NULL");
+        return localClassCopy;
+    }
+    originalNameIndex = javaFindClassNameIndex(copyClassInfo, class_name_base);
+    javaModifyUtf8String(copyClassInfo, originalNameIndex);
+    char *class_name_copy = javaGetUtf8String(copyClassInfo, originalNameIndex);
+
+    unsigned char *dest_copy;
+    (*jvmti_env)->Allocate(jvmti_env, copyClassInfo->length, &dest_copy);
+    javaWriteClass(dest_copy, copyClassInfo);
+
+    localClassCopy = (*jni)->DefineClass(jni, class_name_copy, loader, (const signed char *)dest_copy, copyClassInfo->length);
+    if (!localClassCopy) {
+        scopeLog(CFG_LOG_ERROR, "\nsocketChannelClassCopy error");
+    }
+
+    scopeLog(CFG_LOG_ERROR, "defineCopyClass class_name_base (%s) class_name_copy(%s)", class_name_base, class_name_copy);
+    free(class_name_copy);
+    javaDestroy(&copyClassInfo);
+    free(copy_class_data);
+    return localClassCopy;
+}
+
+// Current mechanism is based on emplace:
+// * Find and copy the expected method,
+// * Add it in the end,
+// * Modify existing method to a native one,
+// * Call the original method after injected one,
+
+// Possible change - modify existing mechanism
+// * Copy the whole class
+// * Modify existing method to a native one,
+// * Call the original method from newly copied class after injected one,
+
 void JNICALL 
 ClassFileLoadHook(jvmtiEnv *jvmti_env,
     JNIEnv* jni,
@@ -339,6 +384,13 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
     if (strcmp(name, SOCKET_CHANNEL_CLASS) == 0) {
         scopeLog(CFG_LOG_ERROR, "installing Java SSL hooks for SocketChannelImpl class... %s", name);
         java_class_t *classInfo = javaReadClass(class_data);
+
+        socketChannelClassCopy = defineCopyClass(jvmti_env, jni, loader, class_data_len, class_data, name);
+        if (!socketChannelClassCopy) {
+            javaDestroy(&classInfo);
+            scopeLog(CFG_LOG_ERROR, "ERRO: 'defineCopyClass' error %s", name);
+            return;
+        }
 
         int methodIndex = javaFindMethodIndex(classInfo, "read", "(Ljava/nio/ByteBuffer;)I");
         if (methodIndex == -1) {
@@ -568,13 +620,38 @@ Java_com_sun_net_ssl_internal_ssl_AppInputStream_read(JNIEnv *jni, jobject obj, 
     return Java_sun_security_ssl_AppInputStream_read(jni, obj, buf, offset, len);
 }
 
-JNIEXPORT jint JNICALL 
-Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) 
+static jint
+RetransformLoadedClasses(jvmtiEnv *env, JavaVM *jvm) {
+    jint        class_count = 0;
+    jclass      *classes;
+
+    jvmtiError error = (*env)->GetLoadedClasses(env, &class_count, &classes);
+
+    if (error != JVMTI_ERROR_NONE) {
+        logJvmtiError(env, error, "GetLoadedClasses() failed");
+        return JNI_ERR;
+    }
+    for (jint i = 0; i < class_count; ++i) {
+        char *sig = NULL;
+        error = (*env)->GetClassSignature(env, classes[i], &sig, NULL);
+        if (error != JVMTI_ERROR_NONE) {
+            logJvmtiError(env, error, "GetClassSignature() failed");
+            return JNI_ERR;
+        }
+        (*env)->Deallocate(env, (unsigned char*)sig);
+    }
+
+    (*env)->Deallocate(env, (unsigned char*)classes);
+
+    scopeLog(CFG_LOG_ERROR, "\nRetransformLoadedClasses Finished");
+    return JNI_OK;
+}
+
+static jint
+initAgent(JavaVM *jvm, int is_attaching)
 {
     jvmtiError error;
     jvmtiEnv *env;
-
-    scopeLog(CFG_LOG_INFO, "Initializing Java agent");
 
     jint result = (*jvm)->GetEnv(jvm, (void **) &env, JVMTI_VERSION_1_0);
     if (result != 0) {
@@ -584,8 +661,22 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved)
 
     jvmtiCapabilities capabilities;
     memset(&capabilities,0, sizeof(capabilities));
-
     capabilities.can_generate_all_class_hook_events = 1;
+
+    if (is_attaching == TRUE) {
+        jvmtiCapabilities initialCapabilities;
+        error = (*env)->GetPotentialCapabilities(env, &initialCapabilities);
+	    if (error != JVMTI_ERROR_NONE) {
+            logJvmtiError(env, error, "GetPotentialCapabilities");
+            return JNI_ERR;
+        }
+        if (initialCapabilities.can_retransform_classes != 1) {
+            logJvmtiError(env, error, "Missing retransform capability");
+            return JNI_ERR;
+        }
+        capabilities.can_retransform_classes = 1;
+    }
+
     error = (*env)->AddCapabilities(env, &capabilities);
     if (error != JVMTI_ERROR_NONE) {
         logJvmtiError(env, error, "AddCapabilities");
@@ -607,13 +698,21 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved)
         return JNI_ERR;
     }
 
-    return JNI_OK;
+    return (is_attaching == TRUE) ? RetransformLoadedClasses(env, jvm) : JNI_OK;
+}
+
+JNIEXPORT jint JNICALL 
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) 
+{
+    scopeLog(CFG_LOG_INFO, "Initializing Java agent - Agent_OnLoad");
+    return initAgent(jvm, FALSE);
 }
 
 JNIEXPORT jint JNICALL 
 Agent_OnAttach(JavaVM *jvm, char *options, void *reserved) 
 {
-    return Agent_OnLoad(jvm, options, reserved);
+    scopeLog(CFG_LOG_INFO, "Initializing Java agent - Agent_OnAttach");
+    return initAgent(jvm, TRUE);
 }
 
 // This overrides a weak definition in src/linux/os.c
