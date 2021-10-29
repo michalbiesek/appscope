@@ -11,7 +11,7 @@ ENV PATH="${PATH}:${CATALINA_HOME}/bin"
 
 ADD https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_MINOR_VERSION}/bin/apache-tomcat-${TOMCAT_MINOR_VERSION}.tar.gz /apache-tomcat.tar.gz
 
-# for hexdump.  java 11 and under seems to use apt-get, 12 and 13 uses yum, 14 uses microdnf
+# for hexdump.  java 11 and under seems to use apt-get, 12 and 13 uses yum, 14, 15, 16, 17 uses microdnf
 RUN eval $DNLD_HEXDUMP
 
 RUN tar zxf apache-tomcat.tar.gz && \
