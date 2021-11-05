@@ -179,6 +179,8 @@ set_library(void)
                         char newdep[PATH_MAX];
                         size_t newdep_len;
                         if (get_dir("/lib/ld-musl", newdep, sizeof(newdep)) == -1) break;
+                        fprintf(stderr, "Function: set_library, TAG:DT_NEEDED, value found:%s len %zu \n", depstr, strlen(depstr));
+                        fprintf(stderr, "Function: set_library, TAG:DT_NEEDED, new value:%s len %zu \n", newdep, strlen(newdep));
                         newdep_len = strlen(newdep);
                         if (strlen(depstr) >= newdep_len) {
                             strncpy(depstr, newdep, newdep_len + 1);
@@ -283,6 +285,8 @@ set_loader(const char *exe)
 
             closedir(dirp);
             dir_len = strlen(dir);
+            fprintf(stderr, "Function: set_loader, PT_INTERP value found: %s len %zu \n", exld, strlen(exld));
+            fprintf(stderr, "Function: set_loader, PT_INTERP new value: %s len %zu \n", dir, strlen(dir));
             if (name && (strlen(exld) >= dir_len)) {
                 if (g_debug) printf("%s:%d exe ld.so: %s to %s\n", __FUNCTION__, __LINE__, exld, dir);
                 strncpy(exld, dir, dir_len + 1);
