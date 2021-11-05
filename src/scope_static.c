@@ -140,6 +140,8 @@ set_library(void)
         return -1;
     }
 
+    fprintf(stderr, "\nset_library %s", libpath);
+
     buf = mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
                PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, (off_t)NULL);
     if (buf == MAP_FAILED) {
@@ -175,10 +177,13 @@ set_library(void)
             for (dyn = (Elf64_Dyn *)((char *)buf + sections[i].sh_offset); dyn != DT_NULL; dyn++) {
                 if (dyn->d_tag == DT_NEEDED) {
                     char *depstr = (char *)(strtab + dyn->d_un.d_val);
+                    fprintf(stderr, "Function: set_library, depstr: %s len %zu \n", depstr, strlen(depstr));
                     if (depstr && strstr(depstr, "ld-linux")) {
                         char newdep[PATH_MAX];
                         size_t newdep_len;
                         if (get_dir("/lib/ld-musl", newdep, sizeof(newdep)) == -1) break;
+                        fprintf(stderr, "Function: set_library, TAG:DT_NEEDED, value found: %s len %zu \n", depstr, strlen(depstr));
+                        fprintf(stderr, "Function: set_library, TAG:DT_NEEDED, new value: %s len %zu \n", newdep, strlen(newdep));
                         newdep_len = strlen(newdep);
                         if (strlen(depstr) >= newdep_len) {
                             strncpy(depstr, newdep, newdep_len + 1);
@@ -193,6 +198,8 @@ set_library(void)
     }
 
     if (found) {
+        fprintf(stderr, "\nset_library found %d %s", found, libpath);
+
         if (close(fd) == -1) {
             munmap(buf, sbuf.st_size);
             return -1;
@@ -221,6 +228,7 @@ set_library(void)
 static int
 set_loader(const char *exe)
 {
+    fprintf(stderr, "Function: set_loader called %s len %zu \n", exe, strlen(exe));
     int i, fd, found, name;
     struct stat sbuf;
     char *buf;
@@ -259,6 +267,7 @@ set_loader(const char *exe)
             struct dirent *entry;
             char dir[PATH_MAX];
             size_t dir_len;
+            fprintf(stderr, "Function: set_loader exld %s len %zu \n", exld, strlen(exld));
 
             if (strstr(exld, "ld-musl") != NULL) {
                 close(fd);
@@ -275,6 +284,7 @@ set_loader(const char *exe)
             while ((entry = readdir(dirp)) != NULL) {
                 if ((entry->d_type != DT_DIR) &&
                     (strstr(entry->d_name, "ld-musl"))) {
+                    fprintf(stderr, "Function: ld-musl found\n");
                     strncat(dir, entry->d_name, strlen(entry->d_name) + 1);
                     name = 1;
                     break;
@@ -283,6 +293,8 @@ set_loader(const char *exe)
 
             closedir(dirp);
             dir_len = strlen(dir);
+            fprintf(stderr, "Function: set_loader, PT_INTERP value found: %s len %zu \n", exld, strlen(exld));
+            fprintf(stderr, "Function: set_loader, PT_INTERP new value: %s len %zu \n", dir, strlen(dir));
             if (name && (strlen(exld) >= dir_len)) {
                 if (g_debug) printf("%s:%d exe ld.so: %s to %s\n", __FUNCTION__, __LINE__, exld, dir);
                 strncpy(exld, dir, dir_len + 1);
