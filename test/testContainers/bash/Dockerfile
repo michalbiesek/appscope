@@ -18,6 +18,16 @@ COPY ./bash/runbashnomem.sh /mybin
 ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
 COPY scope-profile.sh /etc/profile.d/scope.sh
 COPY gdbinit /root/.gdbinit
+ENV SCOPE_LOG_LEVEL=error
+ENV SCOPE_METRIC_VERBOSITY=4
+ENV SCOPE_EVENT_LOGFILE=true
+ENV SCOPE_EVENT_CONSOLE=true
+ENV SCOPE_EVENT_METRIC=true
+ENV SCOPE_EVENT_HTTP=true
+ENV SCOPE_EVENT_NET=true
+ENV SCOPE_EVENT_FS=true
+ENV SCOPE_LOG_DEST=file:///opt/test-runner/logs/scope.log
+ENV SCOPE_EVENT_DEST=file:///opt/test-runner/logs/events.log
 
 RUN  mkdir /usr/local/scope && \
      mkdir /usr/local/scope/bin && \

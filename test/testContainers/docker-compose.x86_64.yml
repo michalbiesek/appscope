@@ -48,16 +48,6 @@ services:
       - 8000:8000
     <<: *scope-common
 
-  # skipped on ARM - not supported yet
-  bash:
-    image: ghcr.io/criblio/appscope-test-bash:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/criblio/appscope-test-bash:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./bash/Dockerfile
-    <<: *scope-common
-
   # skipped on ARM - no attach support yet
   cli:
     image: ghcr.io/criblio/appscope-test-cli:${TAG:?Missing TAG environment variable}
