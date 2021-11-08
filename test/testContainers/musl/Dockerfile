@@ -2,9 +2,17 @@ FROM alpine:latest
 
 RUN apk add bash cmake curl file gcc gdb linux-headers make musl-dbg musl-dev python3 py-pip wget
 
+RUN mkdir -p /opt/musl && \
+    cd /opt/musl/ && \
+    wget https://musl.libc.org/releases/musl-1.2.2.tar.gz -O - | tar -xz --strip-components=1 && \
+    ./configure --syslibdir=/opt/linker_alternative_path && \
+    make && \
+    make install
+
 RUN mkdir -p /opt/fwrite
 COPY ./musl/fwrite.c /opt/fwrite/fwrite.c
 RUN gcc -o /opt/fwrite/fwrite /opt/fwrite/fwrite.c
+RUN gcc -Wl,--dynamic-linker=/opt/linker_alternative_path/ld-musl-x86_64.so.1 -o /opt/fwrite/fwrite_alternative /opt/fwrite/fwrite.c
 
 ENV SCOPE_LOG_LEVEL=error
 ENV SCOPE_METRIC_VERBOSITY=4
@@ -25,6 +33,11 @@ COPY gdbinit /root/.gdbinit
 RUN wget -O ~/.gdbinit-gef.py -q https://github.com/hugsy/gef/raw/master/gef.py && \
     echo source ~/.gdbinit-gef.py >> /root/.gdbinit
 RUN pip3 install capstone unicorn ropper
+
+
+# RUN touch /etc/ld-musl-x86_64.path
+# RUN echo "/opt/linker_alternative_path:/lib:/usr/local/lib:/usr/lib" >> /etc/ld-musl-x86_64.path
+
 
 RUN  mkdir /usr/local/scope && \
      mkdir /usr/local/scope/bin && \
