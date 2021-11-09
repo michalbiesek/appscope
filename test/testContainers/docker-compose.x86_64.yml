@@ -257,53 +257,6 @@ services:
       dockerfile: ./gogen/Dockerfile
     <<: *scope-common
 
-  # no arm64 images
-  java7:
-    image: ghcr.io/criblio/appscope-test-java7:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/criblio/appscope-test-java7:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./java/Dockerfile
-      args:
-        JDK_IMAGE: openjdk:7
-        DNLD_HEXDUMP: apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y bsdmainutils
-    <<: *scope-common
-  java12:
-    image: ghcr.io/criblio/appscope-test-java12:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/criblio/appscope-test-java12:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./java/Dockerfile
-      args:
-        JDK_IMAGE: openjdk:12
-        DNLD_HEXDUMP: yum -y install util-linux
-    <<: *scope-common
-  java13:
-    image: ghcr.io/criblio/appscope-test-java13:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/criblio/appscope-test-java13:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./java/Dockerfile
-      args:
-        JDK_IMAGE: openjdk:13
-        DNLD_HEXDUMP: yum -y install util-linux
-    <<: *scope-common
-  java14:
-    image: ghcr.io/criblio/appscope-test-java14:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/criblio/appscope-test-java14:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./java/Dockerfile
-      args:
-        JDK_IMAGE: openjdk:14
-        DNLD_HEXDUMP: microdnf install util-linux
-    <<: *scope-common
-
-
   # Pulls x86 RPM from Cribl CDN
   oracle-java7:
     image: ghcr.io/criblio/appscope-test-oracle-java7:${TAG:?Missing TAG environment variable}
