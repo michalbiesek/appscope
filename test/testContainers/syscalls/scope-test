@@ -1,4 +1,5 @@
 #!/bin/bash
+/usr/local/scope/bin/ldscope --patch /usr/local/scope/lib/libscope.so
 exec /opt/test-runner/bin/python \
     /opt/test-runner/app.py \
     -t syscalls \
