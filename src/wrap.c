@@ -4419,6 +4419,20 @@ sendto(int sockfd, const void *buf, size_t len, int flags,
     return internal_sendto(sockfd, buf, len, flags, dest_addr, addrlen);
 }
 
+struct msghdr_musl
+  {
+    void *msg_name;
+    socklen_t msg_namelen;
+
+    struct iovec *msg_iov;
+    size_t msg_iovlen;
+    int __pad1;
+    void *msg_control;
+    size_t msg_controllen;
+    socklen_t __pad2;
+    int msg_flags;
+  };
+
 EXPORTON ssize_t
 sendmsg(int sockfd, const struct msghdr *msg, int flags)
 {
@@ -4428,6 +4442,20 @@ sendmsg(int sockfd, const struct msghdr *msg, int flags)
     rc = g_fn.sendmsg(sockfd, msg, flags);
     if (rc != -1) {
         scopeLog(CFG_LOG_TRACE, "fd:%d sendmsg", sockfd);
+        struct msghdr copy_hdr;
+        copy_hdr.msg_name = msg->msg_name;
+        copy_hdr.msg_namelen = msg->msg_namelen;
+        copy_hdr.msg_iov = msg->msg_iov;
+        copy_hdr.msg_iovlen = msg->msg_iovlen;
+        copy_hdr.msg_control = msg->msg_control;
+        copy_hdr.msg_controllen = msg->msg_controllen;
+        copy_hdr.msg_flags = msg->msg_flags;
+
+        if (g_ismusl == TRUE) {
+            copy_hdr.msg_iovlen &= 0xFFFFFFFF;  //change only 
+            copy_hdr.msg_controllen &= 0xFFFFFFFF;
+            scopeLogError("test");
+        }
 
         // For UDP connections the msg is a remote addr
         if (msg && !sockIsTCP(sockfd)) {
@@ -4444,7 +4472,7 @@ sendmsg(int sockfd, const struct msghdr *msg, int flags)
             getDNSName(sockfd, msg->msg_iov->iov_base, msg->msg_iov->iov_len);
         }
 
-        doSend(sockfd, rc, msg, rc, MSG);
+        doSend(sockfd, rc, &copy_hdr, rc, MSG);
     } else {
         setRemoteClose(sockfd, errno);
         doUpdateState(NET_ERR_RX_TX, sockfd, (ssize_t)0, "sendmsg", "nopath");
@@ -4598,6 +4626,10 @@ recvmsg(int sockfd, struct msghdr *msg, int flags)
     if (rc != -1) {
         scopeLog(CFG_LOG_TRACE, "fd:%d recvmsg", sockfd);
 
+        if (g_ismusl == TRUE) {
+             //convert msg format
+
+        }
         // For UDP connections the msg is a remote addr
         if (msg) {
             if (msg->msg_namelen >= sizeof(struct sockaddr_in6)) {
