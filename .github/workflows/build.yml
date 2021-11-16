@@ -411,7 +411,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update Test Image
-        run: make -C test/testContainers ${{ matrix.test }}-build
+        uses: nick-invision/retry@v2
+        with:
+          timeout_seconds: 30
+          max_attempts: 5
+          command: make -C test/testContainers ${{ matrix.test }}-build
 
       - name: Run Test
         run: make -C test/testContainers ${{ matrix.test }} NOBUILD=1
@@ -452,7 +456,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update Test Image
-        run: make -C test/testContainers ${{ matrix.test }}-build
+        uses: nick-invision/retry@v2
+        with:
+          timeout_seconds: 30
+          max_attempts: 5
+          command: make -C test/testContainers ${{ matrix.test }}-build
 
       - name: Run Test
         run: make -C test/testContainers ${{ matrix.test }} NOBUILD=1
