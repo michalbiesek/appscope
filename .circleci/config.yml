@@ -1,0 +1,30 @@
+version: 2.1
+
+jobs:
+  arm-build:
+    machine:
+      image: ubuntu-2004:202101-01
+      docker_layer_caching: true
+    resource_class: arm.medium
+    steps:
+      - checkout
+      - run:
+          name: "Running build"
+          command: make build
+
+  arm-test:
+    machine:
+      image: ubuntu-2004:202101-01
+      docker_layer_caching: true
+    resource_class: arm.medium
+    steps:
+      - checkout
+      - run:
+          name: "Building tests"
+          command: make -C test/testContainers all
+
+workflows:
+  build_and_test:
+    jobs:
+      - arm-build
+      - arm-test
