@@ -1,0 +1,42 @@
+version: 2.1
+
+jobs:
+  arm-build:
+    machine:
+      image: ubuntu-2004:202101-01
+      docker_layer_caching: true
+    resource_class: arm.medium
+    steps:
+      - checkout
+      - run:
+          name: "Running build"
+          command: make build
+      - run:
+          name: "Print architecture info"
+          command: uname -a
+  
+  arm-test:
+    machine:
+      image: ubuntu-2004:202101-01
+      docker_layer_caching: true
+    resource_class: arm.medium
+    steps:
+      - checkout
+      - run:
+          name: "Building tests"
+          command: make -C test/testContainers all
+
+workflows:
+  version: 2
+  arm-workflow:
+    jobs:
+      - arm-build:
+          filters:
+             branches:
+               only: test-pr
+      - arm-test:
+          requires:
+          - arm-build
+          filters:
+             branches:
+               only: test-pr
