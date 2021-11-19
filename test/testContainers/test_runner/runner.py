@@ -24,9 +24,13 @@ class Runner:
         self.__watcher = watcher
         self.__test_execution_validators = []
         self.__test_set_validators = []
+        self.__test_delay = 1
 
     def add_tests(self, tests: List[Test]):
         self.__tests.extend(tests)
+
+    def update_test_delay(self, delay :float):
+        self.__test_delay = delay
 
     def add_test_execution_validators(self, test_execution_validators: List[TestExecutionValidator]):
         self.__test_execution_validators.extend(test_execution_validators)
@@ -101,7 +105,7 @@ class Runner:
                 if data:
                     logging.info(data)
 
-            time.sleep(1)
+            time.sleep(self.__test_delay)
             scope_messages = self.__collector.get_all()
             logging.info(f"Received {len(scope_messages)} messages from scope")
             if len(scope_messages) > 0: logging.debug(f"Last 10 messages:\n {''.join(scope_messages[-9:])}")

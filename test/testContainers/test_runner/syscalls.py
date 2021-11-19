@@ -112,3 +112,4 @@ def configure(runner: Runner, app_config):
         tests = locate_tests(home_dir, included_tests, excluded_tests)
 
         runner.add_tests(tests)
+        runner.update_test_delay(0.01)
