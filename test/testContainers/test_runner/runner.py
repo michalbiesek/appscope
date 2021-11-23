@@ -101,7 +101,7 @@ class Runner:
                 if data:
                     logging.info(data)
 
-            self.__collector.wait()
+            time.sleep(1)
             scope_messages = self.__collector.get_all()
             logging.info(f"Received {len(scope_messages)} messages from scope")
             if len(scope_messages) > 0: logging.debug(f"Last 10 messages:\n {''.join(scope_messages[-9:])}")
