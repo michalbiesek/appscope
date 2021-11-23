@@ -1,6 +1,7 @@
 #!/bin/bash
 exec /opt/test-runner/bin/python \
     /opt/test-runner/app.py \
+    -v \
     -t syscalls \
     -l /opt/test-runner/logs/ \
     -s /usr/local/scope/lib/libscope.so \
