@@ -4,11 +4,26 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update \
     && apt install -y \
       binutils \
+      firefox \
+      fonts-liberation \
+      libcurl4 \
+      libdrm2 \
+      libgbm1 \
+      libnspr4 \
+      libnss3 \
       musl-dev \
+      xdg-utils \
+      wget \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /opt/extract_scope && \
-    mkdir -p /opt/patch_libscope
+    mkdir -p /opt/patch_libscope && \
+    mkdir -p /opt/test
+
+RUN cd opt/test && \
+    wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+    apt install ./google-chrome-stable_current_amd64.deb && \
+    rm google-chrome-stable_current_amd64.deb
 
 ENV SCOPE_LOG_LEVEL=error
 ENV SCOPE_METRIC_VERBOSITY=4

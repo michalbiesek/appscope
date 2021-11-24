@@ -103,6 +103,26 @@ fi
 
 endtest
 
+#
+# firefox test
+#
+
+starttest firefox
+
+scope run -- firefox --headless &
+sleep 1
+
+endtest
+
+#
+# chrome test
+#
+
+starttest chrome
+
+
+endtest
+
 if (( $FAILED_TEST_COUNT == 0 )); then
     echo ""
     echo ""
