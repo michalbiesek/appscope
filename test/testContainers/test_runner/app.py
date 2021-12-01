@@ -17,10 +17,17 @@ from watcher import TestWatcher
 
 
 def main():
+    target_applications = {'nginx': nginx,
+                           'splunk': splunk,
+                           'cribl': cribl,
+                           'syscalls': syscalls,
+                           'elastic': elastic,
+                           'kafka': kafka_test}
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
     parser.add_argument("-t", "--target", help="target application to test",
-                        choices=["nginx", "splunk", "cribl", "syscalls", "elastic", "kafka"],
+                        choices=target_applications.keys(),
                         required=True)
     parser.add_argument("-id", "--execution_id", help="execution id")
     parser.add_argument("-l", "--logs_path", help="path to store the execution results and logs", default="/tmp/")
@@ -52,18 +59,7 @@ def main():
         try:
             runner = Runner(test_watcher, scope_data_collector)
             runner.add_test_set_validators(default_test_set_validators)
-            if args.target == 'nginx':
-                nginx.configure(runner, args)
-            if args.target == 'splunk':
-                splunk.configure(runner, args)
-            if args.target == 'cribl':
-                cribl.configure(runner, args)
-            if args.target == 'syscalls':
-                syscalls.configure(runner, args)
-            if args.target == 'elastic':
-                elastic.configure(runner, args)
-            if args.target == 'kafka':
-                kafka_test.configure(runner, args)
+            target_applications[args.target].configure(runner, args)
             runner.run()
             test_watcher.finish()
         except Exception as e:
