@@ -213,7 +213,7 @@ nothingCrashesBeforeAnyInit(void** state)
     doDupFile(20, 21, "dup");
     doDupSock(22, 23);
     doDup(24, 0, "dupFunc", 1);
-    doDup2(25, 26, 0, "dup2Func");
+    doDup2(25, 26, 0, "dup2Func", 0);
     doClose(26, "closeFunc");
     doOpen(27, "/the/file/path", FD, "openFunc");
     doSendFile(28, 29, 23548, 0, "sendFileFunc");

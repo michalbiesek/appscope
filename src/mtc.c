@@ -83,7 +83,7 @@ int
 mtcConnect(mtc_t *mtc)
 {
     if (!mtc || (cfgLogStream(g_cfg.staticfg))) return 0;
-    return transportConnect(mtc->transport);
+    return transportConnect(mtc->transport, "mtcConnect");
 }
 
 int

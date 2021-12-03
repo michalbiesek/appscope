@@ -245,7 +245,7 @@ int get_port_net(net_info *, int, control_type_t);
 bool checkNetEntry(int);
 bool checkFSEntry(int);
 net_info *getNetEntry(int);
-fs_info *getFSEntry(int);
+fs_info *getFSEntry(int, const char*);
 bool addrIsNetDomain(struct sockaddr_storage *);
 bool addrIsUnixDomain(struct sockaddr_storage *);
 sock_summary_bucket_t getNetRxTxBucket(net_info *);

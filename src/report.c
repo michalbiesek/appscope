@@ -214,7 +214,7 @@ sendEvent(mtc_t *mtc, event_t *event)
     cmdSendEvent(g_ctl, event, getTime(), &g_proc);
 
     if (cmdSendMetric(mtc, event) == -1) {
-        scopeLogError("ERROR: sendEvent:cmdSendMetric");
+        // scopeLogError("ERROR: sendEvent:cmdSendMetric");
     }
 }
 
@@ -1583,7 +1583,7 @@ doErrorMetric(metric_t type, control_type_t source,
 
         event_t fsErrMetric = INT_EVENT(metric, value->mtc, DELTA, fields);
         if (cmdSendMetric(g_mtc, &fsErrMetric)) {
-            scopeLogError("ERROR: doErrorMetric:FS_ERR:cmdSendMetric");
+            // scopeLogError("ERROR: doErrorMetric:FS_ERR:cmdSendMetric");
         }
         atomicSwapU64(&value->mtc, 0);
         break;
@@ -2475,7 +2475,7 @@ doTotalNetRxTx(metric_t type)
             };
             event_t evt = INT_EVENT(metric, (*value)[bucket].mtc, DELTA, fields);
             if (cmdSendMetric(g_mtc, &evt)) {
-                scopeLogError("%s", err_str);
+                // scopeLogError("%s", err_str);
             }
         }
 
@@ -2583,7 +2583,7 @@ doTotal(metric_t type)
     };
     event_t evt = INT_EVENT(metric, value->mtc, aggregation_type, fields);
     if (cmdSendMetric(g_mtc, &evt)) {
-        scopeLogError("%s", err_str);
+        // scopeLogError("%s", err_str);
     }
 
     // Reset the info we tried to report (if it's not a gauge)
@@ -2653,7 +2653,7 @@ doTotalDuration(metric_t type)
     };
     event_t evt = INT_EVENT(metric, dur, aggregation_type, fields);
     if (cmdSendMetric(g_mtc, &evt)) {
-        scopeLogError("%s", err_str);
+        // scopeLogError("%s", err_str);
     }
 
     // Reset the info we tried to report

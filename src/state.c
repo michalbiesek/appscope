@@ -1311,10 +1311,13 @@ getNetEntry(int fd)
 }
 
 fs_info *
-getFSEntry(int fd)
+getFSEntry(int fd, const char* func_name)
 {
     if (g_fsinfo && (fd >= 0) && (fd < g_numFSinfo) &&
         g_fsinfo[fd].active) {
+        if (fd == 3) {
+        //   scopeLogInfo("getFSEntry with Active fd=%d func_name=%s", fd, func_name);
+        }
         return &g_fsinfo[fd];
     }
 
@@ -1338,7 +1341,7 @@ getFSEntry(int fd)
                 DBG(NULL);
                 return NULL;
         }
-
+        // scopeLogInfo("getFSEntry with doOpen fd=%d func_name=%s", fd, func_name);
         doOpen(fd, name, FD, description);
 
         return &g_fsinfo[fd];
@@ -1360,7 +1363,7 @@ setRemoteClose(int sd, int err)
 fs_content_type_t
 getFSContentType(int fd)
 {
-    struct fs_info_t *fs = getFSEntry(fd);
+    struct fs_info_t *fs = getFSEntry(fd, "getFSContentType");
     if (fs) {
        return fs->content_type;
     }
@@ -1371,7 +1374,7 @@ getFSContentType(int fd)
 void
 setFSContentType(int fd, fs_content_type_t type)
 {
-    struct fs_info_t *fs = getFSEntry(fd);
+    struct fs_info_t *fs = getFSEntry(fd, "setFSContentType");
     if (fs) {
         fs->content_type = type;
     } else {
@@ -2055,7 +2058,7 @@ reportFD(int fd, control_type_t source)
         }
     }
 
-    struct fs_info_t *finfo = getFSEntry(fd);
+    struct fs_info_t *finfo = getFSEntry(fd, "reportFD");
     if (finfo) {
         finfo->fd = fd;
         if (!g_summary.fs.read_write) {
@@ -2082,7 +2085,7 @@ void
 doRead(int fd, uint64_t initialTime, int success, const void *buf, ssize_t bytes,
        const char *func, src_data_t src, size_t cnt)
 {
-    struct fs_info_t *fs = getFSEntry(fd);
+    struct fs_info_t *fs = getFSEntry(fd, "doRead");
     struct net_info_t *net = getNetEntry(fd);
 
     if (success) {
@@ -2116,7 +2119,7 @@ void
 doWrite(int fd, uint64_t initialTime, int success, const void *buf, ssize_t bytes,
         const char *func, src_data_t src, size_t cnt)
 {
-    struct fs_info_t *fs = getFSEntry(fd);
+    struct fs_info_t *fs = getFSEntry(fd, "doWrite");
     struct net_info_t *net = getNetEntry(fd);
 
     if (success) {
@@ -2163,7 +2166,7 @@ doWrite(int fd, uint64_t initialTime, int success, const void *buf, ssize_t byte
 void
 doSeek(int fd, int success, const char *func)
 {
-    struct fs_info_t *fs = getFSEntry(fd);
+    struct fs_info_t *fs = getFSEntry(fd, "doSeek");
     if (success) {
         scopeLog(CFG_LOG_DEBUG, "fd:%d %s", fd, func);
         if (fs) {
@@ -2191,7 +2194,7 @@ doStatPath(const char *path, int rc, const char *func)
 void
 doStatFd(int fd, int rc, const char* func)
 {
-    struct fs_info_t *fs = getFSEntry(fd);
+    struct fs_info_t *fs = getFSEntry(fd, "doStatFd");
 
     if (rc != -1) {
         scopeLog(CFG_LOG_DEBUG, "fd:%d %s", fd, func);
@@ -2245,7 +2248,7 @@ doDupSock(int oldfd, int newfd)
 void
 doDup(int fd, int rc, const char *func, int copyNet)
 {
-    struct fs_info_t *fs = getFSEntry(fd);
+    struct fs_info_t *fs = getFSEntry(fd, "doDup");
     struct net_info_t *net = getNetEntry(fd);
     if (rc != -1) {
         if (net) {
@@ -2269,31 +2272,41 @@ doDup(int fd, int rc, const char *func, int copyNet)
 }
 
 void
-doDup2(int oldfd, int newfd, int rc, const char *func)
+doDup2(int oldfd, int newfd, int rc, const char *func, int my_errno)
 {
-    struct fs_info_t *fs = getFSEntry(oldfd);
+    scopeLog(CFG_LOG_DEBUG, "doDup2 Start oldfd=%d newfd=%d rc=%d func=%s my_errno=%d", oldfd, newfd, rc, func, my_errno);
+    struct fs_info_t *fs = getFSEntry(oldfd, "doDup2oldfd");
     struct net_info_t *net = getNetEntry(oldfd);
+    scopeLog(CFG_LOG_DEBUG, "doDup2 After fs_info and net_info oldfd=%d newfd=%d rc=%d net=%p fs=%p func=%s my_errno=%d", oldfd, newfd, rc, net, fs, func, my_errno);
 
     if ((rc != -1) && (oldfd != newfd)) {
-        scopeLog(CFG_LOG_DEBUG, "fd:%d %s", rc, func);
         if (net) {
+            scopeLog(CFG_LOG_DEBUG, "net oldfd:%d newfd:%d", oldfd, newfd);
             if (getNetEntry(newfd)) {
+                scopeLog(CFG_LOG_DEBUG, "net doDup2 doClose %d", newfd);
                 doClose(newfd, func);
             }
+            scopeLog(CFG_LOG_DEBUG, "net doDupSock oldfd:%d newfd:%d", oldfd, newfd);
             doDupSock(oldfd, newfd);
         } else if (fs) {
-            if (getFSEntry(newfd)) {
+            scopeLog(CFG_LOG_DEBUG, "fs newfd:%d", newfd);
+            if (getFSEntry(newfd, "doDup2newfd")) {
+                scopeLog(CFG_LOG_DEBUG, "fs doClose:%d", newfd);
                 doClose(newfd, func);
             }
+            scopeLog(CFG_LOG_DEBUG, "fs doDupFile oldfd:%d newfd:%d", oldfd, newfd);
             doDupFile(oldfd, newfd, func);
         }
     } else {
         if (fs) {
+            scopeLog(CFG_LOG_DEBUG, "doUpdateState fs");
             doUpdateState(FS_ERR_OPEN_CLOSE, oldfd, (size_t)0, func, fs->path);
         } else if (net) {
+            scopeLog(CFG_LOG_DEBUG, "doUpdateState net");
             doUpdateState(NET_ERR_CONN, oldfd, (size_t)0, func, "nopath");
         }
     }
+    scopeLog(CFG_LOG_DEBUG, "doDup2 Finish oldfd=%d newfd=%d rc=%d net=%p fs=%p func=%s my_errno=%d", oldfd, newfd, rc, net, fs, func, my_errno);
 }
 
 void
@@ -2315,7 +2328,7 @@ doClose(int fd, const char *func)
     }
 
     // Check both file descriptor tables
-    if ((fsinfo = getFSEntry(fd)) != NULL) {
+    if ((fsinfo = getFSEntry(fd, "doClose")) != NULL) {
 
         doUpdateState(FS_CLOSE, fd, 0, func, NULL);
     }
@@ -2332,6 +2345,7 @@ doClose(int fd, const char *func)
 void
 doOpen(int fd, const char *path, fs_type_t type, const char *func)
 {
+    // scopeLogInfo("doOpen start fd=%d path=%s type=%d func=%s", fd, path, type ,func);
     if (checkFSEntry(fd) == TRUE) {
         if (g_fsinfo[fd].active) {
             scopeLog(CFG_LOG_DEBUG, "fd:%d doOpen: duplicate", fd);
@@ -2367,6 +2381,7 @@ doOpen(int fd, const char *path, fs_type_t type, const char *func)
         }
 */
         memset(&g_fsinfo[fd], 0, sizeof(struct fs_info_t));
+        scopeLogInfo("doOpen set fs_info fd=%d path=%s type=%d func=%s", fd, path, type ,func);
         g_fsinfo[fd].active = TRUE;
         g_fsinfo[fd].type = type;
         g_fsinfo[fd].uid = getTime();
@@ -2387,12 +2402,13 @@ doOpen(int fd, const char *path, fs_type_t type, const char *func)
         doUpdateState(FS_OPEN, fd, 0, func, path);
         scopeLog(CFG_LOG_TRACE, "fd:%d %s", fd, func);
     }
+    // scopeLogInfo("doOpen end fd=%d path=%s type=%d func=%s", fd, path, type ,func);
 }
 
 void
 doSendFile(int out_fd, int in_fd, uint64_t initialTime, int rc, const char *func)
 {
-    struct fs_info_t *fsrd = getFSEntry(in_fd);
+    struct fs_info_t *fsrd = getFSEntry(in_fd, "doSendFile");
     struct net_info_t *nettx = getNetEntry(out_fd);
 
     if (rc != -1) {
@@ -2430,7 +2446,7 @@ doCloseAndReportFailures(int fd, int success, const char *func)
     if (success) {
         doClose(fd, func);
     } else {
-        if ((fs = getFSEntry(fd))) {
+        if ((fs = getFSEntry(fd, "doCloseAndReportFailures"))) {
             doUpdateState(FS_ERR_OPEN_CLOSE, fd, (size_t)0, func, fs->path);
         }
     }

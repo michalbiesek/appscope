@@ -10,6 +10,13 @@
 //static char thread_delay_list[] = "chrome:nacl_helper";
 static timer_t g_timerid = 0;
 
+void
+scope_internal_close(int fd, char* func_name)
+{
+    scopeLogError("Call g_fn_close for fd %d func_nam %s", fd, func_name);
+    g_fn.close(fd);
+}
+
 static int
 sendNL(int sd, ino_t node)
 {
@@ -186,12 +193,12 @@ osUnixSockPeer(ino_t lnode)
     if ((nsd = g_fn.socket(AF_NETLINK, SOCK_RAW, NETLINK_SOCK_DIAG)) == -1) return -1;
 
     if (sendNL(nsd, lnode) == -1) {
-        g_fn.close(nsd);
+        scope_internal_close(nsd, "osUnixSockPeer");
         return -1;
     }
 
     rnode = getNL(nsd);
-    g_fn.close(nsd);
+    scope_internal_close(nsd, "osUnixSockPeer");
     return rnode;
 }
 
@@ -256,12 +263,14 @@ osGetProcMemory(pid_t pid)
     if (g_fn.read(fd, buf, sizeof(buf)) == -1) {
         DBG(NULL);
         g_fn.close(fd);
+        //scope_internal_close(fd, "osGetProcMemory");
         return -1;
     }
 
     if ((start = strstr(buf, "VmSize")) == NULL) {
         DBG(NULL);
         g_fn.close(fd);
+        //scope_internal_close(fd, "osGetProcMemory");
         return -1;        
     }
     
@@ -270,16 +279,19 @@ osGetProcMemory(pid_t pid)
     if (entry == NULL) {
         DBG(NULL);
         g_fn.close(fd);
+        //scope_internal_close(fd, "osGetProcMemory");
         return -1;        
     }
     
     if ((result = strtol(entry, NULL, 0)) == (long)0) {
         DBG(NULL);
         g_fn.close(fd);
+        //scope_internal_close(fd, "osGetProcMemory");
         return -1;
     }
     
     g_fn.close(fd);
+    //scope_internal_close(fd, "osGetProcMemory");
     return (int)result;
 }
 
@@ -306,6 +318,7 @@ osGetNumThreads(pid_t pid)
     if (g_fn.read(fd, buf, sizeof(buf)) == -1) {
         DBG(NULL);
         g_fn.close(fd);
+        //scope_internal_close(fd, "osGetNumThreads");
         return -1;
     }
 
@@ -314,6 +327,7 @@ osGetNumThreads(pid_t pid)
         entry = strtok_r(NULL, delim, &last);
     }
     g_fn.close(fd);
+    //scope_internal_close(fd, "osGetNumThreads");
 
     if ((result = strtol(entry, NULL, 0)) == (long)0) {
         DBG(NULL);
@@ -391,13 +405,13 @@ osInitTimer(platform_time_t *cfg)
      */    
     if ((buf = calloc(1, MAX_PROC)) == NULL) {
         DBG(NULL);
-        g_fn.close(fd);
+        scope_internal_close(fd, "osInitTimer");
         return -1;
     }
     
     if (g_fn.read(fd, buf, MAX_PROC) == -1) {
         DBG(NULL);
-        g_fn.close(fd);
+        scope_internal_close(fd, "osInitTimer");
         free(buf);
         return -1;
     }
@@ -456,7 +470,7 @@ osInitTimer(platform_time_t *cfg)
 #error No architecture defined
 #endif
 
-    g_fn.close(fd);
+    scope_internal_close(fd, "osInitTimer");
     free(buf);
     if (cfg->freq == (uint64_t)-1) {
         DBG(NULL);
@@ -532,7 +546,7 @@ out:
             buf = tmp;
         }
     }
-    if (fd != -1) g_fn.close(fd);
+    if (fd != -1) scope_internal_close(fd, "osGetCmdline");
     *cmd = buf;
     return (*cmd != NULL);
 }

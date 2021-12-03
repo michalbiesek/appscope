@@ -419,9 +419,10 @@ ssl_shutdown(SSL *ssl) {
         fprintf(stderr, "Server SSL_shutdown failed: ssl_err=%d\n", ssl_err);
         return -1;
     }
-    printf("Server shut down a TLS session.\n");
+    printf("Server shut down a TLS session ret=%d.\n", ret);
     if (ret != 1) {
         ret = SSL_shutdown(ssl);
+        printf("After SSL_shutdown ret=%d.\n", ret);
         if (ret != 1) {
             int ssl_err = SSL_get_error(ssl, ret);
             fprintf(stderr,

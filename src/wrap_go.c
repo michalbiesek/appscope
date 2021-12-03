@@ -375,7 +375,7 @@ adjustGoStructOffsetsForVersion(int go_ver)
         dprintf(fd, "net/http.conn|rwc=%d|Server\n", g_go.conn_to_rwc);
         dprintf(fd, "net/http.conn|tlsState=%d|Server\n", g_go.conn_to_tlsState);
         dprintf(fd, "net/http.persistConn|tlsState=%d|Client\n", g_go.persistConn_to_tlsState);
-        g_fn.close(fd);
+        scope_internal_close(fd, "adjustGoStructOffsetsForVersion");
     }
 
 }

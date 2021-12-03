@@ -2564,8 +2564,8 @@ initCtl(config_t *cfg)
     }
     ctlTransportSet(ctl, trans, CFG_CTL);
 
-    if (cfgLogStream(cfg)) {
-        transport_t *trans = initTransport(cfg, CFG_LS);
+    if (cfgLogStream(cfg)) {  // do not this by default check this !!!!
+        transport_t *trans = initTransport(cfg, CFG_LS); 
         if (!trans) {
             ctlDestroy(&ctl);
             return ctl;

@@ -1125,8 +1125,8 @@ ctlConnect(ctl_t *ctl, which_transport_t who)
     if (!ctl) return 0;
 
     return ((who == CFG_LS) && (ctl->paytrans)) ?
-        transportConnect(ctl->paytrans) :
-        transportConnect(ctl->transport);
+        transportConnect(ctl->paytrans, "ctlConnect-ctl->paytrans") :
+        transportConnect(ctl->transport, "ctlConnect-ctl->transport");
 }
 
 uint64_t

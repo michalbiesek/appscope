@@ -390,11 +390,11 @@ fileModTime(const char *path)
     if ((fd = g_fn.open(path, O_RDONLY)) == -1) return 0;
     
     if (fstat(fd, &statbuf) < 0) {
-        g_fn.close(fd);
+        scope_internal_close(fd, "fileModTime");
         return 0;
     }
 
-    g_fn.close(fd);
+    scope_internal_close(fd, "fileModTime");
     // STATMODTIME from os.h as timespec names are different between OSs
     return STATMODTIME(statbuf);
 }
@@ -847,6 +847,7 @@ setProcId(proc_id_t *proc)
 static void
 doReset()
 {
+    scopeLogInfo("doReset called");
     setProcId(&g_proc);
     setPidEnv(g_proc.pid);
 
@@ -1644,6 +1645,7 @@ openat(int dirfd, const char *pathname, int flags, ...)
     WRAP_CHECK(openat, -1);
     LOAD_FUNC_ARGS_VALIST(fArgs, flags);
     fd = g_fn.openat(dirfd, pathname, flags, fArgs.arg[0]);
+    scopeLogInfo("openat fd=%d dirfd=%d pathname=%s",fd, dirfd, pathname);
     if (fd != -1) {
         doOpen(fd, pathname, FD, "openat");
     } else {
@@ -2641,8 +2643,9 @@ __write_pthread(int fd, const void *buf, size_t size)
 }
 
 static int
-isAnAppScopeConnection(int fd)
+isAnAppScopeConnection(int fd, const char* str)
 {
+    scopeLogDebug("isAnAppScopeConnection fd: %d func: %s", fd, str);
     if (fd == -1) return FALSE;
 
     if ((fd == ctlConnection(g_ctl, CFG_CTL)) ||
@@ -2685,7 +2688,7 @@ scope_syscall(long number, ...)
                           fArgs.arg[2], fArgs.arg[3]);
 
         if ((rc != -1) && (doBlockConnection(fArgs.arg[0], NULL) == 1)) {
-            if (g_fn.close) g_fn.close(rc);
+            if (g_fn.close) scope_internal_close(rc, "scope_syscall");
             errno = ECONNABORTED;
             return -1;
         }
@@ -3422,7 +3425,7 @@ close(int fd)
 {
     WRAP_CHECK(close, -1);
 
-    if (isAnAppScopeConnection(fd)) return 0;
+    if (isAnAppScopeConnection(fd, "close")) return 0;
 
     int rc = g_fn.close(fd);
 
@@ -3437,7 +3440,7 @@ fclose(FILE *stream)
     WRAP_CHECK(fclose, EOF);
     int fd = fileno(stream);
 
-    if (isAnAppScopeConnection(fd)) return 0;
+    if (isAnAppScopeConnection(fd, "fclose")) return 0;
 
     int rc = g_fn.fclose(stream);
 
@@ -3506,7 +3509,7 @@ accept$NOCANCEL(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
     sd = g_fn.accept$NOCANCEL(sockfd, addr, addrlen);
 
     if ((sd != -1) && (doBlockConnection(sockfd, NULL) == 1)) {
-        if (g_fn.close) g_fn.close(sd);
+        if (g_fn.close) scope_internal_close(sd);
         errno = ECONNABORTED;
         return -1;
     }
@@ -4202,9 +4205,15 @@ EXPORTON int
 dup2(int oldfd, int newfd)
 {
     WRAP_CHECK(dup2, -1);
-    int rc = g_fn.dup2(oldfd, newfd);
+    int set_errno = 0;
 
-    doDup2(oldfd, newfd, rc, "dup2");
+    int rc = g_fn.dup2(oldfd, newfd);
+    if (rc == -1) {
+        set_errno = errno;
+        // int res = fcntl(oldfd, F_GETFD);
+        // scopeLogInfo("dup 2 fcntl oldfd=%d newfd=%d res=%d errno=%d", oldfd, newfd, res, errno);
+    }
+    doDup2(oldfd, newfd, rc, "dup2", set_errno);
 
     return rc;
 }
@@ -4214,7 +4223,7 @@ dup3(int oldfd, int newfd, int flags)
 {
     WRAP_CHECK(dup3, -1);
     int rc = g_fn.dup3(oldfd, newfd, flags);
-    doDup2(oldfd, newfd, rc, "dup3");
+    doDup2(oldfd, newfd, rc, "dup3", 0);
 
     return rc;
 }
@@ -4317,7 +4326,7 @@ accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
     sd = g_fn.accept(sockfd, addr, addrlen);
 
     if ((sd != -1) && (doBlockConnection(sockfd, NULL) == 1)) {
-        if (g_fn.close) g_fn.close(sd);
+        if (g_fn.close) scope_internal_close(sd, "accept");
         errno = ECONNABORTED;
         return -1;
     }
@@ -4340,7 +4349,7 @@ accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags)
     sd = g_fn.accept4(sockfd, addr, addrlen, flags);
 
     if ((sd != -1) && (doBlockConnection(sockfd, NULL) == 1)) {
-        if (g_fn.close) g_fn.close(sd);
+        if (g_fn.close) scope_internal_close(sd, "accept4");
         errno = ECONNABORTED;
         return -1;
     }

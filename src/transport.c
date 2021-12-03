@@ -137,7 +137,7 @@ placeDescriptor(int fd, transport_t *t)
     if (next_fd_to_try < DEFAULT_MIN_FD) {
         next_fd_to_try = DEFAULT_FD;
     }
-
+    scopeLogInfo("placeDescriptor callled with fd %d", fd);
     int i, dupfd;
 
     for (i = next_fd_to_try; i >= DEFAULT_MIN_FD; i--) {
@@ -145,7 +145,8 @@ placeDescriptor(int fd, transport_t *t)
 
             // This fd is available, try to dup it
             if ((dupfd = g_fn.dup2(fd, i)) == -1) continue;
-            g_fn.close(fd);
+            scopeLogInfo("placeDescriptor duplicated with fd %d i %d dupfd %d", fd, i, dupfd);
+            scope_internal_close(fd, "placeDescriptor");
 
             // Set close on exec. (dup2 does not preserve FD_CLOEXEC)
             int flags = g_fn.fcntl(dupfd, F_GETFD, 0);
@@ -158,7 +159,7 @@ placeDescriptor(int fd, transport_t *t)
         }
     }
     DBG("%d", t->type);
-    g_fn.close(fd);
+    scope_internal_close(fd, "placeDescriptor");
     return -1;
 }
 
@@ -210,12 +211,31 @@ transportConnection(transport_t *trans)
 int
 transportNeedsConnection(transport_t *trans)
 {
-    if (!trans) return 0;
+    if (!trans) {
+        scopeLogInfo("transportNeedsConnection empty trans return 0");
+        return 0;
+    } 
     switch (trans->type) {
         case CFG_UDP:
         case CFG_TCP:
             if ((trans->net.sock == -1) ||
-                (trans->net.tls.enable && !trans->net.tls.ssl)) return TRUE;
+                (trans->net.tls.enable && !trans->net.tls.ssl))
+            {
+                if (trans->net.pending_connect != -1) {
+                    int res = g_fn.fcntl(trans->net.pending_connect, F_GETFD);
+                    scopeLogInfo("transportNeedsConnection fcntl res=%d trans=%p trans->net.sock=%d trans->net.tls.enable=%d trans->net.pending_connect=%d", res, trans, trans->net.sock, trans->net.tls.enable, trans->net.pending_connect);
+                    if (res != 0 && errno == EBADF) {
+                        scopeLogInfo("transportNeedsConnection fcntl error errno=%d trans=%p trans->net.sock=%d trans->net.tls.enable=%d trans->net.pending_connect=%d",errno, trans, trans->net.sock, trans->net.tls.enable, trans->net.pending_connect);
+                        transportDisconnect(trans);
+                        return TRUE;
+                    }
+                }
+                
+                scopeLogInfo("transportNeedsConnection trans=%p trans->net.sock=%d trans->net.tls.enable=%d trans->net.tls.ssl=%p trans->net.pending_connect=%d return TRUE", trans, trans->net.sock, trans->net.tls.enable, trans->net.tls.ssl, trans->net.pending_connect);
+                return TRUE;
+            }
+                
+                 
             if (osNeedsConnect(trans->net.sock)) {
                 DBG("fd:%d, tls:%d", trans->net.sock, trans->net.tls.enable);
                 if (trans->net.tls.enable) {
@@ -270,11 +290,12 @@ rootCertFile(transport_t *trans)
 
     const char *file;
     for (file=rootFileList[0]; file; file++) {
+        scopeLogInfo("rootCertFile %s file", file);
         if (!g_fn.access (file, R_OK)) {
             return file;
         }
     }
-
+    scopeLogInfo("rootCertFile return NULL");
     // Didn't find it from the list above.
     return NULL;
 }
@@ -287,7 +308,7 @@ shutdownTlsSession(transport_t *trans)
         if (ret < 0) {
             // protocol error occurred
             int ssl_err = SSL_get_error(trans->net.tls.ssl, ret);
-            scopeLogInfo("Client SSL_shutdown failed: ssl_err=%d\n", ssl_err);
+            scopeLogInfo("Client SSL_shutdown failed: ssl_err=%d ret=%d\n", ssl_err, ret);
         } else if (ret == 0) {
             // shutdown not complete, call again
             char buf[4096];
@@ -317,7 +338,7 @@ shutdownTlsSession(transport_t *trans)
     }
 
     if (trans->net.sock != -1) {
-        g_fn.close(trans->net.sock);
+        scope_internal_close(trans->net.sock, "shutdownTlsSession");
         trans->net.sock = -1;
     }
 }
@@ -354,6 +375,7 @@ establishTlsSession(transport_t *trans)
 
     static int init_called = FALSE;
     if (!init_called) {
+        scopeLogInfo("fd:%d establishTlsSession init_called FALSE branch", trans->net.sock);
         OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, NULL);
         init_called = TRUE;
     }
@@ -370,9 +392,15 @@ establishTlsSession(transport_t *trans)
     // If the configuration provides a cacertpath, use it.
     // Otherwise, find a distro-specific root cert file.
     const char *cafile = trans->net.tls.cacertpath;
-    if (!cafile) cafile = rootCertFile(trans);
+    if (!cafile) {
+        scopeLogInfo("Get Cert file");
+        cafile = rootCertFile(trans);
+    }
+    scopeLogInfo("After Get Cert file");
 
+     
     long loc_rv = SSL_CTX_load_verify_locations(trans->net.tls.ctx, cafile, NULL);
+    scopeLogInfo("After SSL_CTX_load_verify_locations");
     if (trans->net.tls.validateserver && !loc_rv) {
         char err[256] = {0};
         ERR_error_string_n(ERR_peek_last_error() , err, sizeof(err));
@@ -383,6 +411,7 @@ establishTlsSession(transport_t *trans)
     }
 
     trans->net.tls.ssl = SSL_new(trans->net.tls.ctx);
+    scopeLogInfo("After SSL_new");
     if (!trans->net.tls.ssl) {
         char err[256] = {0};
         ERR_error_string_n(ERR_peek_last_error() , err, sizeof(err));
@@ -398,9 +427,13 @@ establishTlsSession(transport_t *trans)
         trans->net.failure_reason = TLS_SOCKET_FAIL;
         goto err;
     }
+    scopeLogInfo("After SSL_set_fd trans->net.tls.ssl %p trans->net.sock %d", trans->net.tls.ssl, trans->net.sock);
 
     ERR_clear_error(); // to make SSL_get_error reliable
+    scopeLogInfo("After ERR_clear_error");
+
     int con_rv = SSL_connect(trans->net.tls.ssl);
+    scopeLogInfo("After SSL_connect");
     if (con_rv != 1) {
         char err[256] = {0};
         int ssl_err = SSL_get_error(trans->net.tls.ssl, con_rv);
@@ -413,11 +446,14 @@ establishTlsSession(transport_t *trans)
         }
         goto err;
     }
+    scopeLogInfo("After con_rv %d", trans->net.tls.validateserver);
 
     if (trans->net.tls.validateserver) {
         // Just test that we received a server cert
+        scopeLogInfo("Before SSL_get_peer_certificate");
         X509* cert = SSL_get_peer_certificate(trans->net.tls.ssl);
         if (cert) {
+            scopeLogInfo("After SSL_get_peer_certificate %p", cert);
             X509_free(cert);  // Looks good.  Free it immediately
         } else {
             scopeLogInfo("fd:%d error accessing peer certificate for tls server validation",
@@ -425,8 +461,11 @@ establishTlsSession(transport_t *trans)
             trans->net.failure_reason = TLS_CERT_FAIL;
             goto err;
         }
+        scopeLogInfo("Before SSL_get_verify_result");
 
         long ver_rc = SSL_get_verify_result(trans->net.tls.ssl);
+        scopeLogInfo("After SSL_get_verify_result ver_rc=%ld", ver_rc);
+
         if (ver_rc != X509_V_OK) {
             const char *err = X509_verify_cert_error_string(ver_rc);
             scopeLogInfo("fd:%d tls server validation failed : \"%s\"", trans->net.sock, err);
@@ -438,22 +477,43 @@ establishTlsSession(transport_t *trans)
     scopeLogInfo("fd:%d tls session established", trans->net.sock);
     return TRUE;
 err:
+    scopeLogInfo("fd:%d tls session error", trans->net.sock);
     shutdownTlsSession(trans);
     return FALSE;
+}
+
+static void
+setPendingConnnect(transport_t *trans, int val)
+{
+    scopeLogInfo("SetPendingConnect: trans=%p val=%d", trans, val);
+    trans->net.pending_connect = val;
+}
+
+static void
+closePendingConnect(transport_t *trans)
+{
+    int f_socket = trans->net.pending_connect;
+    setPendingConnnect(trans, -1);
+    scopeLogInfo("closePendingConnect close socket fd=%d", f_socket);
+    g_fn.close(f_socket);
 }
 
 int
 transportDisconnect(transport_t *trans)
 {
-    if (!trans) return 0;
+    if (!trans){
+        scopeLogInfo("transportDisconnect empty return 0");
+        return 0;
+    }
     switch (trans->type) {
         case CFG_UDP:
         case CFG_TCP:
+            scopeLogInfo("transportDisconnect begin trans=%p trans->net.sock=%d trans->net.pending_connect=%d", trans, trans->net.sock, trans->net.pending_connect);
             // appropriate for both tls and non-tls connections...
             shutdownTlsSession(trans);
             if (trans->net.pending_connect != -1) {
-                g_fn.close(trans->net.pending_connect);
-                trans->net.pending_connect = -1;
+                scopeLogInfo("transportDisconnect before close pending trans=%p trans->net.sock=%d trans->net.pending_connect=%d", trans, trans->net.sock, trans->net.pending_connect);
+                closePendingConnect(trans);
             }
             break;
         case CFG_FILE:
@@ -464,7 +524,7 @@ transportDisconnect(transport_t *trans)
             break;
         case CFG_UNIX:
             if (trans->local.sock != -1) {
-                g_fn.close(trans->local.sock);
+                scope_internal_close(trans->local.sock, "transportDisconnect");
                 trans->local.sock = -1;
             }
             break;
@@ -566,6 +626,7 @@ transportReconnect(transport_t *trans)
 {
     if (!trans) return 0;
 
+    scopeLogInfo("transportReconnect trans=%p", trans);
     switch (trans->type) {
         case CFG_TCP:
             // Since TCP is connection-oriented, we want to disconnect
@@ -589,7 +650,7 @@ transportReconnect(transport_t *trans)
             transportDisconnect(trans);          // Never keep the parents connection.
             if (g_cached_addr) {
                 trans->getaddrinfo = scopeGetaddrinfo;
-                transportConnect(trans);         // Will use g_cached_addr
+                transportConnect(trans, "transportReconnect");         // Will use g_cached_addr
                 trans->getaddrinfo = trans->origGetaddrinfo;
             }
 
@@ -637,7 +698,9 @@ socketConnectIsPending(transport_t *trans)
 
 static int
 checkPendingSocketStatus(transport_t *trans)
-{
+{   
+    if (trans)
+        scopeLogInfo("checkPendingSocketStatus start trans=%p, trans->net.pending_connect:%d", trans, trans->net.pending_connect);
     if (!trans || trans->net.pending_connect == -1) return 0;
     int rc;
     struct timeval tv = {0};
@@ -646,6 +709,7 @@ checkPendingSocketStatus(transport_t *trans)
     FD_ZERO(&pending_results);
     FD_SET(trans->net.pending_connect, &pending_results);
     rc = g_fn.select(FD_SETSIZE, NULL, &pending_results, NULL, &tv);
+    scopeLogInfo("checkPendingSocketStatus after select rc:%d trans=%p, trans->net.pending_connect:%d", rc, trans ,trans->net.pending_connect);
     if (rc < 0) {
         if (errno == EINTR) {
           return 0;
@@ -664,21 +728,19 @@ checkPendingSocketStatus(transport_t *trans)
     socklen_t optlen = sizeof(opt);
     if ((getsockopt(trans->net.pending_connect, SOL_SOCKET, SO_ERROR, (void*)(&opt), &optlen) < 0)
             || opt) {
-        scopeLogInfo("fd:%d connect failed", trans->net.pending_connect);
-
-        g_fn.close(trans->net.pending_connect);
-        trans->net.pending_connect = -1;
+        scopeLogInfo("fd:%d connect failed g_fn.close will be called", trans->net.pending_connect);
+        closePendingConnect(trans);
         return 0;
     }
 
     // We have a connection
-    scopeLogInfo("fd:%d connect successful", trans->net.pending_connect);
+    scopeLogInfo("checkPendingSocketStatus fd:%d connect successful", trans->net.pending_connect);
 
     // Move this descriptor up out of the way
     trans->net.sock = placeDescriptor(trans->net.pending_connect, trans);
 
     // Remove the pending status from the transport
-    trans->net.pending_connect = -1;
+    closePendingConnect(trans);
 
     // If the placeDescriptor call failed, we're done
     if (trans->net.sock == -1) return 0;
@@ -816,7 +878,7 @@ socketConnectionStart(transport_t *trans)
             portptr = &addr6_ptr->sin6_port;
         } else {
             DBG("%d %s %s %d", sock, trans->net.host, trans->net.port, addr->ai_family);
-            g_fn.close(sock);
+            scope_internal_close(sock, "socketConnectionStart");
             continue;
         }
         char addrstr[INET6_ADDRSTRLEN];
@@ -824,12 +886,13 @@ socketConnectionStart(transport_t *trans)
         unsigned short port = ntohs(*portptr);
 
         errno = 0;
+        scopeLogInfo("socketConnectionStart before g_fn.connect fd:%d",sock);
         if (g_fn.connect(sock,
                          addr->ai_addr,
                          addr->ai_addrlen) == -1) {
-
+            scopeLogInfo("socketConnectionStart after g_fn.connect result -1 fd:%d errno:%d",sock, errno);
             if (errno != EINPROGRESS) {
-                scopeLogInfo("fd:%d connect to %s:%d failed", sock, addrstr, port);
+                scopeLogInfo("socketConnectionStart fd:%d connect to %s:%d failed", sock, addrstr, port);
                 trans->net.failure_reason = CONN_FAIL;
 
                 // We could create a sock, but not connect.  Clean up.
@@ -837,16 +900,17 @@ socketConnectionStart(transport_t *trans)
                 continue;
             }
 
-            scopeLogInfo("fd:%d connect to %s:%d is pending", sock, addrstr, port);
+            scopeLogInfo("socketConnectionStart fd:%d connect to %s:%d is pending", sock, addrstr, port);
             trans->net.failure_reason = CONN_FAIL;
 
-            trans->net.pending_connect = sock;
+            setPendingConnnect(trans, sock);
             break;  // replace w/continue for a shotgun start.
         }
+        scopeLogInfo("socketConnectionStart after g_fn.connect result diff then -1 fd:%d errno:%d",sock, errno);
 
 
         if (trans->type == CFG_UDP) {
-            scopeLogInfo("fd:%d connect to %s:%d was successful", sock, addrstr, port);
+            scopeLogInfo("socketConnectionStart fd:%d connect to %s:%d was successful", sock, addrstr, port);
 
             // connect on udp sockets normally succeeds immediately.
             trans->net.sock = placeDescriptor(sock, trans);
@@ -919,23 +983,42 @@ transportConnectFile(transport_t *t)
 }
 
 int
-transportConnect(transport_t *trans)
+transportConnect(transport_t *trans, const char* msg)
 {
-    if (!trans) return 1;
+    scopeLogInfo("transportConnect start from %s", msg);
+    if (!trans)
+    {
+        scopeLogInfo("transportConnect empty trans return 1");
+        return 1;
+    }
 
     // We're already connected.  Do nothing.
-    if (!transportNeedsConnection(trans)) return 1;
+    if (!transportNeedsConnection(trans))
+    {
+        scopeLogInfo("transportConnect transportNeedsConnection(return 0) %p return 1", trans);
+        return 1;
+    } 
 
     switch (trans->type) {
         case CFG_UDP:
         case CFG_TCP:
+        {
+            int res;
+            scopeLogInfo("transportConnect trans=%p trans->net.pending_connect=%d", trans, trans->net.pending_connect);
             if (!socketConnectIsPending(trans)) {
                 // socketConnectionStart can directly connect (udp).
                 // If it does, we're done.
-                if (socketConnectionStart(trans)) return 1;
+                if (socketConnectionStart(trans)) 
+                {
+                    scopeLogInfo("transportConnect trans=%p -> socketConnectionStart return 1", trans);
+                    return 1;
+                }
             }
             // Check to see if the a pending connection has been successful.
-            return checkPendingSocketStatus(trans);
+            res = checkPendingSocketStatus(trans);
+            scopeLogInfo("transportConnect trans=%p -> checkPendingSocketStatus return res %d", trans, res);
+            return res;
+        }
         case CFG_FILE:
             return transportConnectFile(trans);
         case CFG_UNIX:
@@ -953,7 +1036,7 @@ transportConnect(transport_t *trans)
             if (g_fn.connect(trans->local.sock, (const struct sockaddr *)&trans->local.addr,
                              trans->local.addr_len) == -1) {
                 scopeLogInfo("fd:%d (%s) connect failed", trans->local.sock, trans->local.path);
-                g_fn.close(trans->local.sock);
+                scope_internal_close(trans->local.sock, "transportConnect");
                 trans->local.sock = -1;
                 return 0;
             }
@@ -984,7 +1067,7 @@ transportCreateTCP(const char *host, const char *port, unsigned int enable,
 
     trans->type = CFG_TCP;
     trans->net.sock = -1;
-    trans->net.pending_connect = -1;
+    setPendingConnnect(trans, -1);
     trans->net.host = strdup(host);
     trans->net.port = strdup(port);
     trans->net.tls.enable = enable;
@@ -997,7 +1080,7 @@ transportCreateTCP(const char *host, const char *port, unsigned int enable,
         return trans;
     }
 
-    transportConnect(trans);
+    transportConnect(trans, "transportCreateTCP");
 
     return trans;
 }
@@ -1014,7 +1097,7 @@ transportCreateUdp(const char* host, const char* port)
 
     t->type = CFG_UDP;
     t->net.sock = -1;
-    t->net.pending_connect = -1;
+    setPendingConnnect(t, -1);
     t->net.host = strdup(host);
     t->net.port = strdup(port);
 
@@ -1024,7 +1107,7 @@ transportCreateUdp(const char* host, const char* port)
         return t;
     }
 
-    transportConnect(t);
+    transportConnect(t, "transportCreateUdp");
 
     return t;
 }
@@ -1051,7 +1134,7 @@ transportCreateFile(const char* path, cfg_buffer_t buf_policy)
     t->file.stdout = !strcmp(path, "stdout");
     t->file.stderr = !strcmp(path, "stderr");
 
-    transportConnect(t);
+    transportConnect(t, "transportCreateFile");
 
     return t;
 }
@@ -1085,7 +1168,7 @@ transportCreateUnix(const char *path)
         trans->local.addr_len += 1; 
     }
 
-    transportConnect(trans);
+    transportConnect(trans, "transportCreateUnix");
 
     return trans;
 
@@ -1192,7 +1275,7 @@ tcpSendPlain(transport_t *trans, const char *msg, size_t len)
         case EPIPE:
             DBG(NULL);
             transportDisconnect(trans);
-            transportConnect(trans);
+            transportConnect(trans, "tcpSendPlain");
             return -1;
         default:
             DBG(NULL);
@@ -1218,12 +1301,13 @@ tcpSendTls(transport_t *trans, const char *msg, size_t len)
         rc = SCOPE_SSL_write(trans->net.tls.ssl, &msg[bytes_sent], bytes_to_send);
         if (rc <= 0) {
             err = SSL_get_error(trans->net.tls.ssl, rc);
+            scopeLogInfo("tcpSendTls bytes_to_send=%zu rc=%d ", bytes_to_send, rc);
         }
 
         if (rc <= 0) {
             DBG("%d", err);
             transportDisconnect(trans);
-            transportConnect(trans);
+            transportConnect(trans, "tcpSendTls");
             return -1;
         }
 
@@ -1253,7 +1337,7 @@ transportSend(transport_t *trans, const char *msg, size_t len)
                     case EBADF:
                         DBG(NULL);
                         transportDisconnect(trans);
-                        transportConnect(trans);
+                        transportConnect(trans, "transportSend_UDP");
                         return -1;
                     case EWOULDBLOCK:
                         DBG(NULL);
@@ -1279,7 +1363,7 @@ transportSend(transport_t *trans, const char *msg, size_t len)
                     if (errno == EBADF) {
                         DBG("%d %d", bytes, msg_size);
                         transportDisconnect(trans);
-                        transportConnect(trans);
+                        transportConnect(trans, "transportSend_TCP");
                         return -1;
                     }
                     DBG("%d %d", bytes, msg_size);
@@ -1301,7 +1385,7 @@ transportSend(transport_t *trans, const char *msg, size_t len)
                     case EPIPE:
                         DBG(NULL);
                         transportDisconnect(trans);
-                        transportConnect(trans);
+                        transportConnect(trans, "transportSend_UNIX");
                         return -1;
                     case EWOULDBLOCK:
                         DBG(NULL);

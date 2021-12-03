@@ -70,7 +70,7 @@ int
 logConnect(log_t* log)
 {
     if (!log) return 0;
-    return transportConnect(log->transport);
+    return transportConnect(log->transport, "logConnect");
 }
 
 int

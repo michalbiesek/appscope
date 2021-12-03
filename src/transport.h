@@ -30,7 +30,7 @@ void                transportDestroy(transport_t **);
 int                 transportSend(transport_t *, const char *, size_t);
 int                 transportFlush(transport_t *);
 int                 transportNeedsConnection(transport_t *);
-int                 transportConnect(transport_t *);
+int                 transportConnect(transport_t *, const char *);
 int                 transportConnection(transport_t *);
 int                 transportDisconnect(transport_t *);
 int                 transportReconnect(transport_t *);

@@ -152,7 +152,7 @@ getElf(char *path)
     get_elf_successful = TRUE;
 
 out:
-    if (fd != -1) g_fn.close(fd);
+    if (fd != -1) scope_internal_close(fd, "getElf");
     if (!get_elf_successful && ebuf) {
         freeElf(ebuf->buf, ebuf->len);
         free(ebuf);
