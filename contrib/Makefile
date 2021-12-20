@@ -12,7 +12,7 @@
 
 ARCH ?= $(shell uname -m)
 
-all: cJSON cmocka funchook libyaml openssl pcre2 ls-hpack
+all: cJSON cmocka funchook libyaml openssl pcre2 ls-hpack libbacktrace
 clean:
 	-@$(MAKE) -C cJSON clean
 	-@$(RM) -r build/*
@@ -25,7 +25,8 @@ libyaml: build/libyaml/src/.libs/libyaml.a
 openssl: build/openssl/libssl.a build/openssl/libcrypto.a
 pcre2: build/pcre2/libpcre2-posix.a build/pcre2/libpcre2-8.a
 ls-hpack: build/ls-hpack/libls-hpack.a
-.PHONY: cJSON cmocka funchook libyaml openssl pcre2 ls-hpack
+libbacktrace: build/libbacktrace/.libs/libbacktrace.a
+.PHONY: cJSON cmocka funchook libyaml openssl pcre2 ls-hpack libbacktrace
 
 # Pro Tip: add these to `cmake` commands to be able to debug the resulting libraries
 #
@@ -91,3 +92,9 @@ build/ls-hpack/libls-hpack.a:
 	cd build/ls-hpack && cmake ../../ls-hpack -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=Release -DLSHPACK_XXH=ON && $(MAKE)
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
+build/libbacktrace/.libs/libbacktrace.a:
+	@echo "$${CI:+::group::}Building libbacktrace"
+	@$(RM) -r build/libbacktrace
+	@mkdir build/libbacktrace
+	cd build/libbacktrace && autoreconf -fvi ../../libbacktrace && ../../libbacktrace/configure && $(MAKE)
+	@[ -z "$(CI)" ] || echo "::endgroup::"

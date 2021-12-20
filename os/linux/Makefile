@@ -15,7 +15,8 @@ JSON_AR=contrib/cJSON/libcjson.a
 PCRE2_AR=contrib/build/pcre2/libpcre2-posix.a contrib/build/pcre2/libpcre2-8.a
 OPENSSL_AR=contrib/build/openssl/libssl.a contrib/build/openssl/libcrypto.a
 LS_HPACK_AR=contrib/build/ls-hpack/libls-hpack.a
-TEST_AR=$(YAML_AR) $(JSON_AR) $(PCRE2_AR) ${OPENSSL_AR} $(LS_HPACK_AR)
+BACKTRACE_AR=contrib/build/libbacktrace/.libs/libbacktrace.a
+TEST_AR=$(YAML_AR) $(JSON_AR) $(PCRE2_AR) ${OPENSSL_AR} $(LS_HPACK_AR) $(BACKTRACE_AR)
 #TEST_LIB=contrib/build/cmocka/src/libcmocka.dylib
 TEST_LIB=contrib/build/cmocka/src/libcmocka.so
 TEST_INCLUDES=-I./src -I./contrib/cmocka/include -I contrib/ls-hpack
@@ -85,7 +86,7 @@ CACHE_FILES:=$(shell find . -name CMakeCache.txt)
 
 # ensure $USER is available since some of the tests expect it
 coretest: export USER ?= $(shell id -u -n)
-coretest: $(C_FILES) $(YAML_AR) $(JSON_AR) $(TEST_LIB)
+coretest: $(C_FILES) $(YAML_AR) $(JSON_AR) $(TEST_LIB) $(BACKTRACE_AR)
 	@echo "$${CI:+::group::}Building Tests"
 	$(CC) -c $(TEST_CFLAGS) $(C_FILES) $(INCLUDES) $(TEST_INCLUDES)
 	$(CC) $(TEST_CFLAGS) -o test/$(OS)/cfgutilstest cfgutilstest.o cfgutils.o cfg.o mtc.o log.o evtformat.o ctl.o transport.o mtcformat.o com.o dbg.o circbuf.o linklist.o fn.o utils.o os.o test.o report.o search.o httpagg.o state.o httpstate.o plattime.o $(TEST_AR) $(TEST_LD_FLAGS)
@@ -125,5 +126,8 @@ $(JSON_AR): contrib/cJSON/cJSON.c
 
 $(TEST_LIB):
 	@$(MAKE) -C contrib cmocka
+
+$(BACKTRACE_AR):
+	@$(MAKE) -C contrib libbacktrace
 
 .PHONY: coreall coreclean coretest corerebuild
