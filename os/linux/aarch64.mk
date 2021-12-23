@@ -9,7 +9,7 @@ $(LIBSCOPE): src/wrap.c src/state.c src/httpstate.c src/metriccapture.c src/repo
 	@$(MAKE) -C contrib funchook pcre2 openssl ls-hpack
 	@echo "$${CI:+::group::}Building $@"
 	$(CC) $(CFLAGS) \
-		-shared -fvisibility=hidden -fno-stack-protector \
+		-shared -fno-stack-protector \
 		-DSCOPE_VER=\"$(SCOPE_VER)\" $(CJSON_DEFINES) $(YAML_DEFINES) \
 		-pthread -o $@ $(INCLUDES) $^ $(LD_FLAGS) ${OPENSSL_AR} \
 		-Wl,--version-script=libscope.map
