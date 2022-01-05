@@ -45,3 +45,18 @@ inputs:
     authToken: ""
     type: appscope
     port: 10090
+  in_appscope_unix:
+    disabled: false
+    sendToRoutes: true
+    tags: []
+    ipWhitelistRegex: /.*/
+    maxActiveCxn: 1000
+    enableProxyHeader: false
+    staleChannelFlushMs: 10000
+    enableUnixPath: true
+    authType: manual
+    unixSocketPath: /tmp/unix_test.sock
+    authToken: ""
+    tls:
+      disabled: true
+    type: appscope

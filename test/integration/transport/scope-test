@@ -19,6 +19,20 @@ wait_for_port() {
     echo 1
 }
 
+wait_for_socket() {
+    TIMEOUT=${2:-60}
+    while ! netstat -an | grep -w ${1} >/dev/null 2>&1; do
+        sleep 1
+        ((TIMEOUT=TIMEOUT-1))
+        if [ $TIMEOUT -le 0 ]; then
+            echo >&2 "warn: timed out waiting for socket ${1} listener"
+            netstat -an | grep -w LISTEN >&2
+            return
+        fi
+    done
+    echo 1
+}
+
 wait_for_files() {
     TIMEOUT=${2:-60}
     while ! compgen -G "${1}" > /dev/null; do
@@ -38,6 +52,7 @@ wait_for_files() {
 #   - AppScope TCP source on tcp:10091
 #   - TCP-JSON source on tcp:10070
 #   - Metrics source on udp:8125
+#   - AppScope Unix socket on following soccket: /tmp/unix_test.sock
 #   - Filesystem dest to /tmp/out/${source}/CriblOut-*.json (5 sec idle timeout)
 # So, anything sent to the sources should appear as JSON in /tmp/out ~5 secs later.
 echo
@@ -139,6 +154,26 @@ else
     echo "  FAILED - no listener"
     ERR+=1
     ERRORS="$ERRORS Metric/UDP"
+fi
+
+echo
+echo ===============================================================================
+echo "Testing Cribl/UNIX Transport"
+if [ "$(wait_for_socket /tmp/unix_test.sock)" ]; then
+    rm -rf /tmp/out/appscope:in_appscope_unix
+    scope run -c unix:///tmp/unix_test.sock -- curl -Lso /dev/null https://cribl.io
+    if [ "$(wait_for_files "/tmp/out/appscope:in_appscope_unix/CriblOut-*.json")" ]; then
+        echo "  PASSED"
+    else
+        echo "  FAILED - missing output files"
+        ERR+=1
+        ERRORS="$ERRORS Cribl/Unix"
+        ls -lR /tmp/out
+    fi
+else
+    echo "  FAILED - no listener"
+    ERR+=1
+    ERRORS="$ERRORS Cribl/Unix"
 fi
 
 echo
