@@ -19,6 +19,7 @@
 #include "inject.h"
 
 #define __RTLD_DLOPEN	0x80000000
+#define PTR_ALIGN(val, align) (((val) + (align) - 1) & ~((align) - 1))
 
 // Size of injected code segment
 #define INJECTED_CODE_SIZE_LEN (512)
@@ -29,6 +30,7 @@ typedef struct {
 } libdl_info_t;
 
 #ifdef __x86_64__
+    #define SP_REG regs.rsp
     #define IP_REG regs.rip
     #define FUNC_REG regs.rax
     #define FIRST_ARG_REG regs.rdi
@@ -36,6 +38,7 @@ typedef struct {
     #define RET_REG regs.rax
     #define DBG_TRAP "int $3 \n"
 #elif defined(__aarch64__)
+    #define SP_REG regs.sp
     #define IP_REG regs.pc
     #define FUNC_REG regs.regs[2]
     #define FIRST_ARG_REG regs.regs[0]
@@ -172,13 +175,14 @@ call_dlopen(void)
 static void call_dlopen_end() {}
 
 static int
-inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
+inject(pid_t pid, uint64_t dlopenAddr, uint64_t otherAddr, char *path, int glibc)
 {
     struct iovec my_iovec;
     struct user_regs_struct oldregs, regs;
     my_iovec.iov_len = sizeof(regs);
     unsigned char *oldcode;
     int status;
+    pid_t pwait;
     uint64_t freeAddr, codeAddr;
     int libpathLen;
 
@@ -200,15 +204,18 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
         return EXIT_FAILURE;
     }
     
-    // back up the code
-    libpathLen = strlen(path) + 1;
+    void *ptr = NULL;
+    posix_memalign(&ptr, 64, 64);
+    memset(ptr, 0, 64);
+    strcpy(ptr, "123");
+    libpathLen = 64;
     oldcode = (unsigned char *)malloc(INJECTED_CODE_SIZE_LEN);
     if (ptraceRead(pid, freeAddr, oldcode, INJECTED_CODE_SIZE_LEN)) {
         return EXIT_FAILURE;
     }
 
-    // write the path to the library 
-    if (ptraceWrite(pid, freeAddr, path, libpathLen)) {
+    // write the puts param to the library 
+    if (ptraceWrite(pid, freeAddr, ptr, libpathLen)) {
         return EXIT_FAILURE;
     }
 
@@ -220,15 +227,12 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
 
     // set instruction pointer to point to the injected code
     IP_REG = codeAddr;
-    FUNC_REG = dlopenAddr;               // address of dlopen
-    FIRST_ARG_REG = freeAddr;            // dlopen's first arg - path to the library
+    FUNC_REG = otherAddr;               // address of other - puts
+    FIRST_ARG_REG = freeAddr;            // puts argument
+#ifdef __aarch64__
+    SP_REG = PTR_ALIGN(SP_REG, 64);
+#endif
 
-    if (glibc == TRUE) {
-         // GNU ld.so uses a custom flag
-        SECOND_ARG_REG = RTLD_NOW | __RTLD_DLOPEN;
-    } else {
-        SECOND_ARG_REG = RTLD_NOW;
-    }
 
     my_iovec.iov_base = &regs;
     if (ptrace(PTRACE_SETREGSET, pid, (void *)NT_PRSTATUS, &my_iovec) == -1) {
@@ -249,7 +253,8 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
             fprintf(stderr, "error: ptrace continue(), library could not be injected\n");
             return EXIT_FAILURE;
         }
-        waitpid(pid, &status, WUNTRACED);
+        pwait = waitpid(pid, &status, WUNTRACED);
+        fprintf(stderr, "waitpid return status %d\n", pwait);
     }
 
     // make sure the target process was stoppend by SIGTRAP triggered by DBG_TRAP
@@ -264,7 +269,7 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
         if (RET_REG != 0x0) {
          //printf("Appscope library injected at %p\n", (void*)RET_REG);
         } else {
-            fprintf(stderr, "error: dlopen() failed, library could not be injected\n");
+            fprintf(stderr, "error %p: dlopen() failed, library could not be injected\n", (void*)RET_REG);
         }
         //restore the app's state
         ptraceWrite(pid, freeAddr, oldcode, INJECTED_CODE_SIZE_LEN);
@@ -303,6 +308,13 @@ injectScope(int pid, char* path)
 {
     uint64_t remoteLib, localLib;
     void *dlopenAddr = NULL;
+    void *mallocAddr = NULL;
+    void *raiseAddr = NULL;
+    void *dupAddr = NULL;
+    void *duptwoAddr = NULL;
+    void *putcharAddr = NULL;
+    void *putsAddr = NULL;
+
     libdl_info_t info;
     int glibc = TRUE;
 
@@ -323,6 +335,42 @@ injectScope(int pid, char* path)
         return EXIT_FAILURE;
     }
 
+    mallocAddr = dlsym(RTLD_DEFAULT, "malloc");
+    if (mallocAddr == NULL) {
+        fprintf(stderr, "error: failed to find malloc()\n");
+        return EXIT_FAILURE;
+    }
+
+    raiseAddr = dlsym(RTLD_DEFAULT, "raise");
+    if (raiseAddr == NULL) {
+        fprintf(stderr, "error: failed to find raise()\n");
+        return EXIT_FAILURE;
+    }
+
+    dupAddr = dlsym(RTLD_DEFAULT, "dup");
+    if (dupAddr == NULL) {
+        fprintf(stderr, "error: failed to find dup()\n");
+        return EXIT_FAILURE;
+    }
+
+    duptwoAddr = dlsym(RTLD_DEFAULT, "dup2");
+    if (duptwoAddr == NULL) {
+        fprintf(stderr, "error: failed to find dup2()\n");
+        return EXIT_FAILURE;
+    }
+
+    putsAddr = dlsym(RTLD_DEFAULT, "puts");
+    if (putsAddr == NULL) {
+        fprintf(stderr, "error: failed to find puts()\n");
+        return EXIT_FAILURE;
+    }
+
+    putcharAddr = dlsym(RTLD_DEFAULT, "putchar");
+    if (putcharAddr == NULL) {
+        fprintf(stderr, "error: failed to find putchar()\n");
+        return EXIT_FAILURE;
+    }
+
     // find the base address of libc in the target process
     remoteLib = findLibrary(info.path, pid);
     if (!remoteLib) {
@@ -332,8 +380,13 @@ injectScope(int pid, char* path)
 
     // calculate the address of dlopen in the target process
     dlopenAddr = remoteLib + (dlopenAddr - localLib);
-
+    mallocAddr = remoteLib + (mallocAddr - localLib);
+    raiseAddr = remoteLib + (raiseAddr - localLib);
+    dupAddr = remoteLib + (dupAddr - localLib);
+    duptwoAddr = remoteLib + (duptwoAddr - localLib);
+    putcharAddr = remoteLib + (putcharAddr - localLib);
+    putsAddr = remoteLib + (putsAddr - localLib);
     // inject libscope.so into the target process
-    return inject(pid, (uint64_t) dlopenAddr, path, glibc);
+    return inject(pid, (uint64_t) dlopenAddr, (uint64_t) putsAddr, path, glibc);
 }
 
