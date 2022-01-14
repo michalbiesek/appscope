@@ -238,6 +238,7 @@ libdirExtract(const char *path, unsigned char *start, unsigned char *end, note_t
 
     if ((fd = mkstemp(temp)) < 1) {
         unlink(temp);
+        fprintf(stderr, "mkstemp failed for %s\n", temp);
         perror("mkstemp() failed");
         return -1;
     }
