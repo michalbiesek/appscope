@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <getopt.h>
 
+#include "scopestdlib.h"
 #include "fn.h"
 #include "dbg.h"
 #include "scopeelf.h"
@@ -49,38 +50,38 @@ setGoHttpEnvVariable(void)
     // If GODEBUG isn't set, try to set it to http2server=0,http2client=0
     if (!cur_val) {
         if (setenv(GO_ENV_VAR, GO_ENV_SERVER_VALUE "=0," GO_ENV_CLIENT_VALUE "=0", 1)) {
-            perror("setGoHttpEnvVariable:setenv");
+            scope_perror("setGoHttpEnvVariable:setenv");
         }
         return;
     }
 
     // GODEBUG is set.
     // If http2server wasn't specified, let's append ",http2server=0"
-    if (!strstr(cur_val, GO_ENV_SERVER_VALUE)) {
+    if (!scope_strstr(cur_val, GO_ENV_SERVER_VALUE)) {
         char *new_val = NULL;
-        if ((asprintf(&new_val, "%s,%s=0", cur_val, GO_ENV_SERVER_VALUE) == -1)) {
-            perror("setGoHttpEnvVariable:asprintf");
+        if ((scope_asprintf(&new_val, "%s,%s=0", cur_val, GO_ENV_SERVER_VALUE) == -1)) {
+            scope_perror("setGoHttpEnvVariable:asprintf");
             return;
         }
         if (setenv(GO_ENV_VAR, new_val, 1)) {
-            perror("setGoHttpEnvVariable:setenv");
+            scope_perror("setGoHttpEnvVariable:setenv");
         }
-        if (new_val) free(new_val);
+        if (new_val) scope_free(new_val);
     }
 
     cur_val = getenv(GO_ENV_VAR);
 
     // If http2client wasn't specified, let's append ",http2client=0"
-    if (!strstr(cur_val, GO_ENV_CLIENT_VALUE)) {
+    if (!scope_strstr(cur_val, GO_ENV_CLIENT_VALUE)) {
         char *new_val = NULL;
-        if ((asprintf(&new_val, "%s,%s=0", cur_val, GO_ENV_CLIENT_VALUE) == -1)) {
-            perror("setGoHttpEnvVariable:asprintf");
+        if ((scope_asprintf(&new_val, "%s,%s=0", cur_val, GO_ENV_CLIENT_VALUE) == -1)) {
+            scope_perror("setGoHttpEnvVariable:asprintf");
             return;
         }
         if (setenv(GO_ENV_VAR, new_val, 1)) {
-            perror("setGoHttpEnvVariable:setenv");
+            scope_perror("setGoHttpEnvVariable:setenv");
         }
-        if (new_val) free(new_val);
+        if (new_val) scope_free(new_val);
     }
 }
 
@@ -142,14 +143,14 @@ main(int argc, char **argv, char **env)
                 // options missing their value end up here
                 switch (optopt) {
                     default:
-                        fprintf(stderr, "error: missing value for -%c option\n", optopt);
+                        scope_fprintf(scope_stderr, "error: missing value for -%c option\n", optopt);
                         showUsage(basename(argv[0]));
                         return EXIT_FAILURE;
                 }
                 break;
             case '?':
             default:
-                fprintf(stderr, "error: invalid option: -%c\n", optopt);
+                scope_fprintf(scope_stderr, "error: invalid option: -%c\n", optopt);
                 showUsage(basename(argv[0]));
                 return EXIT_FAILURE;
         }
@@ -157,24 +158,24 @@ main(int argc, char **argv, char **env)
 
     // either --attach or an executable is required
     if (!attachArg && optind >= argc) {
-        fprintf(stderr, "error: missing --attach or EXECUTABLE argument\n");
+        scope_fprintf(scope_stderr, "error: missing --attach or EXECUTABLE argument\n");
         showUsage(basename(argv[0]));
         return EXIT_FAILURE;
     }
 
     // use --attach, ignore executable and args
     if (attachArg && optind < argc) {
-        fprintf(stderr, "warning: ignoring EXECUTABLE argument with --attach option\n");
+        scope_fprintf(scope_stderr, "warning: ignoring EXECUTABLE argument with --attach option\n");
     }
 
     // SCOPE_LIB_PATH environment variable is required
     char* scopeLibPath = getenv("SCOPE_LIB_PATH");
     if (!scopeLibPath) {
-        fprintf(stderr, "error: SCOPE_LIB_PATH must be set to point to libscope.so\n");
+        scope_fprintf(scope_stderr, "error: SCOPE_LIB_PATH must be set to point to libscope.so\n");
         return EXIT_FAILURE;
     }
     if (access(scopeLibPath, R_OK|X_OK)) {
-        fprintf(stderr, "error: library %s is missing, not readable, or not executable\n", scopeLibPath);
+        scope_fprintf(scope_stderr, "error: library %s is missing, not readable, or not executable\n", scopeLibPath);
         return EXIT_FAILURE;
     }
 
@@ -185,37 +186,37 @@ main(int argc, char **argv, char **env)
 
     // Use dlsym to get addresses for everything in g_fn
     initFn();
-    setPidEnv(getpid());
+    setPidEnv(scope_getpid());
 
     if (attachArg) {
         char *exe_path = NULL;
         elf_buf_t *ebuf;
 
-        int pid = atoi(attachArg);
+        int pid = scope_atoi(attachArg);
         if (pid < 1) {
-            fprintf(stderr, "error: invalid PID for --attach\n");
+            scope_fprintf(scope_stderr, "error: invalid PID for --attach\n");
             return EXIT_FAILURE;
         }
 
         if (osGetExePath(pid, &exe_path) == -1) {
-            fprintf(stderr, "error: can't get path to executable for pid %d\n", pid);
+            scope_fprintf(scope_stderr, "error: can't get path to executable for pid %d\n", pid);
             return EXIT_FAILURE;
         }
 
         if ((ebuf = getElf(exe_path)) == NULL) {
-            free(exe_path);
-            fprintf(stderr, "error: can't read the executable %s\n", exe_path);
+            scope_free(exe_path);
+            scope_fprintf(scope_stderr, "error: can't read the executable %s\n", exe_path);
             return EXIT_FAILURE;
         }
 
         if (is_static(ebuf->buf) == TRUE) {
-            fprintf(stderr, "error: can't attach to the static executable: %s\nNote that the executable can be 'scoped' using the command 'scope run -- %s'\n", exe_path, exe_path);
-            free(exe_path);
+            scope_fprintf(scope_stderr, "error: can't attach to the static executable: %s\nNote that the executable can be 'scoped' using the command 'scope run -- %s'\n", exe_path, exe_path);
+            scope_free(exe_path);
             freeElf(ebuf->buf, ebuf->len);
             return EXIT_FAILURE;
         }
 
-        free(exe_path);
+        scope_free(exe_path);
         freeElf(ebuf->buf, ebuf->len);
 
         printf("Attaching to process %d\n", pid);
@@ -223,7 +224,7 @@ main(int argc, char **argv, char **env)
 
         // remove the config that `ldscope`
         char path[PATH_MAX];
-        snprintf(path, sizeof(path), "/scope_attach_%d.env", pid);
+        scope_snprintf(path, sizeof(path), "/scope_attach_%d.env", pid);
         shm_unlink(path);
 
         // done
@@ -232,7 +233,7 @@ main(int argc, char **argv, char **env)
 
     char *inferior_command = getpath(argv[optind]);
     if (!inferior_command) {
-        fprintf(stderr,"%s could not find or execute command `%s`.  Exiting.\n", argv[0], argv[optind]);
+        scope_fprintf(scope_stderr,"%s could not find or execute command `%s`.  Exiting.\n", argv[0], argv[optind]);
         exit(EXIT_FAILURE);
     }
 
@@ -240,7 +241,7 @@ main(int argc, char **argv, char **env)
 
     if (ebuf && (is_go(ebuf->buf) == TRUE)) {
         if (setenv("SCOPE_APP_TYPE", "go", 1) == -1) {
-            perror("setenv");
+            scope_perror("setenv");
             goto err;
         }
 
@@ -248,7 +249,7 @@ main(int argc, char **argv, char **env)
 
     } else {
         if (setenv("SCOPE_APP_TYPE", "native", 1) == -1) {
-            perror("setenv");
+            scope_perror("setenv");
             goto err;
         }
     }
@@ -258,18 +259,18 @@ main(int argc, char **argv, char **env)
         if (ebuf) freeElf(ebuf->buf, ebuf->len);
 
         if (setenv("LD_PRELOAD", scopeLibPath, 0) == -1) {
-            perror("setenv");
+            scope_perror("setenv");
             goto err;
         }
 
         if (setenv("SCOPE_EXEC_TYPE", "dynamic", 1) == -1) {
-            perror("setenv");
+            scope_perror("setenv");
             goto err;
         }
         
         pid = fork();
         if (pid == -1) {
-            perror("fork");
+            scope_perror("fork");
             goto err;
         } else if (pid > 0) {
             int status;
@@ -282,13 +283,13 @@ main(int argc, char **argv, char **env)
             exit(EXIT_FAILURE);
         } else {
             execve(inferior_command, &argv[optind], environ);
-            perror("execve");
+            scope_perror("execve");
             goto err;
         }
     }
 
     if (setenv("SCOPE_EXEC_TYPE", "static", 1) == -1) {
-        perror("setenv");
+        scope_perror("setenv");
         goto err;
     }
 
@@ -321,6 +322,6 @@ main(int argc, char **argv, char **env)
 
     return 0;
 err:
-    if (ebuf) free(ebuf);
+    if (ebuf) scope_free(ebuf);
     exit(EXIT_FAILURE);
 }

@@ -15,6 +15,7 @@
 #include <getopt.h>
 #include <sys/utsname.h>
 
+#include "scopestdlib.h"
 #include "scopetypes.h"
 #include "libdir.h"
 
@@ -59,30 +60,30 @@ get_dir(const char *path, char *fres, size_t len)
 
     if (!path || !fres || (len <= 0)) return res;
 
-    pcopy = strdup(path);
-    dname = dirname(pcopy);
+    pcopy = scope_strdup(path);
+    dname = scope_dirname(pcopy);
 
-    if ((dirp = opendir(dname)) == NULL) {
-        perror("get_dir:opendir");
-        if (pcopy) free(pcopy);
+    if ((dirp = scope_opendir(dname)) == NULL) {
+        scope_perror("get_dir:opendir");
+        if (pcopy) scope_free(pcopy);
         return res;
     }
 
-    dcopy = strdup(path);
+    dcopy = scope_strdup(path);
     fname = basename(dcopy);
 
-    while ((entry = readdir(dirp)) != NULL) {
+    while ((entry = scope_readdir(dirp)) != NULL) {
         if ((entry->d_type != DT_DIR) &&
-            (strstr(entry->d_name, fname))) {
-            strncpy(fres, entry->d_name, len);
+            (scope_strstr(entry->d_name, fname))) {
+            scope_strncpy(fres, entry->d_name, len);
             res = 0;
             break;
         }
     }
 
-    closedir(dirp);
-    if (pcopy) free(pcopy);
-    if (dcopy) free(dcopy);
+    scope_closedir(dirp);
+    if (pcopy) scope_free(pcopy);
+    if (dcopy) scope_free(dcopy);
     return res;
 }
 
@@ -94,24 +95,24 @@ setEnvVariable(char *env, char *value)
     // If env is not set
     if (!cur_val) {
         if (setenv(env, value, 1)) {
-            perror("setEnvVariable:setenv");
+            scope_perror("setEnvVariable:setenv");
         }
         return;
     }
 
     // env is set. try to append
     char *new_val = NULL;
-    if ((asprintf(&new_val, "%s:%s", cur_val, value) == -1)) {
-        perror("setEnvVariable:asprintf");
+    if ((scope_asprintf(&new_val, "%s:%s", cur_val, value) == -1)) {
+        scope_perror("setEnvVariable:asprintf");
         return;
     }
 
     if (g_debug) printf("%s:%d %s to %s\n", __FUNCTION__, __LINE__, env, new_val);
     if (setenv(env, new_val, 1)) {
-        perror("setEnvVariable:setenv");
+        scope_perror("setEnvVariable:setenv");
     }
 
-    if (new_val) free(new_val);
+    if (new_val) scope_free(new_val);
 }
 
 // modify NEEDED entries in libscope.so to avoid dependencies
@@ -132,20 +133,20 @@ set_library(const char *libpath)
         return -1;
 
     if ((fd = open(libpath, O_RDONLY)) == -1) {
-        perror("set_library:open");
+        scope_perror("set_library:open");
         return -1;
     }
 
     if (fstat(fd, &sbuf) == -1) {
-        perror("set_library:fstat");
+        scope_perror("set_library:fstat");
         close(fd);
         return -1;
     }
 
-    buf = mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
+    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
                PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, (off_t)NULL);
     if (buf == MAP_FAILED) {
-        perror("set_loader:mmap");
+        scope_perror("set_loader:scope_mmap");
         close(fd);
         return -1;
     }
@@ -158,9 +159,9 @@ set_library(const char *libpath)
         || elf->e_ident[EI_MAG2] != ELFMAG2
         || elf->e_ident[EI_MAG3] != ELFMAG3
         || elf->e_ident[EI_VERSION] != EV_CURRENT) {
-        fprintf(stderr, "ERROR:%s: is not valid ELF file", libpath);
+        scope_fprintf(scope_stderr, "ERROR:%s: is not valid ELF file", libpath);
         close(fd);
-        munmap(buf, sbuf.st_size);
+        scope_munmap(buf, sbuf.st_size);
         return -1;
     }
 
@@ -171,15 +172,15 @@ set_library(const char *libpath)
     // locate the .dynstr section
     for (i = 0; i < elf->e_shnum; i++) {
         sec_name = section_strtab + sections[i].sh_name;
-        if (sections[i].sh_type == SHT_STRTAB && strcmp(sec_name, ".dynstr") == 0) {
+        if (sections[i].sh_type == SHT_STRTAB && scope_strcmp(sec_name, ".dynstr") == 0) {
             strtab = (const char *)(buf + sections[i].sh_offset);
         }
     }
 
     if (strtab == NULL) {
-        fprintf(stderr, "ERROR:%s: did not locate the .dynstr from %s", __FUNCTION__, libpath);
+        scope_fprintf(scope_stderr, "ERROR:%s: did not locate the .dynstr from %s", __FUNCTION__, libpath);
         close(fd);
-        munmap(buf, sbuf.st_size);
+        scope_munmap(buf, sbuf.st_size);
         return -1;
     }
 
@@ -189,13 +190,13 @@ set_library(const char *libpath)
             for (dyn = (Elf64_Dyn *)((char *)buf + sections[i].sh_offset); dyn != NULL && dyn->d_tag != DT_NULL; dyn++) {
                 if (dyn->d_tag == DT_NEEDED) {
                     char *depstr = (char *)(strtab + dyn->d_un.d_val);
-                    if (depstr && strstr(depstr, "ld-linux")) {
+                    if (depstr && scope_strstr(depstr, "ld-linux")) {
                         char newdep[PATH_MAX];
                         size_t newdep_len;
                         if (get_dir("/lib/ld-musl", newdep, sizeof(newdep)) == -1) break;
-                        newdep_len = strlen(newdep);
-                        if (strlen(depstr) >= newdep_len) {
-                            strncpy(depstr, newdep, newdep_len + 1);
+                        newdep_len = scope_strlen(newdep);
+                        if (scope_strlen(depstr) >= newdep_len) {
+                            scope_strncpy(depstr, newdep, newdep_len + 1);
                             found = 1;
                             break;
                         }
@@ -208,24 +209,24 @@ set_library(const char *libpath)
 
     if (found) {
         if (close(fd) == -1) {
-            munmap(buf, sbuf.st_size);
+            scope_munmap(buf, sbuf.st_size);
             return -1;
         }
 
         if ((fd = open(libpath, O_RDWR)) == -1) {
-            perror("set_library:open write");
-            munmap(buf, sbuf.st_size);
+            scope_perror("set_library:open write");
+            scope_munmap(buf, sbuf.st_size);
             return -1;
         }
 
         int rc = write(fd, buf, sbuf.st_size);
         if (rc < sbuf.st_size) {
-            perror("set_library:write");
+            scope_perror("set_library:write");
         }
     }
 
     close(fd);
-    munmap(buf, sbuf.st_size);
+    scope_munmap(buf, sbuf.st_size);
     return (found - 1);
 }
 
@@ -242,20 +243,20 @@ set_loader(char *exe)
     if (!exe) return -1;
 
     if ((fd = open(exe, O_RDONLY)) == -1) {
-        perror("set_loader:open");
+        scope_perror("set_loader:open");
         return -1;
     }
 
     if (fstat(fd, &sbuf) == -1) {
-        perror("set_loader:fstat");
+        scope_perror("set_loader:fstat");
         close(fd);
         return -1;
     }
 
-    buf = mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
+    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
                PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, (off_t)NULL);
     if (buf == MAP_FAILED) {
-        perror("set_loader:mmap");
+        scope_perror("set_loader:scope_mmap");
         close(fd);
         return -1;
     }
@@ -272,32 +273,32 @@ set_loader(char *exe)
             char dir[PATH_MAX];
             size_t dir_len;
 
-            if (strstr(exld, "ld-musl") != NULL) {
+            if (scope_strstr(exld, "ld-musl") != NULL) {
                 close(fd);
-                munmap(buf, sbuf.st_size);
+                scope_munmap(buf, sbuf.st_size);
                 return 0;
             }
 
-            snprintf(dir, sizeof(dir), "/lib/");
-            if ((dirp = opendir(dir)) == NULL) {
-                perror("set_loader:opendir");
+            scope_snprintf(dir, sizeof(dir), "/lib/");
+            if ((dirp = scope_opendir(dir)) == NULL) {
+                scope_perror("set_loader:opendir");
                 break;
             }
 
-            while ((entry = readdir(dirp)) != NULL) {
+            while ((entry = scope_readdir(dirp)) != NULL) {
                 if ((entry->d_type != DT_DIR) &&
-                    (strstr(entry->d_name, "ld-musl"))) {
-                    strncat(dir, entry->d_name, strlen(entry->d_name) + 1);
+                    (scope_strstr(entry->d_name, "ld-musl"))) {
+                    scope_strncat(dir, entry->d_name, scope_strlen(entry->d_name) + 1);
                     name = 1;
                     break;
                 }
             }
 
-            closedir(dirp);
-            dir_len = strlen(dir);
-            if (name && (strlen(exld) >= dir_len)) {
+            scope_closedir(dirp);
+            dir_len = scope_strlen(dir);
+            if (name && (scope_strlen(exld) >= dir_len)) {
                 if (g_debug) printf("%s:%d exe ld.so: %s to %s\n", __FUNCTION__, __LINE__, exld, dir);
-                strncpy(exld, dir, dir_len + 1);
+                scope_strncpy(exld, dir, dir_len + 1);
                 found = 1;
                 break;
             }
@@ -306,26 +307,26 @@ set_loader(char *exe)
 
     if (found) {
         if (close(fd) == -1) {
-            munmap(buf, sbuf.st_size);
+            scope_munmap(buf, sbuf.st_size);
             return -1;
         }
 
         if ((fd = open(exe, O_RDWR)) == -1) {
-            perror("set_loader:open write");
-            munmap(buf, sbuf.st_size);
+            scope_perror("set_loader:open write");
+            scope_munmap(buf, sbuf.st_size);
             return -1;
         }
 
         int rc = write(fd, buf, sbuf.st_size);
         if (rc < sbuf.st_size) {
-            perror("set_loader:write");
+            scope_perror("set_loader:write");
         }
     } else {
-        fprintf(stderr, "WARNING: can't locate or set the loader string in %s\n", exe);
+        scope_fprintf(scope_stderr, "WARNING: can't locate or set the loader string in %s\n", exe);
     }
 
     close(fd);
-    munmap(buf, sbuf.st_size);
+    scope_munmap(buf, sbuf.st_size);
     return (found - 1);
 }
 
@@ -341,20 +342,20 @@ get_loader(char *exe)
     if (!exe) return NULL;
 
     if ((fd = open(exe, O_RDONLY)) == -1) {
-        perror("get_loader:open");
+        scope_perror("get_loader:open");
         return NULL;
     }
 
     if (fstat(fd, &sbuf) == -1) {
-        perror("get_loader:fstat");
+        scope_perror("get_loader:fstat");
         close(fd);
         return NULL;
     }
 
-    buf = mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
+    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
                PROT_READ, MAP_PRIVATE, fd, (off_t)NULL);
     if (buf == MAP_FAILED) {
-        perror("get_loader:mmap");
+        scope_perror("get_loader:scope_mmap");
         close(fd);
         return NULL;
     }
@@ -369,13 +370,13 @@ get_loader(char *exe)
             char * exld = (char *)&buf[phead[i].p_offset];
             if (g_debug) printf("%s:%d exe ld.so: %s\n", __FUNCTION__, __LINE__, exld);
 
-            ldso = strdup(exld);
+            ldso = scope_strdup(exld);
 
             break;
         }
     }
 
-    munmap(buf, sbuf.st_size);
+    scope_munmap(buf, sbuf.st_size);
     return ldso;
 }
 
@@ -385,11 +386,11 @@ do_musl(char *exld, char *ldscope)
     char *lpath = NULL;
     char *ldso = NULL;
     char *path;
-    char dir[strlen(ldscope) + 2];
+    char dir[scope_strlen(ldscope) + 2];
 
     // always set the env var
-    strncpy(dir, ldscope, strlen(ldscope) + 1);
-    path = dirname(dir);
+    scope_strncpy(dir, ldscope, scope_strlen(ldscope) + 1);
+    path = scope_dirname(dir);
     setEnvVariable(LD_LIB_ENV, path);
 
     // does a link to the musl ld.so exist?
@@ -397,28 +398,28 @@ do_musl(char *exld, char *ldscope)
     if ((ldso = get_loader(ldscope)) == NULL) return;
 
     // Avoid creating ld-musl-x86_64.so.1 -> /lib/ld-musl-x86_64.so.1
-    if (strstr(ldso, "musl")) return;
+    if (scope_strstr(ldso, "musl")) return;
 
-    if (asprintf(&lpath, "%s/%s", path, basename(ldso)) == -1) {
-        perror("do_musl:asprintf");
-        if (ldso) free(ldso);
+    if (scope_asprintf(&lpath, "%s/%s", path, basename(ldso)) == -1) {
+        scope_perror("do_musl:asprintf");
+        if (ldso) scope_free(ldso);
         return;
     }
 
     // dir is expected to exist here, not creating one
     if ((symlink((const char *)exld, lpath) == -1) &&
         (errno != EEXIST)) {
-        perror("do_musl:symlink");
-        if (ldso) free(ldso);
-        if (lpath) free(lpath);
+        scope_perror("do_musl:symlink");
+        if (ldso) scope_free(ldso);
+        if (lpath) scope_free(lpath);
         return;
     }
 
     set_loader(ldscope);
     set_library(libdirGetLibrary());
 
-    if (ldso) free(ldso);
-    if (lpath) free(lpath);
+    if (ldso) scope_free(ldso);
+    if (lpath) scope_free(lpath);
 }
 
 /*
@@ -434,13 +435,13 @@ setup_loader(char *ldscope)
     char *ldso = NULL;
 
     if (((ldso = get_loader(EXE_TEST_FILE)) != NULL) &&
-        (strstr(ldso, LIBMUSL) != NULL)) {
+        (scope_strstr(ldso, LIBMUSL) != NULL)) {
             // we are using the musl ld.so
             do_musl(ldso, ldscope);
             ret = 1; // detected musl
     }
 
-    if (ldso) free(ldso);
+    if (ldso) scope_free(ldso);
 
     return ret;
 }
@@ -450,10 +451,10 @@ patch_library(const char *so_path) {
     int result = EXIT_FAILURE;
 
     char *ldso = get_loader(EXE_TEST_FILE);
-    if (ldso && strstr(ldso, LIBMUSL) != NULL) {
+    if (ldso && scope_strstr(ldso, LIBMUSL) != NULL) {
         result = set_library(optarg);
     }
-    free(ldso);
+    scope_free(ldso);
 
     return result;
 }
@@ -473,7 +474,7 @@ static const char  shm_mount[] = SHM_MOUNT;
 const char *__shm_directory(size_t *len)
 {
     if (len)
-        *len = strlen(shm_mount);
+        *len = scope_strlen(shm_mount);
     return shm_mount;
 }
 
@@ -887,24 +888,24 @@ showHelp(const char *section)
       SCOPE_VER
     );
 
-    if (!section || !strcasecmp(section, "all")) {
+    if (!section || !scope_strcasecmp(section, "all")) {
         puts(scope_help_overview);
         puts(scope_help_configuration);
         puts(scope_help_metrics);
         puts(scope_help_events);
         puts(scope_help_protocol);
-    } else if (!strcasecmp(section, "overview")) {
+    } else if (!scope_strcasecmp(section, "overview")) {
         puts(scope_help_overview);
-    } else if (!strcasecmp(section, "configuration") || !strcasecmp(section, "config")) {
+    } else if (!scope_strcasecmp(section, "configuration") || !scope_strcasecmp(section, "config")) {
         puts(scope_help_configuration);
-    } else if (!strcasecmp(section, "metrics")) {
+    } else if (!scope_strcasecmp(section, "metrics")) {
         puts(scope_help_metrics);
-    } else if (!strcasecmp(section, "events")) {
+    } else if (!scope_strcasecmp(section, "events")) {
         puts(scope_help_events);
-    } else if (!strcasecmp(section, "protocols")) {
+    } else if (!scope_strcasecmp(section, "protocols")) {
         puts(scope_help_protocol);
     } else {
-        fprintf(stderr, "error: invalid help section\n\n");
+        scope_fprintf(scope_stderr, "error: invalid help section\n\n");
         return -1;
     }
     return 0;
@@ -1003,14 +1004,14 @@ main(int argc, char **argv, char **env)
                         showHelp(0);
                         return EXIT_SUCCESS;
                     default: 
-                        fprintf(stderr, "error: missing required value for -%c option\n", optopt);
+                        scope_fprintf(scope_stderr, "error: missing required value for -%c option\n", optopt);
                         showUsage(basename(argv[0]));
                         return EXIT_FAILURE;
                 }
                 break;
             case '?':
             default:
-                fprintf(stderr, "error: invalid option: -%c\n", optopt);
+                scope_fprintf(scope_stderr, "error: invalid option: -%c\n", optopt);
                 showUsage(basename(argv[0]));
                 return EXIT_FAILURE;
         }
@@ -1018,31 +1019,31 @@ main(int argc, char **argv, char **env)
 
     // either --attach or a command are required
     if (!attachArg && optind >= argc) {
-        fprintf(stderr, "error: missing --attach option or EXECUTABLE argument\n");
+        scope_fprintf(scope_stderr, "error: missing --attach option or EXECUTABLE argument\n");
         showUsage(basename(argv[0]));
         return EXIT_FAILURE;
     }
 
     // use --attach, ignore executable and args
     if (attachArg && optind < argc) {
-        fprintf(stderr, "warning: ignoring EXECUTABLE argument with --attach option\n");
+        scope_fprintf(scope_stderr, "warning: ignoring EXECUTABLE argument with --attach option\n");
     }
 
     // extract to the library directory
     if (libdirExtractLoader()) {
-        fprintf(stderr, "error: failed to extract loader\n");
+        scope_fprintf(scope_stderr, "error: failed to extract loader\n");
         return EXIT_FAILURE;
     }
 
     if (libdirExtractLibrary()) {
-        fprintf(stderr, "error: failed to extract library\n");
+        scope_fprintf(scope_stderr, "error: failed to extract library\n");
         return EXIT_FAILURE;
     }
 
     // setup for musl libc if detected
     char *loader = (char *)libdirGetLoader();
     if (!loader) {
-        fprintf(stderr, "error: failed to get a loader path\n");
+        scope_fprintf(scope_stderr, "error: failed to get a loader path\n");
         return EXIT_FAILURE;
     }
     setup_loader(loader);
@@ -1050,8 +1051,8 @@ main(int argc, char **argv, char **env)
     // set SCOPE_EXEC_PATH to path to `ldscope` if not set already
     if (getenv("SCOPE_EXEC_PATH") == 0) {
         char execPath[PATH_MAX];
-        if (readlink("/proc/self/exe", execPath, sizeof(execPath) - 1) == -1) {
-            perror("readlink(/proc/self/exe) failed");
+        if (scope_readlink("/proc/self/exe", execPath, sizeof(execPath) - 1) == -1) {
+            scope_perror("readlink(/proc/self/exe) failed");
             return EXIT_FAILURE;
         }
         setenv("SCOPE_EXEC_PATH", execPath, 0);
@@ -1060,28 +1061,28 @@ main(int argc, char **argv, char **env)
     // create /dev/shm/scope_${PID}.env when attaching
     if (attachArg) {
         // must be root
-        if (getuid()) {
+        if (scope_getuid()) {
             printf("error: --attach requires root\n");
             return EXIT_FAILURE;
         }
 
         // target process must exist
-        int pid = atoi(attachArg);
+        int pid = scope_atoi(attachArg);
         if (pid < 1) {
             printf("error: invalid --attach PID: %s\n", attachArg);
             return EXIT_FAILURE;
         }
-        snprintf(path, sizeof(path), "/proc/%d", pid);
+        scope_snprintf(path, sizeof(path), "/proc/%d", pid);
         if (access(path, F_OK)) {
             printf("error: --attach PID not a current process: %d\n", pid);
             return EXIT_FAILURE;
         }
 
         // create .env file for the library to load
-        snprintf(path, sizeof(path), "/scope_attach_%d.env", pid);
+        scope_snprintf(path, sizeof(path), "/scope_attach_%d.env", pid);
         int fd = shm_open(path, O_RDWR|O_CREAT, S_IRUSR|S_IRGRP|S_IROTH);
         if (fd == -1) {
-            perror("shm_open() failed");
+            scope_perror("shm_open() failed");
             return EXIT_FAILURE;
         }
 
@@ -1090,7 +1091,7 @@ main(int argc, char **argv, char **env)
 
         int i;
         for (i = 0; environ[i]; i++) {
-            if (strlen(environ[i]) > 6 && strncmp(environ[i], "SCOPE_", 6) == 0) {
+            if (scope_strlen(environ[i]) > 6 && scope_strncmp(environ[i], "SCOPE_", 6) == 0) {
                 dprintf(fd, "%s\n", environ[i]);
             }
         }
@@ -1101,9 +1102,9 @@ main(int argc, char **argv, char **env)
 
     // build exec args
     int execArgc = 0;
-    char **execArgv = calloc(argc + 4, sizeof(char *));
+    char **execArgv = scope_calloc(argc + 4, sizeof(char *));
     if (!execArgv) {
-        perror("calloc");
+        scope_perror("scope_calloc");
         return EXIT_FAILURE;
     }
 
@@ -1122,7 +1123,7 @@ main(int argc, char **argv, char **env)
 
     // pass SCOPE_LIB_PATH in environment
     if (setenv("SCOPE_LIB_PATH", libdirGetLibrary(), 1)) {
-        perror("setenv(SCOPE_LIB_PATH) failed");
+        scope_perror("setenv(SCOPE_LIB_PATH) failed");
         return EXIT_FAILURE;
     }
 
@@ -1130,13 +1131,13 @@ main(int argc, char **argv, char **env)
     struct utsname ubuf;
 
     if (uname(&ubuf) != 0) {
-        perror("uname");
+        scope_perror("uname");
         return EXIT_FAILURE;
     }
 
     execve(libdirGetLoader(), execArgv, environ);
 
-    free(execArgv);
-    perror("execve failed");
+    scope_free(execArgv);
+    scope_perror("execve failed");
     return EXIT_FAILURE;
 }

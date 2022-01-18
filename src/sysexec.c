@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include <dlfcn.h>
 
+#include "scopestdlib.h"
 #include "fn.h"
 #include "dbg.h"
 #include "os.h"
@@ -64,10 +65,10 @@ sysprint(const char* fmt, ...)
 static int
 get_file_size(const char *path)
 {
-    int fd;
+    int fd = scope_open(path, O_RDONLY);
     struct stat sbuf;
 
-    if (g_fn.open && (fd = g_fn.open(path, O_RDONLY)) == -1) {
+    if (fd == -1) {
         scopeLogError("ERROR: get_file_size:open");
         return -1;
     }
@@ -77,7 +78,7 @@ get_file_size(const char *path)
         return -1;
     }
 
-    if (g_fn.close && g_fn.close(fd) == -1) {
+    if (scope_close(fd) == -1) {
         scopeLogError("ERROR: get_file_size:close");
         return -1;        
     }
@@ -113,7 +114,7 @@ load_sections(char *buf, char *addr, size_t mlen)
             if ((type != SHT_NOBITS) && ((flags & SHF_ALLOC) || (flags & SHF_EXECINSTR))) {
                 memmove(laddr, &buf[sections[i].sh_offset], len);
             } else if (type == SHT_NOBITS) {
-                memset(laddr, 0, len);
+                scope_memset(laddr, 0, len);
             }
 
             sysprint("%s:%d %s addr %p - %p\n",
@@ -147,16 +148,16 @@ map_segment(char *buf, Elf64_Phdr *phead)
     sysprint("%s:%d vaddr 0x%lx size 0x%lx\n",
              __FUNCTION__, __LINE__, phead->p_vaddr, (size_t)phead->p_memsz);
 
-    if ((addr = mmap(laddr, ROUND_UP((size_t)lsize, phead->p_align),
+    if ((addr = scope_mmap(laddr, ROUND_UP((size_t)lsize, phead->p_align),
                      prot | PROT_WRITE,
                      MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
                      -1, (off_t)NULL)) == MAP_FAILED) {
-        scopeLogError("ERROR: load_segment:mmap");
+        scopeLogError("ERROR: load_segment:scope_mmap");
         return -1;
     }
 
     if (laddr != addr) {
-        scopeLogError("ERROR: load_segment:mmap:laddr mismatch");
+        scopeLogError("ERROR: load_segment:scope_mmap:laddr mismatch");
         return -1;
     }
 
@@ -182,11 +183,11 @@ load_elf(char *buf)
     Elf64_Half phsize = elf->e_phentsize;
     void *pheadaddr;
 
-    if ((pheadaddr = mmap(NULL, ROUND_UP((size_t)(pnum * phsize), pgsz),
+    if ((pheadaddr = scope_mmap(NULL, ROUND_UP((size_t)(pnum * phsize), pgsz),
                           PROT_READ | PROT_WRITE,
                           MAP_PRIVATE | MAP_ANONYMOUS,
                           -1, (off_t)NULL)) == MAP_FAILED) {
-        scopeLogError("ERROR: load_elf:mmap");
+        scopeLogError("ERROR: load_elf:scope_mmap");
         return (Elf64_Addr)NULL;
     }
 
@@ -280,7 +281,7 @@ copy_strings(char *buf, uint64_t sp, int argc, const char **argv, const char **e
     // This is the destination for the new auxv array
     // The AUX_ENT macro uses elf_info
     elf_info = (Elf64_Addr *)spp;
-    memset(elf_info, 0, sizeof(Elf64_Addr) * ((AT_EXECFN + 1) * 2));
+    scope_memset(elf_info, 0, sizeof(Elf64_Addr) * ((AT_EXECFN + 1) * 2));
 
     /*
      * There is an auxv vector that defines a TLS section from the elf image.
@@ -339,11 +340,11 @@ set_go(char *buf, int argc, const char **argv, const char **env, Elf64_Addr phad
     char *rtld_fini = NULL;
 
     // create a stack (void *)ROUND_UP(laddr + pgsz + HEAP_SIZE, pgsz)  | MAP_FIXED
-    if ((sp = mmap(NULL, STACK_SIZE,
+    if ((sp = scope_mmap(NULL, STACK_SIZE,
                    PROT_READ | PROT_WRITE,
                    MAP_PRIVATE | MAP_ANONYMOUS | MAP_GROWSDOWN,
                    -1, (off_t)NULL)) == MAP_FAILED) {
-        scopeLogError("set_go:mmap");
+        scopeLogError("set_go:scope_mmap");
         return -1;
     }
 
