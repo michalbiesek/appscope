@@ -15,6 +15,7 @@
 #include <getopt.h>
 #include <sys/utsname.h>
 
+#include "scopestdlib.h"
 #include "scopetypes.h"
 #include "libdir.h"
 
@@ -59,16 +60,16 @@ get_dir(const char *path, char *fres, size_t len)
 
     if (!path || !fres || (len <= 0)) return res;
 
-    pcopy = strdup(path);
+    pcopy = scope_strdup(path);
     dname = dirname(pcopy);
 
     if ((dirp = opendir(dname)) == NULL) {
         perror("get_dir:opendir");
-        if (pcopy) free(pcopy);
+        if (pcopy) scope_free(pcopy);
         return res;
     }
 
-    dcopy = strdup(path);
+    dcopy = scope_strdup(path);
     fname = basename(dcopy);
 
     while ((entry = readdir(dirp)) != NULL) {
@@ -81,8 +82,8 @@ get_dir(const char *path, char *fres, size_t len)
     }
 
     closedir(dirp);
-    if (pcopy) free(pcopy);
-    if (dcopy) free(dcopy);
+    if (pcopy) scope_free(pcopy);
+    if (dcopy) scope_free(dcopy);
     return res;
 }
 
@@ -101,7 +102,7 @@ setEnvVariable(char *env, char *value)
 
     // env is set. try to append
     char *new_val = NULL;
-    if ((asprintf(&new_val, "%s:%s", cur_val, value) == -1)) {
+    if ((scope_asprintf(&new_val, "%s:%s", cur_val, value) == -1)) {
         perror("setEnvVariable:asprintf");
         return;
     }
@@ -111,7 +112,7 @@ setEnvVariable(char *env, char *value)
         perror("setEnvVariable:setenv");
     }
 
-    if (new_val) free(new_val);
+    if (new_val) scope_free(new_val);
 }
 
 // modify NEEDED entries in libscope.so to avoid dependencies
@@ -142,10 +143,10 @@ set_library(const char *libpath)
         return -1;
     }
 
-    buf = mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
+    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
                PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, (off_t)NULL);
     if (buf == MAP_FAILED) {
-        perror("set_loader:mmap");
+        perror("set_loader:scope_mmap");
         close(fd);
         return -1;
     }
@@ -252,10 +253,10 @@ set_loader(char *exe)
         return -1;
     }
 
-    buf = mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
+    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
                PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, (off_t)NULL);
     if (buf == MAP_FAILED) {
-        perror("set_loader:mmap");
+        perror("set_loader:scope_mmap");
         close(fd);
         return -1;
     }
@@ -351,10 +352,10 @@ get_loader(char *exe)
         return NULL;
     }
 
-    buf = mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
+    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
                PROT_READ, MAP_PRIVATE, fd, (off_t)NULL);
     if (buf == MAP_FAILED) {
-        perror("get_loader:mmap");
+        perror("get_loader:scope_mmap");
         close(fd);
         return NULL;
     }
@@ -369,13 +370,13 @@ get_loader(char *exe)
             char * exld = (char *)&buf[phead[i].p_offset];
             if (g_debug) printf("%s:%d exe ld.so: %s\n", __FUNCTION__, __LINE__, exld);
 
-            ldso = strdup(exld);
+            ldso = scope_strdup(exld);
 
             break;
         }
     }
 
-    munmap(buf, sbuf.st_size);
+    scope_munmap(buf, sbuf.st_size);
     return ldso;
 }
 
@@ -399,9 +400,9 @@ do_musl(char *exld, char *ldscope)
     // Avoid creating ld-musl-x86_64.so.1 -> /lib/ld-musl-x86_64.so.1
     if (strstr(ldso, "musl")) return;
 
-    if (asprintf(&lpath, "%s/%s", path, basename(ldso)) == -1) {
+    if (scope_asprintf(&lpath, "%s/%s", path, basename(ldso)) == -1) {
         perror("do_musl:asprintf");
-        if (ldso) free(ldso);
+        if (ldso) scope_free(ldso);
         return;
     }
 
@@ -409,16 +410,16 @@ do_musl(char *exld, char *ldscope)
     if ((symlink((const char *)exld, lpath) == -1) &&
         (errno != EEXIST)) {
         perror("do_musl:symlink");
-        if (ldso) free(ldso);
-        if (lpath) free(lpath);
+        if (ldso) scope_free(ldso);
+        if (lpath) scope_free(lpath);
         return;
     }
 
     set_loader(ldscope);
     set_library(libdirGetLibrary());
 
-    if (ldso) free(ldso);
-    if (lpath) free(lpath);
+    if (ldso) scope_free(ldso);
+    if (lpath) scope_free(lpath);
 }
 
 /*
@@ -440,7 +441,7 @@ setup_loader(char *ldscope)
             ret = 1; // detected musl
     }
 
-    if (ldso) free(ldso);
+    if (ldso) scope_free(ldso);
 
     return ret;
 }
@@ -453,7 +454,7 @@ patch_library(const char *so_path) {
     if (ldso && strstr(ldso, LIBMUSL) != NULL) {
         result = set_library(optarg);
     }
-    free(ldso);
+    scope_free(ldso);
 
     return result;
 }
@@ -1050,7 +1051,7 @@ main(int argc, char **argv, char **env)
     // set SCOPE_EXEC_PATH to path to `ldscope` if not set already
     if (getenv("SCOPE_EXEC_PATH") == 0) {
         char execPath[PATH_MAX];
-        if (readlink("/proc/self/exe", execPath, sizeof(execPath) - 1) == -1) {
+        if (scope_readlink("/proc/self/exe", execPath, sizeof(execPath) - 1) == -1) {
             perror("readlink(/proc/self/exe) failed");
             return EXIT_FAILURE;
         }
@@ -1101,9 +1102,9 @@ main(int argc, char **argv, char **env)
 
     // build exec args
     int execArgc = 0;
-    char **execArgv = calloc(argc + 4, sizeof(char *));
+    char **execArgv = scope_calloc(argc + 4, sizeof(char *));
     if (!execArgv) {
-        perror("calloc");
+        perror("scope_calloc");
         return EXIT_FAILURE;
     }
 
@@ -1136,7 +1137,7 @@ main(int argc, char **argv, char **env)
 
     execve(libdirGetLoader(), execArgv, environ);
 
-    free(execArgv);
+    scope_free(execArgv);
     perror("execve failed");
     return EXIT_FAILURE;
 }

@@ -3,6 +3,7 @@
 #include <string.h>
 #include "scopetypes.h"
 #include "search.h"
+#include "scopestdlib.h"
 
 #define ASIZE 256
 
@@ -25,11 +26,11 @@ searchComp(const char *input_str)
 {
     if (!input_str) return NULL;
 
-    search_t* handle = calloc(1, sizeof(search_t));
+    search_t* handle = scope_calloc(1, sizeof(search_t));
     if (!handle) goto failed;
     handle->nlen = strlen(input_str);
     if (!handle->nlen) goto failed;
-    handle->str = (unsigned char*)strdup(input_str);
+    handle->str = (unsigned char*)scope_strdup(input_str);
     if (!handle->str) goto failed;
 
     int i;
@@ -50,8 +51,8 @@ searchFree(search_t **handle_ptr)
 {
     if (!handle_ptr || !*handle_ptr) return;
     search_t *handle = *handle_ptr;
-    if (handle && handle->str) free(handle->str);
-    if (handle) free(handle);
+    if (handle && handle->str) scope_free(handle->str);
+    if (handle) scope_free(handle);
     *handle_ptr = NULL;
 }
 

@@ -91,12 +91,12 @@ func_found_in_executable(const char *symbol, const char *exe)
     }
 
     // turns "bash" into "/bash", for example
-    if (asprintf(&exe_with_preceeding_slash, "/%s", exe) == -1) goto out;
+    if (scope_asprintf(&exe_with_preceeding_slash, "/%s", exe) == -1) goto out;
     func_found = endsWith(symbol_info.dli_fname, exe_with_preceeding_slash);
 
 out:
     if (exe_handle) dlclose(exe_handle);
-    if (exe_with_preceeding_slash) free(exe_with_preceeding_slash);
+    if (exe_with_preceeding_slash) scope_free(exe_with_preceeding_slash);
     return func_found;
 }
 

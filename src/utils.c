@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "scopestdlib.h"
 #include "utils.h"
 #include "fn.h"
 #include "dbg.h"
@@ -105,7 +106,7 @@ getpath(const char *cmd)
     if (cmd[0] == '/') {
         //  If we can resolve it, use it.
         if (!stat(cmd, &buf) && S_ISREG(buf.st_mode) && (buf.st_mode & 0111)) {
-            ret_val = strdup(cmd);
+            ret_val = scope_strdup(cmd);
         }
         goto out;
     }
@@ -116,33 +117,33 @@ getpath(const char *cmd)
         if (!cur_dir) goto out;
 
         char *path = NULL;
-        if (asprintf(&path, "%s/%s", cur_dir, cmd) > 0) {
+        if (scope_asprintf(&path, "%s/%s", cur_dir, cmd) > 0) {
             // If we can resolve it, use it
             if (!stat(path, &buf) && S_ISREG(buf.st_mode) && (buf.st_mode & 0111)) {
                 ret_val = path;
             } else {
-                free(path);
+                scope_free(path);
             }
         }
-        free(cur_dir);
+        scope_free(cur_dir);
         goto out;
     }
 
     // try the current dir
     char *path = NULL;
-    if (asprintf(&path, "./%s", cmd) > 0) {
+    if (scope_asprintf(&path, "./%s", cmd) > 0) {
         if (!stat(path, &buf) && S_ISREG(buf.st_mode) && (buf.st_mode & 0111)) {
             ret_val = path;
             goto out;
         } else {
-            free(path);
+            scope_free(path);
         }
     }
 
     // try to resolve the cmd from PATH env variable
     char *path_env_ptr = getenv("PATH");
     if (!path_env_ptr) goto out;
-    path_env = strdup(path_env_ptr); // create a copy for strtok below
+    path_env = scope_strdup(path_env_ptr); // create a copy for strtok below
     if (!path_env) goto out;
 
     char *saveptr = NULL;
@@ -151,14 +152,14 @@ getpath(const char *cmd)
 
     do {
         char *path = NULL;
-        if (asprintf(&path, "%s/%s", strtok_path, cmd) < 0) {
+        if (scope_asprintf(&path, "%s/%s", strtok_path, cmd) < 0) {
             break;
         }
         if ((stat(path, &buf) == -1) ||    // path doesn't exist
             (!S_ISREG(buf.st_mode)) ||     // path isn't a file
             ((buf.st_mode & 0111) == 0)) { // path isn't executable
 
-            free(path);
+            scope_free(path);
             continue;
         }
 
@@ -169,7 +170,7 @@ getpath(const char *cmd)
     } while ((strtok_path = strtok_r(NULL, ":", &saveptr)));
 
 out:
-    if (path_env) free(path_env);
+    if (path_env) scope_free(path_env);
     return ret_val;
 }
 #endif //__APPLE__

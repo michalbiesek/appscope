@@ -6,6 +6,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include "dbg.h"
+#include "scopestdlib.h"
 #include "os.h"
 #include "fn.h"
 #include "scopeelf.h"
@@ -18,7 +19,7 @@ freeElf(char *buf, size_t len)
 {
     if (!buf) return;
 
-    if (munmap(buf, len) == -1) {
+    if (scope_munmap(buf, len) == -1) {
         scopeLogError("freeElf: munmap failed");
     }
 }
@@ -104,7 +105,7 @@ getElf(char *path)
         goto out;
     }
 
-    if ((ebuf = calloc(1, sizeof(elf_buf_t))) == NULL) {
+    if ((ebuf = scope_calloc(1, sizeof(elf_buf_t))) == NULL) {
         scopeLogError("getElf: memory alloc failed");
         goto out;
     }
@@ -120,10 +121,10 @@ getElf(char *path)
     }
 
 
-    char * mmap_rv = mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
+    char * mmap_rv = scope_mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
                           PROT_READ, MAP_PRIVATE, fd, (off_t)NULL);
     if (mmap_rv == MAP_FAILED) {
-        scopeLogError("fd:%d getElf: mmap failed", fd);
+        scopeLogError("fd:%d getElf: scope_mmap failed", fd);
         goto out;
     }
 
@@ -155,7 +156,7 @@ out:
     if (fd != -1) g_fn.close(fd);
     if (!get_elf_successful && ebuf) {
         freeElf(ebuf->buf, ebuf->len);
-        free(ebuf);
+        scope_free(ebuf);
         ebuf = NULL;
     }
     return ebuf;
@@ -496,13 +497,13 @@ is_musl(char *buf)
         if ((phead[i].p_type == PT_INTERP)) {
             char *exld = (char *)&buf[phead[i].p_offset];
 
-            ldso = strdup(exld);
+            ldso = scope_strdup(exld);
             if (ldso) {
                 if (strstr(ldso, "musl") != NULL) {
-                    free(ldso);
+                    scope_free(ldso);
                     return TRUE;
                 }
-                free(ldso);
+                scope_free(ldso);
             } else {
                 DBG(NULL); // not expected
             }

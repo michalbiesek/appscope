@@ -16,6 +16,7 @@
 #include <dlfcn.h>
 #include <stddef.h>
 #include <inttypes.h>
+#include "scopestdlib.h"
 #include "dbg.h"
 #include "inject.h"
 
@@ -220,7 +221,7 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     }
     
     // back up the code
-    oldcode = (unsigned char *)malloc(INJECTED_CODE_SIZE_LEN);
+    oldcode = (unsigned char *)scope_malloc(INJECTED_CODE_SIZE_LEN);
     if (ptraceRead(pid, freeAddr, oldcode, INJECTED_CODE_SIZE_LEN)) {
         goto detach;
     }
@@ -298,7 +299,7 @@ detach:
     ptrace(PTRACE_DETACH, pid, NULL, NULL);
 
 exit:
-    free(oldcode);
+    scope_free(oldcode);
     return ret;
 }
 
@@ -308,7 +309,7 @@ findLib(struct dl_phdr_info *info, size_t size, void *data)
     if (strstr(info->dlpi_name, "libc.so") != NULL ||
         strstr(info->dlpi_name, "ld-musl") != NULL) {
         char libpath[PATH_MAX];
-        if (realpath(info->dlpi_name, libpath)) {
+        if (scope_realpath(info->dlpi_name, libpath)) {
             ((libdl_info_t *)data)->path = libpath;
             ((libdl_info_t *)data)->addr = info->dlpi_addr;
             return 1;

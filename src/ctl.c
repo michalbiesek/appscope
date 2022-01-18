@@ -13,6 +13,7 @@
 #include "com.h"
 #include "fn.h"
 #include "state.h"
+#include "scopestdlib.h"
 
 #define FS_ENTRIES 1024
 #define DEFAULT_LOG_MAX_AGG_BYTES 32768
@@ -157,7 +158,7 @@ grab_supplemental_for_set_cfg(cJSON * json_root, request_t *req)
 
     // Feed the string to the yaml parser to get a cfg
     req->cfg = cfgFromString(string);
-    free(string);
+    scope_free(string);
 
     if (!req->cfg) goto error;
 
@@ -216,7 +217,7 @@ grab_supplemental_for_def_protocol(cJSON * json_root, request_t *req)
     body = cJSON_GetObjectItem(json_root, "body");
     if (!body || !cJSON_IsObject(body)) goto err;
 
-    if ((prot = calloc(1, sizeof(protocol_def_t))) == NULL) goto err;
+    if ((prot = scope_calloc(1, sizeof(protocol_def_t))) == NULL) goto err;
 
     req->protocol = prot;
 
@@ -240,20 +241,20 @@ grab_supplemental_for_def_protocol(cJSON * json_root, request_t *req)
     json = cJSON_GetObjectItem(body, "regex");
     if (!json) goto err;
     if (!(str = cJSON_GetStringValue(json))) goto err;
-    prot->regex = strdup(str);
+    prot->regex = scope_strdup(str);
 
     json = cJSON_GetObjectItem(body, "pname");
     if (!json) goto err;
     if (!(str = cJSON_GetStringValue(json))) goto err;
-    prot->protname = strdup(str);
+    prot->protname = scope_strdup(str);
 
     return;
 
 err:
     if (req) req->cmd=REQ_PARAM_ERR;
-    if (prot && prot->regex) free(prot->regex);
-    if (prot && prot->protname) free(prot->protname);
-    if (prot) free(prot);
+    if (prot && prot->regex) scope_free(prot->regex);
+    if (prot && prot->protname) scope_free(prot->protname);
+    if (prot) scope_free(prot);
 }
 
 static void
@@ -269,21 +270,21 @@ grab_supplemental_for_del_protocol(cJSON * json_root, request_t *req)
     body = cJSON_GetObjectItem(json_root, "body");
     if (!body || !cJSON_IsObject(body)) goto err;
 
-    if ((prot = calloc(1, sizeof(protocol_def_t))) == NULL) goto err;
+    if ((prot = scope_calloc(1, sizeof(protocol_def_t))) == NULL) goto err;
 
     req->protocol = prot;
 
     json = cJSON_GetObjectItem(body, "pname");
     if (!json) goto err;
     if (!(str = cJSON_GetStringValue(json))) goto err;
-    prot->protname = strdup(str);
+    prot->protname = scope_strdup(str);
 
     return;
 
 err:
     if (req) req->cmd=REQ_PARAM_ERR;
-    if (prot && prot->protname) free(prot->protname);
-    if (prot) free(prot);
+    if (prot && prot->protname) scope_free(prot->protname);
+    if (prot) scope_free(prot);
 }
 
 request_t *
@@ -294,7 +295,7 @@ ctlParseRxMsg(const char *msg)
     char *str;
     cmd_map_t *map;
 
-    request_t *req = calloc(1, sizeof(request_t));
+    request_t *req = scope_calloc(1, sizeof(request_t));
     if (!req) {
         DBG(NULL);
         goto out;
@@ -329,7 +330,7 @@ ctlParseRxMsg(const char *msg)
     json = cJSON_GetObjectItem(json_root, "req");
     if (!json) goto out;
     if (!(str = cJSON_GetStringValue(json))) goto out;
-    req->cmd_str = strdup(str);
+    req->cmd_str = scope_strdup(str);
 
     // verify that type field exists, with required value "req"
     json = cJSON_GetObjectItem(json_root, "type");
@@ -398,10 +399,10 @@ destroyReq(request_t **request)
 
     request_t *req = *request;
 
-    if (req->cmd_str) free(req->cmd_str);
+    if (req->cmd_str) scope_free(req->cmd_str);
     if (req->cfg) cfgDestroy(&req->cfg);
     // Note: don't mess with the protocol object here
-    free(req);
+    scope_free(req);
 
     *request=NULL;
 }
@@ -526,11 +527,11 @@ prepMessage(upload_t *upld)
 
     // Add the newline delimiter to the msg.
     int strsize = strlen(streamMsg);
-    char *temp = realloc(streamMsg, strsize+2); // room for "\n\0"
+    char *temp = scope_realloc(streamMsg, strsize+2); // room for "\n\0"
     if (!temp) {
         DBG(NULL);
-        scopeLogInfo("CTL realloc error");
-        free(streamMsg);
+        scopeLogInfo("CTL scope_realloc error");
+        scope_free(streamMsg);
         return NULL;
     }
 
@@ -575,7 +576,7 @@ out:
 ctl_t *
 ctlCreate()
 {
-    ctl_t *ctl = calloc(1, sizeof(ctl_t));
+    ctl_t *ctl = scope_calloc(1, sizeof(ctl_t));
     if (!ctl) {
         DBG(NULL);
         goto err;
@@ -609,8 +610,9 @@ ctlCreate()
     ctl->enhancefs = DEFAULT_ENHANCE_FS;
 
     ctl->payload.enable = DEFAULT_PAYLOAD_ENABLE;
-    ctl->payload.dir = (DEFAULT_PAYLOAD_DIR) ? strdup(DEFAULT_PAYLOAD_DIR) : NULL;
+    ctl->payload.dir = (DEFAULT_PAYLOAD_DIR) ? scope_strdup(DEFAULT_PAYLOAD_DIR) : NULL;
     ctl->payload.ringbuf = cbufInit(buf_size);
+
     if (!ctl->payload.ringbuf) {
         DBG(NULL);
         goto err;
@@ -639,14 +641,14 @@ ctlDestroy(ctl_t **ctl)
     cbufFree((*ctl)->msgbuf);
     cbufFree((*ctl)->events);
 
-    if ((*ctl)->payload.dir) free((*ctl)->payload.dir);
+    if ((*ctl)->payload.dir) scope_free((*ctl)->payload.dir);
     cbufFree((*ctl)->payload.ringbuf);
 
     transportDestroy(&(*ctl)->transport);
     transportDestroy(&(*ctl)->paytrans);
     evtFormatDestroy(&(*ctl)->evt);
 
-    free(*ctl);
+    scope_free(*ctl);
     *ctl = NULL;
 }
 
@@ -655,14 +657,14 @@ ctlSendMsg(ctl_t *ctl, char *msg)
 {
     if (!msg) return;
     if (!ctl) {
-        free(msg);
+        scope_free(msg);
         return;
     }
 
     if (cbufPut(ctl->msgbuf, (uint64_t)msg) == -1) {
         // Full; drop and ignore
         DBG(NULL);
-        free(msg);
+        scope_free(msg);
     }
 }
 
@@ -688,7 +690,7 @@ ctlSendJson(ctl_t *ctl, cJSON *json, which_transport_t who)
         }
     }
 
-    if (msg) free(msg);
+    if (msg) scope_free(msg);
     cJSON_Delete(json);
     return rc;
 }
@@ -753,7 +755,7 @@ ctlSendHttp(ctl_t *ctl, event_t *evt, uint64_t uid, proc_id_t *proc)
     streamMsg = prepMessage(&upld);
 
     rc = transportSend(ctl->transport, streamMsg, strlen(streamMsg));
-    if (streamMsg) free(streamMsg);
+    if (streamMsg) scope_free(streamMsg);
     return rc;
 }
 
@@ -779,7 +781,7 @@ ctlSendEvent(ctl_t *ctl, event_t *evt, uint64_t uid, proc_id_t *proc)
     streamMsg = prepMessage(&upld);
 
     rc = transportSend(ctl->transport, streamMsg, strlen(streamMsg));
-    if (streamMsg) free(streamMsg);
+    if (streamMsg) scope_free(streamMsg);
     return rc;
 
 }
@@ -789,14 +791,14 @@ ctlPostEvent(ctl_t *ctl, char *event)
 {
     if (!event) return -1;
     if (!ctl) {
-        free(event);
+        scope_free(event);
         return -1;
     }
 
     if (cbufPut(ctl->events, (uint64_t)event) == -1) {
         // Full; drop and ignore
         DBG(NULL);
-        free(event);
+        scope_free(event);
         return -1;
     }
     return 0;
@@ -805,15 +807,15 @@ ctlPostEvent(ctl_t *ctl, char *event)
 static log_event_t *
 createInternalLogEvent(int fd, const char *path, const void *buf, size_t count, uint64_t uid, proc_id_t *proc, watch_t logType, regex_t *valfilter)
 {
-    log_event_t *event = calloc(1, sizeof(*event));
-    char *data = malloc(count);
-    char *src = strdup(path);
+    log_event_t *event = scope_calloc(1, sizeof(*event));
+    char *data = scope_malloc(count);
+    char *src = scope_strdup(path);
 
     if (!event || !data || !path) {
-        if (event) free(event);
-        if (data) free(data);
-        if (src) free(src);
         DBG("event = %p, data = %p, src = %p", event, data, src);
+        if (event) scope_free(event);
+        if (data) scope_free(data);
+        if (src) scope_free(src);
         return NULL;
     }
 
@@ -840,9 +842,9 @@ destroyInternalLogEvent(log_event_t **eventptr)
     if (!eventptr || !*eventptr) return;
 
     log_event_t *event = *eventptr;
-    if (event->id.path) free(event->id.path);
-    if (event->data)    free(event->data);
-    if (event)          free(event);
+    if (event->id.path) scope_free(event->id.path);
+    if (event->data)    scope_free(event->data);
+    if (event)          scope_free(event);
     *eventptr = NULL;
 }
 
@@ -951,8 +953,8 @@ out:
         cJSON_Delete(root);
         root = NULL;
     }
-    free(stmbuf->buf);
-    free(stmbuf->id.path);
+    scope_free(stmbuf->buf);
+    scope_free(stmbuf->id.path);
 
     return root;
 }
@@ -968,10 +970,10 @@ sendBufferedMessages(ctl_t *ctl)
             // Add the newline delimiter to the msg.
             {
                 int strsize = strlen(msg);
-                char* temp = realloc(msg, strsize+2); // room for "\n\0"
+                char* temp = scope_realloc(msg, strsize+2); // room for "\n\0"
                 if (!temp) {
                     DBG(NULL);
-                    free(msg);
+                    scope_free(msg);
                     msg = NULL;
                     continue;
                 }
@@ -980,7 +982,7 @@ sendBufferedMessages(ctl_t *ctl)
                 msg[strsize+1] = '\0';
             }
             transportSend(ctl->transport, msg, strlen(msg));
-            free(msg);
+            scope_free(msg);
         }
     }
 }
@@ -1004,7 +1006,7 @@ sendAggregatedLogData(ctl_t *ctl, streambuf_t *stmbuf)
 
     // Send it.
     transportSend(ctl->transport, msg, strlen(msg));
-    free(msg);
+    scope_free(msg);
 }
 
 static void
@@ -1280,13 +1282,13 @@ void
 ctlPayDirSet(ctl_t *ctl, const char *dir)
 {
     if (!ctl) return;
-    if (ctl->payload.dir) free(ctl->payload.dir);
+    if (ctl->payload.dir) scope_free(ctl->payload.dir);
     if (!dir || (dir[0] == '\0')) {
-        ctl->payload.dir = (DEFAULT_PAYLOAD_DIR) ? strdup(DEFAULT_PAYLOAD_DIR) : NULL;
+        ctl->payload.dir = (DEFAULT_PAYLOAD_DIR) ? scope_strdup(DEFAULT_PAYLOAD_DIR) : NULL;
         return;
     }
 
-    ctl->payload.dir = strdup(dir);
+    ctl->payload.dir = scope_strdup(dir);
 }
 
 

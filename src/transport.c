@@ -17,6 +17,7 @@
 #include "dbg.h"
 #include "scopetypes.h"
 #include "os.h"
+#include "scopestdlib.h"
 #include "fn.h"
 #include "transport.h"
 
@@ -89,7 +90,7 @@ newTransport()
 {
     transport_t *t;
 
-    t = calloc(1, sizeof(transport_t));
+    t = scope_calloc(1, sizeof(transport_t));
     if (!t) {
         DBG(NULL);
         return NULL;
@@ -113,7 +114,7 @@ newTransport()
         g_fn.send, g_fn.open, g_fn.dup2, g_fn.close,
         g_fn.fcntl, g_fn.fwrite, g_fn.socket, g_fn.access, g_fn.connect,
         g_fn.getaddrinfo, g_fn.fclose, g_fn.select);
-    free(t);
+    scope_free(t);
     return NULL;
 }
 
@@ -499,7 +500,7 @@ getExistingConnectionAddr(transport_t *trans)
     if (transportNeedsConnection(trans) || trans->type != CFG_TCP) goto err;
 
     // Allocate what we need to be compatible with freeaddrinfo()
-    ai = calloc(1, sizeof(struct addrinfo));
+    ai = scope_calloc(1, sizeof(struct addrinfo));
     if (!ai) {
         DBG(NULL);
         goto err;
@@ -529,7 +530,7 @@ getExistingConnectionAddr(transport_t *trans)
     return ai;
 
 err:
-    if (ai) free(ai);
+    if (ai) scope_free(ai);
     return NULL;
 }
 
@@ -907,7 +908,7 @@ edgePath(void){
 
     // 1) If EDGE_PATH_DOCKER can be accessed, return that.
     if (g_fn.access(EDGE_PATH_DOCKER, READ_AND_WRITE) == 0) {
-        return strdup(EDGE_PATH_DOCKER);
+        return scope_strdup(EDGE_PATH_DOCKER);
     }
 
     // 2) If CRIBL_HOME is defined and can be accessed,
@@ -915,17 +916,17 @@ edgePath(void){
     const char *cribl_home = getenv("CRIBL_HOME");
     if (cribl_home) {
         char *new_path = NULL;
-        if (asprintf(&new_path, "%s/%s", cribl_home, "state/appscope.sock") > 0) {
+        if (scope_asprintf(&new_path, "%s/%s", cribl_home, "state/appscope.sock") > 0) {
             if (g_fn.access(new_path, READ_AND_WRITE) == 0) {
                 return new_path;
             }
-            free(new_path);
+            scope_free(new_path);
         }
     }
 
     // 3) If EDGE_PATH_DEFAULT can be accessed, return it
     if (g_fn.access(EDGE_PATH_DEFAULT, READ_AND_WRITE) == 0) {
-        return strdup(EDGE_PATH_DEFAULT);
+        return scope_strdup(EDGE_PATH_DEFAULT);
     }
 
     return NULL;
@@ -953,7 +954,7 @@ transportConnect(transport_t *trans)
             return transportConnectFile(trans);
         case CFG_EDGE:
             // Edge path needs to be recomputed on every connection attempt.
-            if (trans->local.path) free(trans->local.path);
+            if (trans->local.path) scope_free(trans->local.path);
             trans->local.path = edgePath();
             if (!trans->local.path) return 0;
 
@@ -1014,11 +1015,11 @@ transportCreateTCP(const char *host, const char *port, unsigned int enable,
     trans->type = CFG_TCP;
     trans->net.sock = -1;
     trans->net.pending_connect = -1;
-    trans->net.host = strdup(host);
-    trans->net.port = strdup(port);
+    trans->net.host = scope_strdup(host);
+    trans->net.port = scope_strdup(port);
     trans->net.tls.enable = enable;
     trans->net.tls.validateserver = validateserver;
-    trans->net.tls.cacertpath = (cacertpath) ? strdup(cacertpath) : NULL;
+    trans->net.tls.cacertpath = (cacertpath) ? scope_strdup(cacertpath) : NULL;
 
     if (!trans->net.host || !trans->net.port) {
         DBG(NULL);
@@ -1044,8 +1045,8 @@ transportCreateUdp(const char* host, const char* port)
     t->type = CFG_UDP;
     t->net.sock = -1;
     t->net.pending_connect = -1;
-    t->net.host = strdup(host);
-    t->net.port = strdup(port);
+    t->net.host = scope_strdup(host);
+    t->net.port = scope_strdup(port);
 
     if (!t->net.host || !t->net.port) {
         DBG(NULL);
@@ -1068,7 +1069,7 @@ transportCreateFile(const char* path, cfg_buffer_t buf_policy)
     if (!t) return NULL; 
 
     t->type = CFG_FILE;
-    t->file.path = strdup(path);
+    t->file.path = scope_strdup(path);
     if (!t->file.path) {
         DBG("%s", path);
         transportDestroy(&t);
@@ -1099,7 +1100,7 @@ transportCreateUnix(const char *path)
 
     trans->type = CFG_UNIX;
     trans->local.sock = -1;
-    if (!(trans->local.path = strdup(path))) goto err;
+    if (!(trans->local.path = scope_strdup(path))) goto err;
 
     memset(&trans->local.addr, 0, sizeof(trans->local.addr));
     trans->local.addr.sun_family = AF_UNIX;
@@ -1149,7 +1150,7 @@ err:
 transport_t*
 transportCreateSyslog(void)
 {
-    transport_t* t = calloc(1, sizeof(transport_t));
+    transport_t* t = scope_calloc(1, sizeof(transport_t));
     if (!t) {
         DBG(NULL);
         return NULL;
@@ -1163,7 +1164,7 @@ transportCreateSyslog(void)
 transport_t*
 transportCreateShm()
 {
-    transport_t* t = calloc(1, sizeof(transport_t));
+    transport_t* t = scope_calloc(1, sizeof(transport_t));
     if (!t) {
         DBG(NULL);
         return NULL;
@@ -1184,18 +1185,18 @@ transportDestroy(transport_t **transport)
         case CFG_UDP:
         case CFG_TCP:
             transportDisconnect(trans);
-            if (trans->net.host) free (trans->net.host);
-            if (trans->net.port) free (trans->net.port);
-            if (trans->net.tls.cacertpath) free(trans->net.tls.cacertpath);
+            if (trans->net.host) scope_free (trans->net.host);
+            if (trans->net.port) scope_free (trans->net.port);
+            if (trans->net.tls.cacertpath) scope_free(trans->net.tls.cacertpath);
             freeAddressList(trans);
             break;
         case CFG_UNIX:
         case CFG_EDGE:
-            if (trans->local.path) free(trans->local.path);
+            if (trans->local.path) scope_free(trans->local.path);
             transportDisconnect(trans);
             break;
         case CFG_FILE:
-            if (trans->file.path) free(trans->file.path);
+            if (trans->file.path) scope_free(trans->file.path);
             if (!trans->file.stdout && !trans->file.stderr) {
                 // if stdout/stderr, we didn't open stream, so don't close it
                 if (trans->file.stream) g_fn.fclose(trans->file.stream);
@@ -1208,7 +1209,7 @@ transportDestroy(transport_t **transport)
         default:
             DBG("%d", trans->type);
     }
-    free(trans);
+    scope_free(trans);
     *transport = NULL;
 }
 

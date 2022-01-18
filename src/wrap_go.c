@@ -14,6 +14,7 @@
 #include "utils.h"
 #include "fn.h"
 #include "capstone/capstone.h"
+#include "scopestdlib.h"
 
 #define SCOPE_STACK_SIZE (size_t)(32 * 1024)
 //#define ENABLE_SIGNAL_MASKING_IN_SYSEXEC 1
@@ -97,7 +98,7 @@ c_str(gostring_t *go_str)
     if (!go_str || go_str->len <= 0) return NULL;
 
     char *path;
-    if ((path = calloc(1, go_str->len+1)) == NULL) return NULL;
+    if ((path = scope_calloc(1, go_str->len+1)) == NULL) return NULL;
     memmove(path, go_str->str, go_str->len);
     path[go_str->len] = '\0';
 
@@ -422,7 +423,7 @@ initGoHook(elf_buf_t *ebuf)
     gostring_t *go_ver; // There is an implicit len field at go_ver + 0x8
     char *go_runtime_version = NULL;
 
-    g_stack = malloc(32 * 1024);
+    g_stack = scope_malloc(32 * 1024);
     g_threadlist = lstCreate(NULL);
 
     // A go app may need to expand stacks for some C functions
@@ -623,8 +624,8 @@ dumb_thread(void *arg)
     sigfillset(&mask);
     pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
-    void *dummy = calloc(1, 32);
-    if (dummy) free(dummy);
+    void *dummy = scope_calloc(1, 32);
+    if (dummy) scope_free(dummy);
     pthread_barrier_wait(pbarrier);
     while (1) {
         sleep(0xffffffff);
@@ -890,8 +891,8 @@ go_switch_no_thread(char *stackptr, void *cfunc, void *gfunc)
             );
 
             //initialize tcache
-            void *buf = calloc(1, 0xff);
-            free(buf);
+            void *buf = scope_calloc(1, 0xff);
+            scope_free(buf);
 
             //restore stack
             __asm__ volatile (
@@ -1010,7 +1011,7 @@ c_open(char *stackaddr)
     funcprint("Scope: open of %ld\n", fd);
     doOpen(fd, path, FD, "open");
 
-    if (path) free(path);
+    if (path) scope_free(path);
 }
 
 EXPORTON void *

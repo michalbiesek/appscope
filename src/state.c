@@ -26,6 +26,7 @@
 #include "fn.h"
 #include "os.h"
 #include "utils.h"
+#include "scopestdlib.h"
 
 #define NET_ENTRIES 1024
 #define FS_ENTRIES 1024
@@ -89,7 +90,7 @@ destroyNetInfo(void *data)
 
     resetHttp(net->http);
 
-    free(net);
+    scope_free(net);
 }
 
 int
@@ -161,8 +162,8 @@ delProtocol(request_t *req)
         }
     }
 
-    if (protoreq && protoreq->protname) free(protoreq->protname);
-    if (protoreq) free(protoreq);
+    if (protoreq && protoreq->protname) scope_free(protoreq->protname);
+    if (protoreq) scope_free(protoreq);
     return TRUE;
 }
 
@@ -205,7 +206,7 @@ initPayloadDetect()
     // Setup the TLS protocol-detect regex
     errornumber = 0;
     erroroffset = 0;
-    if ((g_tls_protocol_def = calloc(1, sizeof(protocol_def_t))) == NULL) goto error;
+    if ((g_tls_protocol_def = scope_calloc(1, sizeof(protocol_def_t))) == NULL) goto error;
     g_tls_protocol_def->protname = "TLS";
     g_tls_protocol_def->binary = TRUE;
     g_tls_protocol_def->len = PAYLOAD_BYTESRC;
@@ -224,7 +225,7 @@ initPayloadDetect()
     // Setup the HTTP protocol-detect regex
     errornumber = 0;
     erroroffset = 0;
-    if ((g_http_protocol_def = calloc(1, sizeof(protocol_def_t))) == NULL) goto error;
+    if ((g_http_protocol_def = scope_calloc(1, sizeof(protocol_def_t))) == NULL) goto error;
     g_http_protocol_def->protname = "HTTP";
     g_http_protocol_def->regex = "(?: HTTP\\/1\\.[0-2]|PRI \\* HTTP\\/2\\.0\r\n\r\nSM\r\n\r\n)";
     g_http_protocol_def->detect = TRUE;
@@ -242,7 +243,7 @@ initPayloadDetect()
     // Setup the StatsD protocol-detect regex
     errornumber = 0;
     erroroffset = 0;
-    if ((g_statsd_protocol_def = calloc(1, sizeof(protocol_def_t))) == NULL) goto error;
+    if ((g_statsd_protocol_def = scope_calloc(1, sizeof(protocol_def_t))) == NULL) goto error;
     g_statsd_protocol_def->protname = "STATSD";
     g_statsd_protocol_def->regex = "^([^:]+):([\\d.]+)\\|(c|g|ms|s|h)";
     g_statsd_protocol_def->detect = TRUE;
@@ -274,13 +275,13 @@ void
 initState()
 {
     // Per a Read Update & Change (RUC) model; now that the object is ready assign the global
-    if ((g_netinfo = (net_info *)calloc(1, sizeof(struct net_info_t) * NET_ENTRIES)) == NULL) {
-        scopeLogError("ERROR: Constructor:Calloc");
+    if ((g_netinfo = (net_info *)scope_calloc(1, sizeof(struct net_info_t) * NET_ENTRIES)) == NULL) {
+        scopeLogError("ERROR: Constructor:scope_calloc");
     }
 
     // Per RUC...
-    if ((g_fsinfo = (fs_info *)calloc(1, sizeof(struct fs_info_t) * FS_ENTRIES)) == NULL) {
-        scopeLogError("ERROR: Constructor:Calloc");
+    if ((g_fsinfo = (fs_info *)scope_calloc(1, sizeof(struct fs_info_t) * FS_ENTRIES)) == NULL) {
+        scopeLogError("ERROR: Constructor:scope_calloc");
     }
 
     initHttpState();
@@ -399,7 +400,7 @@ postStatErrState(metric_t stat_err, metric_t type, const char *funcop, const cha
     if (!need_to_post) return FALSE;
 
     size_t len = sizeof(struct stat_err_info_t);
-    stat_err_info *sep = calloc(1, len);
+    stat_err_info *sep = scope_calloc(1, len);
     if (!sep) return FALSE;
 
     sep->evtype = stat_err;
@@ -451,7 +452,7 @@ postFSState(int fd, metric_t type, fs_info *fs, const char *funcop, const char *
     if (!need_to_post) return FALSE;
 
     size_t len = sizeof(struct fs_info_t);
-    fs_info *fsp = calloc(1, len);
+    fs_info *fsp = scope_calloc(1, len);
     if (!fsp) return FALSE;
 
     if (fs) memmove(fsp, fs, len);
@@ -484,7 +485,7 @@ postDNSState(int fd, metric_t type, net_info *net, uint64_t duration, const char
     if (!need_to_post) return FALSE;
 
     size_t len = sizeof(struct net_info_t);
-    net_info *netp = calloc(1, len);
+    net_info *netp = scope_calloc(1, len);
     if (!netp) return FALSE;
 
     if (net) memmove(netp, net, len);
@@ -541,7 +542,7 @@ postNetState(int fd, metric_t type, net_info *net)
     if (!need_to_post) return FALSE;
 
     size_t len = sizeof(struct net_info_t);
-    net_info *netp = calloc(1, len);
+    net_info *netp = scope_calloc(1, len);
     if (!netp) return FALSE;
 
     memmove(netp, net, len);
@@ -942,7 +943,7 @@ setProtocol(int sockfd, protocol_def_t *protoDef, net_info *net, char *buf, size
         int i;
         size_t alen = (cvlen * 2) + 1;
 
-        if ((cpdata = calloc(1, alen)) == NULL) {
+        if ((cpdata = scope_calloc(1, alen)) == NULL) {
             if (net) net->protoDetect = DETECT_FALSE;
             return FALSE;
         }
@@ -966,10 +967,10 @@ setProtocol(int sockfd, protocol_def_t *protoDef, net_info *net, char *buf, size
         }
 
         if (protoDef->detect && ctlEvtSourceEnabled(g_ctl, CFG_SRC_NET)) {
-            if ((proto = calloc(1, sizeof(struct protocol_info_t))) == NULL)
+            if ((proto = scope_calloc(1, sizeof(struct protocol_info_t))) == NULL)
             {
                 if (cpdata)
-                    free(cpdata);
+                    scope_free(cpdata);
                 if (match_data)
                     pcre2_match_data_free(match_data);
                 return FALSE;
@@ -979,7 +980,7 @@ setProtocol(int sockfd, protocol_def_t *protoDef, net_info *net, char *buf, size
             proto->len = sizeof(protocol_def_t);
             proto->fd = sockfd;
             if (net) proto->uid = net->uid;
-            proto->data = (char *)strdup(protoDef->protname);
+            proto->data = (char *)scope_strdup(protoDef->protname);
             cmdPostEvent(g_ctl, (char *)proto);
         }
 
@@ -990,7 +991,7 @@ setProtocol(int sockfd, protocol_def_t *protoDef, net_info *net, char *buf, size
     }
 
     if (match_data) pcre2_match_data_free(match_data);
-    if (cpdata) free(cpdata);
+    if (cpdata) scope_free(cpdata);
 
     return ret;
 }
@@ -1041,15 +1042,15 @@ extractPayload(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
         return -1;
     }
 
-    payload_info *pinfo = calloc(1, sizeof(struct payload_info_t));
+    payload_info *pinfo = scope_calloc(1, sizeof(struct payload_info_t));
     if (!pinfo) {
         return -1;
     }
 
     if (dtype == BUF) {
-        pinfo->data = calloc(1, len);
+        pinfo->data = scope_calloc(1, len);
         if (!pinfo->data) {
-            free(pinfo);
+            scope_free(pinfo);
             return -1;
         }
         memmove(pinfo->data, buf, len);
@@ -1061,10 +1062,10 @@ extractPayload(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
         for (i = 0; i < msg->msg_iovlen; i++) {
             iov = &msg->msg_iov[i];
             if (iov && iov->iov_base && (iov->iov_len > 0)) {
-                char *temp = realloc(pinfo->data, blen + iov->iov_len);
+                char *temp = scope_realloc(pinfo->data, blen + iov->iov_len);
                 if (!temp) {
-                    if (pinfo->data) free(pinfo->data);
-                    free(pinfo);
+                    if (pinfo->data) scope_free(pinfo->data);
+                    scope_free(pinfo);
                     return -1;
                 }
 
@@ -1080,10 +1081,10 @@ extractPayload(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
         struct iovec *iov = (struct iovec *)buf;
         for (i = 0; i < len; i++) {
             if (iov[i].iov_base && (iov[i].iov_len > 0)) {
-                char *temp = realloc(pinfo->data, blen + iov[i].iov_len);
+                char *temp = scope_realloc(pinfo->data, blen + iov[i].iov_len);
                 if (!temp) {
-                    if (pinfo->data) free(pinfo->data);
-                    free(pinfo);
+                    if (pinfo->data) scope_free(pinfo->data);
+                    scope_free(pinfo);
                     return -1;
                 }
 
@@ -1095,7 +1096,7 @@ extractPayload(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
         len = blen;
     } else {
         // no data, no need to continue
-        free(pinfo);
+        scope_free(pinfo);
         return -1;
     }
 
@@ -1119,8 +1120,8 @@ extractPayload(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
     }
 
     if (cmdPostPayload(g_ctl, (char *)pinfo) == -1) {
-        if (pinfo->data) free(pinfo->data);
-        if (pinfo) free(pinfo);
+        if (pinfo->data) scope_free(pinfo->data);
+        if (pinfo) scope_free(pinfo);
         return -1;
     }
 
@@ -1233,13 +1234,13 @@ getChannelNetEntry(uint64_t id)
 {
     net_info *net = lstFind(g_extra_net_info_list, id);
     if (!net) {
-        net = calloc(1, sizeof(net_info));
+        net = scope_calloc(1, sizeof(net_info));
         if (!net) {
             scopeLogError("ERROR: failed to allocate channel's net_info");
             DBG(NULL);
         } else {
             if (lstInsert(g_extra_net_info_list, id, net) != TRUE) {
-                free(net);
+                scope_free(net);
                 net = NULL;
                 scopeLogError("ERROR: failed to save channel's net_info");
                 DBG(NULL);
@@ -1455,10 +1456,10 @@ addSock(int fd, int type, int family)
 
         }
 /*
- * We need to do this realloc.
+ * We need to do this scope_realloc.
  * However, it needs to be done in such a way as to not
- * free the previous object that may be in use by a thread.
- * Possibly not use realloc. Leaving the code in place and this
+ * scope_free the previous object that may be in use by a thread.
+ * Possibly not use scope_realloc. Leaving the code in place and this
  * comment as a reminder.
         if ((fd > g_numNinfo) && (fd < MAX_FDS))  {
             int increase;
@@ -1470,9 +1471,9 @@ addSock(int fd, int type, int family)
                 increase = MAX_FDS;
             }
 
-            // Need to realloc
-            if ((temp = realloc(g_netinfo, sizeof(struct net_info_t) * increase)) == NULL) {
-                scopeLogError("fd:%d ERROR: addSock:realloc", fd);
+            // Need to scope_realloc
+            if ((temp = scope_realloc(g_netinfo, sizeof(struct net_info_t) * increase)) == NULL) {
+                scopeLogError("fd:%d ERROR: addSock:scope_realloc", fd);
                 DBG("re-alloc on Net table failed");
             } else {
                 memset(&temp[g_numNinfo], 0, sizeof(struct net_info_t) * (increase - g_numNinfo));
@@ -2416,10 +2417,10 @@ doOpen(int fd, const char *path, fs_type_t type, const char *func)
             doClose(fd, func);
         }
 /*
- * We need to do this realloc.
+ * We need to do this scope_realloc.
  * However, it needs to be done in such a way as to not
- * free the previous object that may be in use by a thread.
- * Possibly not use realloc. Leaving the code in place and this
+ * scope_free the previous object that may be in use by a thread.
+ * Possibly not use scope_realloc. Leaving the code in place and this
  * comment as a reminder.
 
         if ((fd > g_numFSinfo) && (fd < MAX_FDS))  {
@@ -2432,9 +2433,9 @@ doOpen(int fd, const char *path, fs_type_t type, const char *func)
                 increase = MAX_FDS;
             }
 
-            // Need to realloc
-            if ((temp = realloc(g_fsinfo, sizeof(struct fs_info_t) * increase)) == NULL) {
-                scopeLogError("fd:%d ERROR: doOpen:realloc", fd);
+            // Need to scope_realloc
+            if ((temp = scope_realloc(g_fsinfo, sizeof(struct fs_info_t) * increase)) == NULL) {
+                scopeLogError("fd:%d ERROR: doOpen:scope_realloc", fd);
                 DBG("re-alloc on FS table failed");
             } else {
                 memset(&temp[g_numFSinfo], 0, sizeof(struct fs_info_t) * (increase - g_numFSinfo));

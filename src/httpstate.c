@@ -9,6 +9,7 @@
 #include "plattime.h"
 #include "search.h"
 #include "atomic.h"
+#include "scopestdlib.h"
 
 #define MIN_HDR_ALLOC (4  * 1024)
 #define MAX_HDR_ALLOC (16 * 1024)
@@ -47,15 +48,16 @@ setHttpState(http_state_t *httpstate, http_enum_t toState)
         case HTTP_NONE:
             // cleanup the stash for the RX and TX sides
             if (httpstate->http2Buf.buf) {
-                free(httpstate->http2Buf.buf);
+                scope_free(httpstate->http2Buf.buf);
                 httpstate->http2Buf.buf = NULL;
             }
             httpstate->http2Buf.len = 0;
             httpstate->http2Buf.size = 0;
             if (httpstate->hdr) {
-                free(httpstate->hdr);
+                scope_free(httpstate->hdr);
                 httpstate->hdr = NULL;
             }
+
             httpstate->hdrlen = 0;
             httpstate->hdralloc = 0;
             httpstate->clen = 0;
@@ -91,9 +93,9 @@ appendHeader(http_state_t *httpstate, char* buf, size_t len)
         }
     }
 
-    // If we need more space, realloc
+    // If we need more space, scope_realloc
     if (alloc_size != httpstate->hdralloc) {
-        char* temp = realloc(httpstate->hdr, alloc_size);
+        char* temp = scope_realloc(httpstate->hdr, alloc_size);
         if (!temp) {
             DBG(NULL);
             // Don't return partial headers...  All or nothing.
@@ -231,13 +233,13 @@ reportHttp1(http_state_t *httpstate)
 {
     if (!httpstate || !httpstate->hdr || !httpstate->hdrlen) return -1;
 
-    protocol_info *proto = calloc(1, sizeof(struct protocol_info_t));
-    http_post *post = calloc(1, sizeof(struct http_post_t));
+    protocol_info *proto = scope_calloc(1, sizeof(struct protocol_info_t));
+    http_post *post = scope_calloc(1, sizeof(struct http_post_t));
     if (!proto || !post) {
         // Bummer!  We're losing info.  At least make sure we clean up.
         DBG(NULL);
-        if (post) free(post);
-        if (proto) free(proto);
+        if (post) scope_free(post);
+        if (proto) scope_free(proto);
         return -1;
     }
 
@@ -299,7 +301,7 @@ reportHttp2(http_state_t *state, net_info *net, http_buf_t *stash,
         return FALSE;
     }
 
-    http_post *post = calloc(1, sizeof(struct http_post_t));
+    http_post *post = scope_calloc(1, sizeof(struct http_post_t));
     if (!post) {
         scopeLogError("ERROR: failed to allocate post object");
         DBG(NULL);
@@ -308,9 +310,9 @@ reportHttp2(http_state_t *state, net_info *net, http_buf_t *stash,
     post->ssl            = state->id.isSsl;
     post->start_duration = getTime();
     post->id             = state->id.uid;
-    post->hdr            = malloc(frameLen);
+    post->hdr            = scope_malloc(frameLen);
     if (!post->hdr) {
-        free(post);
+        scope_free(post);
         scopeLogError("ERROR: failed to allocate post data");
         DBG(NULL);
         return FALSE;
@@ -322,10 +324,10 @@ reportHttp2(http_state_t *state, net_info *net, http_buf_t *stash,
         memcpy(post->hdr, buf, frameLen);
     }
 
-    protocol_info *proto = calloc(1, sizeof(struct protocol_info_t));
+    protocol_info *proto = scope_calloc(1, sizeof(struct protocol_info_t));
     if (!proto) {
-        free(post->hdr);
-        free(post);
+        scope_free(post->hdr);
+        scope_free(post);
         scopeLogError("ERROR: failed to allocate protocol object");
         DBG(NULL);
         return FALSE;
@@ -511,9 +513,9 @@ http2StashFrame(http_buf_t *stash, const uint8_t *buf, size_t len)
     // need to store the `len` we're given plus whatever's already stashed
     size_t need = len + stash->len;
     if (need > stash->size) {
-        // round up to the next 1k boundary and realloc
+        // round up to the next 1k boundary and scope_realloc
         need = ((need + 1023) / 1024) * 1024;
-        uint8_t *newBuf = realloc(stash->buf, need);
+        uint8_t *newBuf = scope_realloc(stash->buf, need);
         if (!newBuf) {
             scopeLogError("ERROR: failed to (re)allocate frame buffer");
             DBG(NULL);

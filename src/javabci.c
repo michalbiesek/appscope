@@ -11,6 +11,7 @@
 #include <linux/limits.h>
 #include <endian.h>
 #include "javabci.h"
+#include "scopestdlib.h"
 
 static char magic[] = { 0xca, 0xfe, 0xba, 0xbe };
 
@@ -44,7 +45,7 @@ javaGetUtf8String(java_class_t *info, int tagIndex)
 {
     unsigned char *cp = info->constant_pool[tagIndex - 1];
     uint16_t len = be16toh(*((uint16_t *)(cp + 1)));
-    char *buf = malloc(len + 1);
+    char *buf = scope_malloc(len + 1);
     memcpy(buf, cp + 3, len);
     buf[len] = 0;
     return buf;
@@ -84,7 +85,7 @@ addUtf8Tag(java_class_t *info, const char *str)
 {
     size_t len = strlen(str);
     size_t bufsize = len + 3;
-    unsigned char *utf8Tag = malloc(bufsize);
+    unsigned char *utf8Tag = scope_malloc(bufsize);
     *((uint8_t *)utf8Tag)        = CONSTANT_Utf8;
     *((uint16_t *)(utf8Tag + 1)) = htobe16(len);
     memcpy(utf8Tag + 3, str, len);
@@ -102,7 +103,7 @@ javaAddNameAndTypeTag(java_class_t *info, const char *name, const char *desc)
     uint16_t nameIndex = addUtf8Tag(info, name);
     uint16_t descIndex = addUtf8Tag(info, desc);
     size_t bufsize = 5;
-    unsigned char *tag = malloc(bufsize);
+    unsigned char *tag = scope_malloc(bufsize);
     *((uint8_t *)tag)        = CONSTANT_NameAndType;
     *((uint16_t *)(tag + 1)) = htobe16(nameIndex);
     *((uint16_t *)(tag + 3)) = htobe16(descIndex);
@@ -118,7 +119,7 @@ uint16_t
 javaAddMethodRefTag(java_class_t *info, uint16_t classIndex, uint16_t nameAndTypeIndex) 
 {
     size_t bufsize = 5;
-    unsigned char *tag = malloc(bufsize);
+    unsigned char *tag = scope_malloc(bufsize);
     *((uint8_t *)tag)        = CONSTANT_Methodref;
     *((uint16_t *)(tag + 1)) = htobe16(classIndex);
     *((uint16_t *)(tag + 3)) = htobe16(nameAndTypeIndex);
@@ -134,7 +135,7 @@ uint16_t
 javaAddStringTag(java_class_t *info, const char* str)
 {
     uint16_t idx = addUtf8Tag(info, str);
-    unsigned char *tag = malloc(3);
+    unsigned char *tag = scope_malloc(3);
     *((uint8_t *)tag)        = CONSTANT_String;
     *((uint16_t *)(tag + 1)) = htobe16(idx);
     return addTag(info, tag);
@@ -174,7 +175,7 @@ getCodeAttributeAddress(java_class_t *info, unsigned char *method)
         if (strcmp(attr_name, "Code")==0) {
             code = off;
         }
-        free(attr_name);
+        scope_free(attr_name);
         if (code != NULL) break;
         off += attr_length + 6;
     }
@@ -195,7 +196,7 @@ javaFindClassIndex(java_class_t *info, const char *className)
             if (strcmp(name, className) == 0) {
                 idx = i;
             }
-            free(name);
+            scope_free(name);
         }
         if (idx != -1) break;
     }
@@ -218,8 +219,8 @@ javaFindMethodIndex(java_class_t *info, const char *method, const char *signatur
         if (strcmp(method, method_name) == 0 && strcmp(signature, method_desc) == 0) {
             idx = i;
         }
-        free(method_name);
-        free(method_desc);
+        scope_free(method_name);
+        scope_free(method_desc);
         if (idx != -1) break;
     }
     return idx;
@@ -229,7 +230,7 @@ void
 javaCopyMethod(java_class_t *info, unsigned char *method, const char *newName) 
 {
     uint32_t len = javaGetMethodLength(method);
-    unsigned char *dest = malloc(len);
+    unsigned char *dest = scope_malloc(len);
     memcpy(dest, method, len);
     uint16_t nameIndex = addUtf8Tag(info, newName);
     *((uint16_t *)(dest + 2)) = htobe16(nameIndex);
@@ -244,7 +245,7 @@ javaConvertMethodToNative(java_class_t *info, int methodIndex)
     unsigned char *methodAddr = info->methods[methodIndex];
     uint32_t len   = javaGetMethodLength(methodAddr);
     size_t bufsize = 8;
-    unsigned char *addr        = malloc(bufsize);
+    unsigned char *addr        = scope_malloc(bufsize);
     info->methods[methodIndex] = addr;
 
     memcpy(addr, methodAddr, bufsize);
@@ -279,7 +280,7 @@ javaAddMethod(java_class_t *info, const char* name, const char* descriptor,
         bufsize = 8;
     }
 
-    unsigned char *addr = malloc(bufsize);
+    unsigned char *addr = scope_malloc(bufsize);
     info->methods_count++;
     info->methods[info->methods_count - 1] = addr;
 
@@ -324,7 +325,7 @@ javaAddField(java_class_t *info, const char* name, const char* descriptor, uint1
     uint16_t attrCount = 0;
 
     size_t bufsize = 4 * 2;
-    unsigned char *buf = malloc(bufsize);
+    unsigned char *buf = scope_malloc(bufsize);
     info->fields_count++;
     info->fields[info->fields_count - 1] = buf;
     info->length += bufsize;
@@ -402,11 +403,11 @@ javaWriteClass(unsigned char *dest, java_class_t *info)
 java_class_t* 
 javaReadClass(const unsigned char* classData) 
 {
-    java_class_t *classInfo = malloc(sizeof(java_class_t));
+    java_class_t *classInfo = scope_malloc(sizeof(java_class_t));
     if (!classInfo) return NULL;
 
     if (memcmp(classData, magic, sizeof(magic)) != 0) {
-        free(classInfo);
+        scope_free(classInfo);
         return NULL;
     }
     unsigned char *addr = (unsigned char *)classData;
@@ -416,7 +417,7 @@ javaReadClass(const unsigned char* classData)
     classInfo->constant_pool_count  = be16toh(*((uint16_t *)off)); off += 2;
     classInfo->_constant_pool_count = classInfo->constant_pool_count;
     //allocate memory for existing constant pool enties and make a room for up to 100 new entries
-    classInfo->constant_pool        = (unsigned char **) calloc(100 + (classInfo->constant_pool_count - 1), sizeof(unsigned char *));
+    classInfo->constant_pool        = (unsigned char **) scope_calloc(100 + (classInfo->constant_pool_count - 1), sizeof(unsigned char *));
     int i;
     for(i=1;i<classInfo->constant_pool_count;i++) {
         classInfo->constant_pool[i - 1] = (unsigned char *)off;
@@ -441,7 +442,7 @@ javaReadClass(const unsigned char* classData)
     //read fields
     classInfo->fields_count         = be16toh(*((uint16_t *)off)); off += 2;
     //allocate memory for existing fields and make a room for up to 100 new fields
-    classInfo->fields               = (unsigned char **) calloc(100 + classInfo->fields_count, sizeof(unsigned char *));
+    classInfo->fields               = (unsigned char **) scope_calloc(100 + classInfo->fields_count, sizeof(unsigned char *));
     for (i=0;i<classInfo->fields_count;i++) {
         classInfo->fields[i] = off;
         off += getAttributesLength(off + 6) + 6;
@@ -451,7 +452,7 @@ javaReadClass(const unsigned char* classData)
     classInfo->methods_count        = be16toh(*((uint16_t *)off)); off += 2;
     classInfo->_methods_count       = classInfo->methods_count;
     //allocate memory for existing methods and make a room for up to 100 new methods
-    classInfo->methods              = (unsigned char **) calloc(100 + classInfo->methods_count, sizeof(unsigned char *));
+    classInfo->methods              = (unsigned char **) scope_calloc(100 + classInfo->methods_count, sizeof(unsigned char *));
     for (i=0;i<classInfo->methods_count;i++) {
         classInfo->methods[i] = off;
         off += javaGetMethodLength(off);
@@ -459,7 +460,7 @@ javaReadClass(const unsigned char* classData)
 
     //read attributes
     classInfo->attributes_count     = be16toh(*((uint16_t *)off)); off += 2;
-    classInfo->attributes           = (unsigned char **) calloc(classInfo->attributes_count, sizeof(unsigned char *));
+    classInfo->attributes           = (unsigned char **) scope_calloc(classInfo->attributes_count, sizeof(unsigned char *));
     for (i=0;i<classInfo->attributes_count;i++) {
         classInfo->attributes[i] = off;
         uint32_t attribute_length = be32toh(*((uint32_t *)(off + 2)));
@@ -472,15 +473,15 @@ javaReadClass(const unsigned char* classData)
 void javaDestroy(java_class_t **classInfo) {
     int i;
     for(i = (*classInfo)->_constant_pool_count - 1;i<(*classInfo)->constant_pool_count - 1;i++) {
-        free((*classInfo)->constant_pool[i]);
+        scope_free((*classInfo)->constant_pool[i]);
     }
     for(i = (*classInfo)->_methods_count;i<(*classInfo)->methods_count;i++) {
-        free((*classInfo)->methods[i]);
+        scope_free((*classInfo)->methods[i]);
     }
-    free((*classInfo)->constant_pool);
-    free((*classInfo)->fields);
-    free((*classInfo)->methods);
-    free((*classInfo)->attributes);
-    free(*classInfo);
+    scope_free((*classInfo)->constant_pool);
+    scope_free((*classInfo)->fields);
+    scope_free((*classInfo)->methods);
+    scope_free((*classInfo)->attributes);
+    scope_free(*classInfo);
     *classInfo = NULL;
 }
