@@ -5,6 +5,7 @@
 #include "mtc.h"
 #include "circbuf.h"
 #include "runtimecfg.h"
+#include "mm.h"
 
 struct _mtc_t
 {
@@ -16,7 +17,7 @@ struct _mtc_t
 mtc_t *
 mtcCreate()
 {
-    mtc_t *mtc = calloc(1, sizeof(mtc_t));
+    mtc_t *mtc = mm_calloc(1, sizeof(mtc_t));
     if (!mtc) {
         DBG(NULL);
         return NULL;
@@ -33,7 +34,7 @@ mtcDestroy(mtc_t **mtc)
     mtc_t *mtcb = *mtc;
     transportDestroy(&mtcb->transport);
     mtcFormatDestroy(&mtcb->format);
-    free(mtcb);
+    mm_free(mtcb);
     *mtc = NULL;
 }
 
@@ -59,7 +60,7 @@ mtcSendMetric(mtc_t *mtc, event_t *evt)
 
     char *msg = mtcFormatEventForOutput(mtc->format, evt, NULL);
     int rv = mtcSend(mtc, msg);
-    if (msg) free(msg);
+    if (msg) mm_free(msg);
     return rv;
 }
 

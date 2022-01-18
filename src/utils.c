@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "mm.h"
 #include "utils.h"
 #include "fn.h"
 #include "dbg.h"
@@ -105,7 +106,7 @@ getpath(const char *cmd)
     if (cmd[0] == '/') {
         //  If we can resolve it, use it.
         if (!stat(cmd, &buf) && S_ISREG(buf.st_mode) && (buf.st_mode & 0111)) {
-            ret_val = strdup(cmd);
+            ret_val = mm_strdup(cmd);
         }
         goto out;
     }
@@ -121,10 +122,10 @@ getpath(const char *cmd)
             if (!stat(path, &buf) && S_ISREG(buf.st_mode) && (buf.st_mode & 0111)) {
                 ret_val = path;
             } else {
-                free(path);
+                mm_free(path);
             }
         }
-        free(cur_dir);
+        mm_free(cur_dir);
         goto out;
     }
 
@@ -135,14 +136,14 @@ getpath(const char *cmd)
             ret_val = path;
             goto out;
         } else {
-            free(path);
+            mm_free(path);
         }
     }
 
     // try to resolve the cmd from PATH env variable
     char *path_env_ptr = getenv("PATH");
     if (!path_env_ptr) goto out;
-    path_env = strdup(path_env_ptr); // create a copy for strtok below
+    path_env = mm_strdup(path_env_ptr); // create a copy for strtok below
     if (!path_env) goto out;
 
     char *saveptr = NULL;
@@ -158,7 +159,7 @@ getpath(const char *cmd)
             (!S_ISREG(buf.st_mode)) ||     // path isn't a file
             ((buf.st_mode & 0111) == 0)) { // path isn't executable
 
-            free(path);
+            mm_free(path);
             continue;
         }
 

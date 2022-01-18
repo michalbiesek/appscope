@@ -9,6 +9,7 @@
 #include "evtformat.h"
 #include "strset.h"
 #include "com.h"
+#include "mm.h"
 
 
 // This is ugly, but...
@@ -164,7 +165,7 @@ filterSet(local_re_t *re, const char *str, const char *default_val)
 evt_fmt_t *
 evtFormatCreate()
 {
-    evt_fmt_t *evt = calloc(1, sizeof(evt_fmt_t));
+    evt_fmt_t *evt = mm_calloc(1, sizeof(evt_fmt_t));
     if (!evt) {
         DBG(NULL);
         return NULL;
@@ -193,12 +194,12 @@ evtFormatDestroyTags(custom_tag_t*** tags)
     custom_tag_t** t = *tags;
     int i = 0;
     while (t[i]) {
-        free(t[i]->name);
-        free(t[i]->value);
-        free(t[i]);
+        mm_free(t[i]->name);
+        mm_free(t[i]->value);
+        mm_free(t[i]);
         i++;
     }
-    free(t);
+    mm_free(t);
     *tags = NULL;
 }
 
@@ -217,7 +218,7 @@ evtFormatDestroy(evt_fmt_t **evt)
 
     evtFormatDestroyTags(&edestroy->tags);
 
-    free(edestroy);
+    mm_free(edestroy);
     *evt = NULL;
 }
 
@@ -336,11 +337,11 @@ evtFormatCustomTagsSet(evt_fmt_t* fmt, custom_tag_t** tags)
 
     if (!tags || !*tags) return;
 
-    // get a count of how big to calloc
+    // get a count of how big to mm_calloc
     int num = 0;
     while(tags[num]) num++;
 
-    fmt->tags = calloc(1, sizeof(custom_tag_t*) * (num+1));
+    fmt->tags = mm_calloc(1, sizeof(custom_tag_t*) * (num+1));
     if (!fmt->tags) {
         DBG(NULL);
         return;
@@ -348,14 +349,14 @@ evtFormatCustomTagsSet(evt_fmt_t* fmt, custom_tag_t** tags)
 
     int i, j = 0;
     for (i = 0; i<num; i++) {
-        custom_tag_t* t = calloc(1, sizeof(custom_tag_t));
-        char* n = strdup(tags[i]->name);
-        char* v = strdup(tags[i]->value);
+        custom_tag_t* t = mm_calloc(1, sizeof(custom_tag_t));
+        char* n = mm_strdup(tags[i]->name);
+        char* v = mm_strdup(tags[i]->value);
         if (!t || !n || !v) {
-            if (t) free (t);
-            if (n) free (n);
-            if (v) free (v);
             DBG("t=%p n=%p v=%p", t, n, v);
+            if (t) mm_free (t);
+            if (n) mm_free (n);
+            if (v) mm_free (v);
             continue;
         }
         t->name = n;

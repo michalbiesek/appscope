@@ -6,6 +6,7 @@
 #include "com.h"
 #include "dbg.h"
 #include "metriccapture.h"
+#include "mm.h"
 
 // Consistent with src/sluice/js/input/MetricsIn.ts
 #define STATSD         "^([^:]+):([\\d.]+)\\|(c|g|ms|s|h)$"
@@ -65,7 +66,7 @@ createCapturedMetric(unsigned char *name, unsigned char *value,
     if (!name || !value || !type) goto err;
 
     // Alloc space
-    base = malloc(sizeof(captured_metric_t));
+    base = mm_malloc(sizeof(captured_metric_t));
     if (!base) goto err;
 
     // Copy in field values
@@ -81,7 +82,7 @@ err:
     if (value) pcre2_substring_free(value);
     if (type) pcre2_substring_free(type);
     if (dims) pcre2_substring_free(dims);
-    if (base) free(base);
+    if (base) mm_free(base);
     return NULL;
 }
 
@@ -94,7 +95,7 @@ destroyCapturedMetric(captured_metric_t **metric)
     if (tmp->value) pcre2_substring_free(tmp->value);
     if (tmp->type) pcre2_substring_free(tmp->type);
     if (tmp->dims) pcre2_substring_free(tmp->dims);
-    free(tmp);
+    mm_free(tmp);
     *metric = NULL;
 }
 

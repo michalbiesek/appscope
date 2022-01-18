@@ -42,15 +42,15 @@ $(OPENSSL_AR):
 $(PCRE2_AR):
 	@$(MAKE) -C contrib pcre2
 
-$(LDSCOPEDYN): src/fn.c os/$(OS)/os.c src/dbg.c src/scopeelf.c src/scope.c src/utils.c src/inject.c
+$(LDSCOPEDYN): src/fn.c src/mm.c os/$(OS)/os.c src/dbg.c src/scopeelf.c src/scope.c src/utils.c src/inject.c
 	@echo "$${CI:+::group::}Building $@"
 	gcc -Wall -g $(ARCH_CFLAGS) $(DISTRO_FLAGS) \
 		-DSCOPE_VER=\"$(SCOPE_VER)\" \
-		src/fn.c os/$(OS)/os.c src/dbg.c src/scopeelf.c src/scope.c src/utils.c src/inject.c \
+		src/fn.c src/mm.c os/$(OS)/os.c src/dbg.c src/scopeelf.c src/scope.c src/utils.c src/inject.c \
 		-ldl -lrt -o $@ -I./os/$(OS) $(INCLUDES)
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
-$(LDSCOPE): src/scope_static.c src/libdir.c $(LDSCOPEDYN) $(LIBSCOPE)
+$(LDSCOPE): src/scope_static.c src/libdir.c src/mm.c $(LDSCOPEDYN) $(LIBSCOPE)
 	@echo "$${CI:+::group::}Building $@"
 	cd $(dir $(LDSCOPEDYN)) && objcopy \
 		-I binary -O $(ARCH_BINARY) -B $(ARCH_OBJ) \
@@ -60,7 +60,7 @@ $(LDSCOPE): src/scope_static.c src/libdir.c $(LDSCOPEDYN) $(LIBSCOPE)
 		$(notdir $(LIBSCOPE)) $(notdir $(LIBSCOPE:.so=.o))
 	gcc -Wall -static -g $(ARCH_CFLAGS) $(DISTRO_FLAGS) \
 		-DSCOPE_VER=\"$(SCOPE_VER)\" \
-		src/scope_static.c src/libdir.c \
+		src/scope_static.c src/mm.c src/libdir.c \
 		$(INCLUDES) \
 		$(LDSCOPEDYN).o $(LIBSCOPE:.so=.o) \
 		-lrt -lpthread -o $@
