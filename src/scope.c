@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <getopt.h>
 
+#include "mm.h"
 #include "fn.h"
 #include "dbg.h"
 #include "scopeelf.h"
@@ -65,7 +66,7 @@ setGoHttpEnvVariable(void)
         if (setenv(GO_ENV_VAR, new_val, 1)) {
             perror("setGoHttpEnvVariable:setenv");
         }
-        if (new_val) free(new_val);
+        if (new_val) mm_free(new_val);
     }
 
     cur_val = getenv(GO_ENV_VAR);
@@ -80,7 +81,7 @@ setGoHttpEnvVariable(void)
         if (setenv(GO_ENV_VAR, new_val, 1)) {
             perror("setGoHttpEnvVariable:setenv");
         }
-        if (new_val) free(new_val);
+        if (new_val) mm_free(new_val);
     }
 }
 
@@ -203,19 +204,19 @@ main(int argc, char **argv, char **env)
         }
 
         if ((ebuf = getElf(exe_path)) == NULL) {
-            free(exe_path);
+            mm_free(exe_path);
             fprintf(stderr, "error: can't read the executable %s\n", exe_path);
             return EXIT_FAILURE;
         }
 
         if (is_static(ebuf->buf) == TRUE) {
             fprintf(stderr, "error: can't attach to the static executable: %s\nNote that the executable can be 'scoped' using the command 'scope run -- %s'\n", exe_path, exe_path);
-            free(exe_path);
+            mm_free(exe_path);
             freeElf(ebuf->buf, ebuf->len);
             return EXIT_FAILURE;
         }
 
-        free(exe_path);
+        mm_free(exe_path);
         freeElf(ebuf->buf, ebuf->len);
 
         printf("Attaching to process %d\n", pid);
@@ -321,6 +322,6 @@ main(int argc, char **argv, char **env)
 
     return 0;
 err:
-    if (ebuf) free(ebuf);
+    if (ebuf) mm_free(ebuf);
     exit(EXIT_FAILURE);
 }

@@ -1,3 +1,4 @@
+#include "mm.h"
 #include "scopetypes.h"
 #include "strset.h"
 #include <stdlib.h>
@@ -12,8 +13,8 @@ typedef struct _strset_t {
 strset_t *
 strSetCreate(unsigned int initialCapacity)
 {
-    strset_t *set = malloc(sizeof(*set));
-    const char **str = malloc(initialCapacity * sizeof(char *));
+    strset_t *set = mm_malloc(sizeof(*set));
+    const char **str = mm_malloc(initialCapacity * sizeof(char *));
     if (!set || !str) goto err;
 
     set->str = str;
@@ -23,8 +24,8 @@ strSetCreate(unsigned int initialCapacity)
     return set;
 
 err:
-    if (set) free(set);
-    if (str) free(str);
+    if (set) mm_free(set);
+    if (str) mm_free(str);
     return NULL;
 }
 
@@ -34,8 +35,8 @@ strSetDestroy(strset_t **set_ptr)
     if (!set_ptr || !*set_ptr) return;
 
     strset_t *set = *set_ptr;
-    free(set->str);
-    free(set);
+    mm_free(set->str);
+    mm_free(set);
     *set_ptr = NULL;
 }
 
@@ -50,7 +51,7 @@ strSetAdd(strset_t *set, const char *str)
     // grow if needed
     if (set->count >= set->capacity) {
         unsigned int new_capacity = (set->capacity) ? set->capacity * 4 : 2;
-        const char **new_str = realloc(set->str, new_capacity * sizeof(char *));
+        const char **new_str = mm_realloc(set->str, new_capacity * sizeof(char *));
         if (!new_str) {
             return FALSE;
         }

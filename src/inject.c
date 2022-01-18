@@ -16,6 +16,7 @@
 #include <dlfcn.h>
 #include <stddef.h>
 #include <inttypes.h>
+#include "mm.h"
 #include "dbg.h"
 #include "inject.h"
 
@@ -220,7 +221,7 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     }
     
     // back up the code
-    oldcode = (unsigned char *)malloc(INJECTED_CODE_SIZE_LEN);
+    oldcode = (unsigned char *)mm_malloc(INJECTED_CODE_SIZE_LEN);
     if (ptraceRead(pid, freeAddr, oldcode, INJECTED_CODE_SIZE_LEN)) {
         goto detach;
     }
@@ -298,7 +299,7 @@ detach:
     ptrace(PTRACE_DETACH, pid, NULL, NULL);
 
 exit:
-    free(oldcode);
+    mm_free(oldcode);
     return ret;
 }
 

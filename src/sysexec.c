@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include <dlfcn.h>
 
+#include "mm.h"
 #include "fn.h"
 #include "dbg.h"
 #include "os.h"
@@ -147,16 +148,16 @@ map_segment(char *buf, Elf64_Phdr *phead)
     sysprint("%s:%d vaddr 0x%lx size 0x%lx\n",
              __FUNCTION__, __LINE__, phead->p_vaddr, (size_t)phead->p_memsz);
 
-    if ((addr = mmap(laddr, ROUND_UP((size_t)lsize, phead->p_align),
+    if ((addr = mm_mmap(laddr, ROUND_UP((size_t)lsize, phead->p_align),
                      prot | PROT_WRITE,
                      MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
                      -1, (off_t)NULL)) == MAP_FAILED) {
-        scopeLogError("ERROR: load_segment:mmap");
+        scopeLogError("ERROR: load_segment:mm_mmap");
         return -1;
     }
 
     if (laddr != addr) {
-        scopeLogError("ERROR: load_segment:mmap:laddr mismatch");
+        scopeLogError("ERROR: load_segment:mm_mmap:laddr mismatch");
         return -1;
     }
 
@@ -182,11 +183,11 @@ load_elf(char *buf)
     Elf64_Half phsize = elf->e_phentsize;
     void *pheadaddr;
 
-    if ((pheadaddr = mmap(NULL, ROUND_UP((size_t)(pnum * phsize), pgsz),
+    if ((pheadaddr = mm_mmap(NULL, ROUND_UP((size_t)(pnum * phsize), pgsz),
                           PROT_READ | PROT_WRITE,
                           MAP_PRIVATE | MAP_ANONYMOUS,
                           -1, (off_t)NULL)) == MAP_FAILED) {
-        scopeLogError("ERROR: load_elf:mmap");
+        scopeLogError("ERROR: load_elf:mm_mmap");
         return (Elf64_Addr)NULL;
     }
 
@@ -337,11 +338,11 @@ set_go(char *buf, int argc, const char **argv, const char **env, Elf64_Addr phad
     char *rtld_fini = NULL;
 
     // create a stack (void *)ROUND_UP(laddr + pgsz + HEAP_SIZE, pgsz)  | MAP_FIXED
-    if ((sp = mmap(NULL, STACK_SIZE,
+    if ((sp = mm_mmap(NULL, STACK_SIZE,
                    PROT_READ | PROT_WRITE,
                    MAP_PRIVATE | MAP_ANONYMOUS | MAP_GROWSDOWN,
                    -1, (off_t)NULL)) == MAP_FAILED) {
-        scopeLogError("set_go:mmap");
+        scopeLogError("set_go:mm_mmap");
         return -1;
     }
 

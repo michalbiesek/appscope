@@ -19,6 +19,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "mm.h"
 #include "scopetypes.h" // for ROUND_UP()
 
 #ifndef SCOPE_VER
@@ -195,15 +196,15 @@ libdirExtract(const char *path, unsigned char *start, unsigned char *end, note_t
         struct stat s;
         if (fstat(fd, &s) == -1) {
             close(fd);
-            perror("mmap() failed");
+            perror("fstat failed");
             return 0;
         }
 
-        void* buf = mmap(NULL, ROUND_UP(s.st_size, sysconf(_SC_PAGESIZE)),
+        void* buf = mm_mmap(NULL, ROUND_UP(s.st_size, sysconf(_SC_PAGESIZE)),
                 PROT_READ, MAP_PRIVATE, fd, (off_t)NULL);
         if (buf == MAP_FAILED) {
             close(fd);
-            perror("mmap() failed");
+            perror("mm_mmap() failed");
             return 0;
         }
 

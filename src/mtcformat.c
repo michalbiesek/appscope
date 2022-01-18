@@ -12,6 +12,7 @@
 #include "scopetypes.h"
 #include "strset.h"
 #include "com.h"
+#include "mm.h"
 
 
 struct _mtc_fmt_t
@@ -32,13 +33,13 @@ mtcFormatCreate(cfg_mtc_format_t format)
 {
     if (format >= CFG_FORMAT_MAX) return NULL;
 
-    mtc_fmt_t* f = calloc(1, sizeof(mtc_fmt_t));
+    mtc_fmt_t* f = mm_calloc(1, sizeof(mtc_fmt_t));
     if (!f) {
         DBG(NULL);
         return NULL;
     }
     f->format = format;
-    f->statsd.prefix = (DEFAULT_STATSD_PREFIX) ? strdup(DEFAULT_STATSD_PREFIX) : NULL;
+    f->statsd.prefix = (DEFAULT_STATSD_PREFIX) ? mm_strdup(DEFAULT_STATSD_PREFIX) : NULL;
     f->statsd.max_len = DEFAULT_STATSD_MAX_LEN;
     f->verbosity = DEFAULT_MTC_VERBOSITY;
     f->tags = DEFAULT_CUSTOM_TAGS;
@@ -54,12 +55,12 @@ mtcFormatDestroyTags(custom_tag_t*** tags)
     custom_tag_t** t = *tags;
     int i = 0;
     while (t[i]) {
-        free(t[i]->name);
-        free(t[i]->value);
-        free(t[i]);
+        mm_free(t[i]->name);
+        mm_free(t[i]->value);
+        mm_free(t[i]);
         i++;
     }
-    free(t);
+    mm_free(t);
     *tags = NULL;
 }
 
@@ -68,9 +69,9 @@ mtcFormatDestroy(mtc_fmt_t** fmt)
 {
     if (!fmt || !*fmt) return;
     mtc_fmt_t* f = *fmt;
-    if (f->statsd.prefix) free(f->statsd.prefix);
+    if (f->statsd.prefix) mm_free(f->statsd.prefix);
     mtcFormatDestroyTags(&f->tags);
-    free(f);
+    mm_free(f);
     *fmt = NULL;
 }
 
@@ -193,7 +194,7 @@ mtcFormatStatsDString(mtc_fmt_t* fmt, event_t* e, regex_t* fieldFilter)
 {
     if (!fmt || !e) return NULL;
 
-    char* end = calloc(1, fmt->statsd.max_len + 1);
+    char* end = mm_calloc(1, fmt->statsd.max_len + 1);
     if (!end) {
          DBG("%s", e->name);
          return NULL;
@@ -218,7 +219,7 @@ mtcFormatStatsDString(mtc_fmt_t* fmt, event_t* e, regex_t* fieldFilter)
             DBG(NULL);
     }
     if (n < 0) {
-        free(end_start);
+        mm_free(end_start);
         return NULL;
     }
     bytes += n; // size of value in valuebuf
@@ -227,7 +228,7 @@ mtcFormatStatsDString(mtc_fmt_t* fmt, event_t* e, regex_t* fieldFilter)
 
     // Test the calloc'd size is adequate
     if (bytes >= fmt->statsd.max_len) {
-        free(end_start);
+        mm_free(end_start);
         return NULL;
     }
 
@@ -286,11 +287,11 @@ mtcFormatEventForOutput(mtc_fmt_t *fmt, event_t *evt, regex_t *fieldFilter)
 
         if ((msg = cJSON_PrintUnformatted(json_root))) {
             int strsize = strlen(msg);
-            char *temp = realloc(msg, strsize+2); // room for "\n\0"
+            char *temp = mm_realloc(msg, strsize+2); // room for "\n\0"
             if (!temp) {
                 DBG(NULL);
-                scopeLogInfo("mtcFormat realloc error");
-                free(msg);
+                scopeLogInfo("mtcFormat mm_realloc error");
+                mm_free(msg);
                 msg = NULL;
             } else {
                 msg = temp;
@@ -341,8 +342,8 @@ mtcFormatStatsDPrefixSet(mtc_fmt_t* fmt, const char* prefix)
     if (!fmt) return;
 
     // Don't leak on repeated sets
-    if (fmt->statsd.prefix) free(fmt->statsd.prefix);
-    fmt->statsd.prefix = (prefix) ? strdup(prefix) : NULL;
+    if (fmt->statsd.prefix) mm_free(fmt->statsd.prefix);
+    fmt->statsd.prefix = (prefix) ? mm_strdup(prefix) : NULL;
 }
 
 void
@@ -370,11 +371,11 @@ mtcFormatCustomTagsSet(mtc_fmt_t* fmt, custom_tag_t** tags)
 
     if (!tags || !*tags) return;
 
-    // get a count of how big to calloc
+    // get a count of how big to mm_calloc
     int num = 0;
     while(tags[num]) num++;
 
-    fmt->tags = calloc(1, sizeof(custom_tag_t*) * (num+1));
+    fmt->tags = mm_calloc(1, sizeof(custom_tag_t*) * (num+1));
     if (!fmt->tags) {
         DBG(NULL);
         return;
@@ -382,14 +383,14 @@ mtcFormatCustomTagsSet(mtc_fmt_t* fmt, custom_tag_t** tags)
 
     int i, j = 0;
     for (i = 0; i<num; i++) {
-        custom_tag_t* t = calloc(1, sizeof(custom_tag_t));
-        char* n = strdup(tags[i]->name);
-        char* v = strdup(tags[i]->value);
+        custom_tag_t* t = mm_calloc(1, sizeof(custom_tag_t));
+        char* n = mm_strdup(tags[i]->name);
+        char* v = mm_strdup(tags[i]->value);
         if (!t || !n || !v) {
-            if (t) free (t);
-            if (n) free (n);
-            if (v) free (v);
             DBG("t=%p n=%p v=%p", t, n, v);
+            if (t) mm_free (t);
+            if (n) mm_free (n);
+            if (v) mm_free (v);
             continue;
         }
         t->name = n;
@@ -439,7 +440,7 @@ fmtUrlEncode(const char* in_str)
 {
     // rfc3986 Percent-Encoding
     if (!in_str) return NULL;
-    char *out = malloc(strlen(in_str) * 3 + 1);
+    char *out = mm_malloc(strlen(in_str) * 3 + 1);
     if (!out) return NULL;
 
     char *inptr = (char*) in_str;
@@ -464,7 +465,7 @@ fmtUrlDecode(const char* in_str)
 {
     // rfc3986 Percent-Encoding
     if (!in_str) return NULL;
-    char *out = malloc(strlen(in_str) + 1);
+    char *out = mm_malloc(strlen(in_str) + 1);
     if (!out) return NULL;
 
     char *inptr = (char*) in_str;

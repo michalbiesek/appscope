@@ -5,6 +5,7 @@
 #include <pwd.h>
 #include <time.h>
 #include "os.h"
+#include "../../src/mm.h"
 #include "../../src/dbg.h"
 #include "../../src/fn.h"
 #include "../../src/scopetypes.h"
@@ -154,7 +155,7 @@ getProcVal(char *srcbuf, const char *tag)
     const char delim[] = ":";
 
     if (!srcbuf) return -1;
-    buf = strdup(srcbuf);
+    buf = mm_strdup(srcbuf);
 
     entry = strtok_r(buf, delim, &last);
     while (1) {
@@ -173,7 +174,7 @@ getProcVal(char *srcbuf, const char *tag)
         }
     }
 
-    if (buf) free(buf);
+    if (buf) mm_free(buf);
     return val;
 }
 
@@ -205,8 +206,8 @@ osGetExePath(pid_t pid, char **path)
     char *buf = *path;
     char pidpath[PATH_MAX];
 
-    if (!(buf = calloc(1, PATH_MAX))) {
-        scopeLogError("ERROR:calloc in osGetExePath");
+    if (!(buf = mm_calloc(1, PATH_MAX))) {
+        scopeLogError("ERROR:mm_calloc in osGetExePath");
         return -1;
     }
 
@@ -214,7 +215,7 @@ osGetExePath(pid_t pid, char **path)
 
     if (readlink(pidpath, buf, PATH_MAX - 1) == -1) {
         scopeLogError("osGetExePath: can't get path to pid %d exe", pid);
-        free(buf);
+        mm_free(buf);
         return -1;
     }
 
@@ -232,7 +233,7 @@ osGetProcname(char *pname, int len)
 
         if (osGetExePath(getpid(), &ppath) != -1) {
             strncpy(pname, basename(ppath), len);
-            if (ppath) free(ppath);
+            if (ppath) mm_free(ppath);
         } else {
             return -1;
         }
@@ -302,7 +303,7 @@ osGetNumThreads(pid_t pid)
         return -1;
     }
 
-    // Get the size of the file with stat, malloc buf then free
+    // Get the size of the file with stat, malloc buf then mm_free
     snprintf(buf, sizeof(buf), "/proc/%d/stat", pid);
     if ((fd = g_fn.open(buf, O_RDONLY)) == -1) {
         DBG(NULL);
@@ -399,7 +400,7 @@ osInitTimer(platform_time_t *cfg)
      * Anecdotal evidence that there is a max size to proc entrires.
      * In any case this should be big enough.
      */    
-    if ((buf = calloc(1, MAX_PROC)) == NULL) {
+    if ((buf = mm_calloc(1, MAX_PROC)) == NULL) {
         DBG(NULL);
         g_fn.close(fd);
         return -1;
@@ -408,7 +409,7 @@ osInitTimer(platform_time_t *cfg)
     if (g_fn.read(fd, buf, MAX_PROC) == -1) {
         DBG(NULL);
         g_fn.close(fd);
-        free(buf);
+        mm_free(buf);
         return -1;
     }
 
@@ -467,7 +468,7 @@ osInitTimer(platform_time_t *cfg)
 #endif
 
     g_fn.close(fd);
-    free(buf);
+    mm_free(buf);
     if (cfg->freq == (uint64_t)-1) {
         DBG(NULL);
         return -1;
@@ -506,7 +507,7 @@ osGetCmdline(pid_t pid, char **cmd)
         goto out;
     }
 
-    if ((buf = calloc(1, NCARGS)) == NULL) {
+    if ((buf = mm_calloc(1, NCARGS)) == NULL) {
         goto out;
     }
 
@@ -532,13 +533,13 @@ osGetCmdline(pid_t pid, char **cmd)
 
 out:
     if (!buf || !buf[0]) {
-        if (buf) free(buf);
-        buf = strdup("none");
+        if (buf) mm_free(buf);
+        buf = mm_strdup("none");
     } else {
-        // buf is big; try to strdup what we've used and free the rest
-        char* tmp = strdup(buf);
+        // buf is big; try to mm_strdup what we've used and mm_free the rest
+        char* tmp = mm_strdup(buf);
         if (tmp) {
-            free(buf);
+            mm_free(buf);
             buf = tmp;
         }
     }
@@ -639,14 +640,14 @@ osGetPageProt(uint64_t addr)
         errno = 0;
         uint64_t addr1 = strtoull(buf, &end, 0x10);
         if ((addr1 == 0) || (errno != 0)) {
-            if (buf) free(buf);
+            if (buf) mm_free(buf);
             g_fn.fclose(fstream);
             return -1;
         }
 
         uint64_t addr2 = strtoull(end + 1, &end, 0x10);
         if ((addr2 == 0) || (errno != 0)) {
-            if (buf) free(buf);
+            if (buf) mm_free(buf);
             g_fn.fclose(fstream);
             return -1;
         }
@@ -660,12 +661,12 @@ osGetPageProt(uint64_t addr)
             prot |= perms[0] == 'r' ? PROT_READ : 0;
             prot |= perms[1] == 'w' ? PROT_WRITE : 0;
             prot |= perms[2] == 'x' ? PROT_EXEC : 0;
-            if (buf) free(buf);
+            if (buf) mm_free(buf);
             break;
         }
 
         if (buf) {
-            free(buf);
+            mm_free(buf);
             buf = NULL;
         }
 
@@ -734,12 +735,12 @@ osGetCgroup(pid_t pid, char *cgroup, size_t cglen)
             char *nonl = strchr(cgroup, '\n');
             if (nonl) *nonl = '\0';
 
-            free(buf);
+            mm_free(buf);
             g_fn.fclose(fstream);
             return TRUE;
         }
 
-        if (buf) free(buf);
+        if (buf) mm_free(buf);
         buf = NULL;
         len = 0;
     }
@@ -751,7 +752,7 @@ osGetCgroup(pid_t pid, char *cgroup, size_t cglen)
 char *
 osGetFileMode(mode_t perm)
 {
-    char *mode = malloc(MODE_STR);
+    char *mode = mm_malloc(MODE_STR);
     if (!mode) return NULL;
 
     mode[0] = (perm & S_IRUSR) ? 'r' : '-';
@@ -777,7 +778,7 @@ osGetUserName(unsigned uid)
     int ret = getpwuid_r(uid, &pwd, buf, sizeof(buf), &pwd_res);
     if (ret)
         return NULL;
-    return strdup(pwd.pw_name);
+    return mm_strdup(pwd.pw_name);
 }
 
 char *
@@ -790,5 +791,5 @@ osGetGroupName(unsigned gid)
     int ret = getgrgid_r(gid, &grp, buf, sizeof(buf), &grp_res);
     if (ret)
         return NULL;
-    return strdup(grp.gr_name);
+    return mm_strdup(grp.gr_name);
 }
