@@ -4,6 +4,7 @@
 #include "os.h"
 #include "state.h"
 #include "utils.h"
+#include "mm.h"
 
 #include <jni.h>
 #include <jvmti.h>
@@ -751,13 +752,13 @@ initJavaAgent() {
             }
             bufsize += strlen(env) + 1;
         }
-        buf = malloc(bufsize);
+        buf = mm_malloc(bufsize);
         snprintf(buf, bufsize, "%s%s%s", env != NULL ? env : "", env != NULL ? " " : "", opt);
 
         int result = fullSetenv("JAVA_TOOL_OPTIONS", buf, 1);
         if (result) {
             scopeLogError("ERROR: Could not set JAVA_TOOL_OPTIONS failed\n");
         }
-        free(buf);
+        mm_free(buf);
     }
 }

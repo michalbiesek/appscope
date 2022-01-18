@@ -5,6 +5,7 @@
 
 #include "dbg.h"
 #include "log.h"
+#include "mm.h"
 
 struct _log_t
 {
@@ -15,7 +16,7 @@ struct _log_t
 log_t*
 logCreate()
 {
-    log_t* log = calloc(1, sizeof(log_t));
+    log_t* log = mm_calloc(1, sizeof(log_t));
     if (!log) {
         DBG(NULL);
         return NULL;
@@ -32,7 +33,7 @@ logDestroy(log_t** log)
     if (!log || !*log) return;
     log_t* l = *log;
     transportDestroy(&l->transport);
-    free(l);
+    mm_free(l);
     *log = NULL;
 }
 

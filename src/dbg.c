@@ -9,6 +9,7 @@
 #include "atomic.h"
 #include "dbg.h"
 #include "utils.h"
+#include "mm.h"
 
 
 #define MAX_INSTANCES_PER_LINE 2
@@ -42,7 +43,7 @@ dbgInit()
 {
     dbgDestroy();
 
-    g_dbg = calloc(1, sizeof(*g_dbg));
+    g_dbg = mm_calloc(1, sizeof(*g_dbg));
 }
 
 static char *
@@ -81,10 +82,10 @@ updateLine(line_t *line, char *str)
     line->instance[i].time = tv.tv_sec;
     line->instance[i].err = errno;
 
-    // The atomic swap allows us to free previous strings without leaking
-    // memory and equally importantly, ensures we can't double-free a str.
+    // The atomic swap allows us to mm_free previous strings without leaking
+    // memory and equally importantly, ensures we can't double-mm_free a str.
     char *prev_str = atomicSwapString(&line->instance[i].str, str);
-    if (prev_str) free(prev_str);
+    if (prev_str) mm_free(prev_str);
 }
 
 static void
@@ -94,7 +95,7 @@ resetLine(line_t *line)
     int i;
     for (i=0; i < MAX_INSTANCES_PER_LINE; i++) {
         char *prev_str = atomicSwapString(&line->instance[i].str, NULL);
-        if (prev_str) free(prev_str);
+        if (prev_str) mm_free(prev_str);
     }
     memset(line, 0, sizeof(*line));
 }
@@ -109,7 +110,7 @@ dbgDestroy()
          resetLine(&g_dbg->lines[i]);
      }
 
-    free(g_dbg);
+    mm_free(g_dbg);
     g_dbg = NULL;
 }
 
@@ -221,7 +222,7 @@ search_for_spot:
 
     // If we're out of space for our key, give up.
     if (i >= MAX_NUM_LINES) {
-        if (str) free(str);
+        if (str) mm_free(str);
         return;
     }
 
@@ -249,7 +250,7 @@ dbgAddLine(const char *key, const char *fmt, ...)
         int rv = vasprintf(&str, fmt, args);
         va_end(args);
         if (rv == -1) {
-            if (str) free(str);
+            if (str) mm_free(str);
             str = NULL;
         }
     }

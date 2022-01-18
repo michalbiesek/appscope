@@ -6,6 +6,7 @@
 
 #include "cfg.h"
 #include "dbg.h"
+#include "mm.h"
 
 typedef struct {
     cfg_transport_t type;
@@ -168,14 +169,14 @@ static cfg_buffer_t bufDefault[] = {
 config_t *
 cfgCreateDefault()
 { 
-    config_t *c = calloc(1, sizeof(config_t));
+    config_t *c = mm_calloc(1, sizeof(config_t));
     if (!c) {
         DBG(NULL);
         return NULL;
     }
     c->mtc.enable = DEFAULT_MTC_ENABLE;
     c->mtc.format = DEFAULT_MTC_FORMAT;
-    c->mtc.statsd.prefix = (DEFAULT_STATSD_PREFIX) ? strdup(DEFAULT_STATSD_PREFIX) : NULL;
+    c->mtc.statsd.prefix = (DEFAULT_STATSD_PREFIX) ? mm_strdup(DEFAULT_STATSD_PREFIX) : NULL;
     c->mtc.statsd.maxlen = DEFAULT_STATSD_MAX_LEN;
     c->mtc.statsd.enable = DEFAULT_MTC_STATSD_ENABLE;
     c->mtc.period = DEFAULT_SUMMARY_PERIOD;
@@ -187,11 +188,11 @@ cfgCreateDefault()
     watch_t src;
     for (src=CFG_SRC_FILE; src<CFG_SRC_MAX; src++) {
         const char *val_def = valueFilterDefault[src];
-        c->evt.valuefilter[src] = (val_def) ? strdup(val_def) : NULL;
+        c->evt.valuefilter[src] = (val_def) ? mm_strdup(val_def) : NULL;
         const char *field_def = fieldFilterDefault[src];
-        c->evt.fieldfilter[src] = (field_def) ? strdup(field_def) : NULL;
+        c->evt.fieldfilter[src] = (field_def) ? mm_strdup(field_def) : NULL;
         const char *name_def = nameFilterDefault[src];
-        c->evt.namefilter[src] = (name_def) ? strdup(name_def) : NULL;
+        c->evt.namefilter[src] = (name_def) ? mm_strdup(name_def) : NULL;
         c->evt.src[src] = srcEnabledDefault[src];
     }
 
@@ -202,26 +203,26 @@ cfgCreateDefault()
     for (tp=CFG_MTC; tp<CFG_WHICH_MAX; tp++) {
         c->transport[tp].type = typeDefault[tp];
         const char* host_def = hostDefault[tp];
-        c->transport[tp].net.host = (host_def) ? strdup(host_def) : NULL;
+        c->transport[tp].net.host = (host_def) ? mm_strdup(host_def) : NULL;
         const char* port_def = portDefault[tp];
-        c->transport[tp].net.port = (port_def) ? strdup(port_def) : NULL;
+        c->transport[tp].net.port = (port_def) ? mm_strdup(port_def) : NULL;
         const char* path_def = pathDefault[tp];
-        c->transport[tp].file.path = (path_def) ? strdup(path_def) : NULL;
+        c->transport[tp].file.path = (path_def) ? mm_strdup(path_def) : NULL;
         c->transport[tp].file.buf_policy = bufDefault[tp];
         c->transport[tp].net.tls.enable = DEFAULT_TLS_ENABLE;
         c->transport[tp].net.tls.validateserver = DEFAULT_TLS_VALIDATE_SERVER;
-        c->transport[tp].net.tls.cacertpath = (DEFAULT_TLS_CA_CERT) ? strdup(DEFAULT_TLS_CA_CERT) : NULL;
+        c->transport[tp].net.tls.cacertpath = (DEFAULT_TLS_CA_CERT) ? mm_strdup(DEFAULT_TLS_CA_CERT) : NULL;
     }
 
     c->log.level = DEFAULT_LOG_LEVEL;
 
     c->pay.enable = DEFAULT_PAYLOAD_ENABLE;
-    c->pay.dir = (DEFAULT_PAYLOAD_DIR) ? strdup(DEFAULT_PAYLOAD_DIR) : NULL;
+    c->pay.dir = (DEFAULT_PAYLOAD_DIR) ? mm_strdup(DEFAULT_PAYLOAD_DIR) : NULL;
 
     c->tags = DEFAULT_CUSTOM_TAGS;
     c->max_tags = DEFAULT_NUM_TAGS;
 
-    c->commanddir = (DEFAULT_COMMAND_DIR) ? strdup(DEFAULT_COMMAND_DIR) : NULL;
+    c->commanddir = (DEFAULT_COMMAND_DIR) ? mm_strdup(DEFAULT_COMMAND_DIR) : NULL;
     c->processstartmsg = DEFAULT_PROCESS_START_MSG;
     c->enhancefs = DEFAULT_ENHANCE_FS;
 
@@ -236,48 +237,48 @@ cfgDestroy(config_t **cfg)
 {
     if (!cfg || !*cfg) return;
     config_t *c = *cfg;
-    if (c->mtc.statsd.prefix) free(c->mtc.statsd.prefix);
-    if (c->commanddir) free(c->commanddir);
+    if (c->mtc.statsd.prefix) mm_free(c->mtc.statsd.prefix);
+    if (c->commanddir) mm_free(c->commanddir);
 
     watch_t src;
     for (src = CFG_SRC_FILE; src<CFG_SRC_MAX; src++) {
-        if (c->evt.valuefilter[src]) free (c->evt.valuefilter[src]);
-        if (c->evt.fieldfilter[src]) free (c->evt.fieldfilter[src]);
-        if (c->evt.namefilter[src]) free (c->evt.namefilter[src]);
+        if (c->evt.valuefilter[src]) mm_free (c->evt.valuefilter[src]);
+        if (c->evt.fieldfilter[src]) mm_free (c->evt.fieldfilter[src]);
+        if (c->evt.namefilter[src]) mm_free (c->evt.namefilter[src]);
     }
 
     int i;
     for (i = 0; i < c->evt.numHeaders; i++) {
         if (c->evt.hextract && c->evt.hextract[i]) {
             c->evt.hextract[i]->valid = FALSE;
-            if (c->evt.hextract[i]->filter) free(c->evt.hextract[i]->filter);
+            if (c->evt.hextract[i]->filter) mm_free(c->evt.hextract[i]->filter);
             regfree(&c->evt.hextract[i]->re);
-            free(c->evt.hextract[i]);
+            mm_free(c->evt.hextract[i]);
         }
     }
 
-    if (c->evt.hextract) free(c->evt.hextract);
+    if (c->evt.hextract) mm_free(c->evt.hextract);
 
     which_transport_t t;
     for (t=CFG_MTC; t<CFG_WHICH_MAX; t++) {
-        if (c->transport[t].net.host) free(c->transport[t].net.host);
-        if (c->transport[t].net.port) free(c->transport[t].net.port);
-        if (c->transport[t].file.path) free(c->transport[t].file.path);
+        if (c->transport[t].net.host) mm_free(c->transport[t].net.host);
+        if (c->transport[t].net.port) mm_free(c->transport[t].net.port);
+        if (c->transport[t].file.path) mm_free(c->transport[t].file.path);
     }
 
-    if (c->pay.dir) free(c->pay.dir);
+    if (c->pay.dir) mm_free(c->pay.dir);
 
     if (c->tags) {
         int i = 0;
         while (c->tags[i]) {
-            free(c->tags[i]->name);
-            free(c->tags[i]->value);
-            free(c->tags[i]);
+            mm_free(c->tags[i]->name);
+            mm_free(c->tags[i]->value);
+            mm_free(c->tags[i]);
             i++;
         }
-        free(c->tags);
+        mm_free(c->tags);
     }
-    free(c);
+    mm_free(c);
     *cfg = NULL;
 }
 
@@ -626,16 +627,16 @@ void
 cfgMtcStatsDPrefixSet(config_t* cfg, const char* prefix)
 {
     if (!cfg) return;
-    if (cfg->mtc.statsd.prefix) free(cfg->mtc.statsd.prefix);
+    if (cfg->mtc.statsd.prefix) mm_free(cfg->mtc.statsd.prefix);
     if (!prefix || (prefix[0] == '\0')) {
-        cfg->mtc.statsd.prefix = strdup(DEFAULT_STATSD_PREFIX);
+        cfg->mtc.statsd.prefix = mm_strdup(DEFAULT_STATSD_PREFIX);
         return;
     }
 
     // Make sure that the prefix always ends in a '.'
     int n = strlen(prefix);
     if (prefix[n-1] != '.') {
-        char* temp = malloc(n+2);
+        char* temp = mm_malloc(n+2);
         if (temp) {
             strcpy(temp, prefix);
             temp[n] = '.';
@@ -645,7 +646,7 @@ cfgMtcStatsDPrefixSet(config_t* cfg, const char* prefix)
         }
         cfg->mtc.statsd.prefix = temp;
     } else {
-        cfg->mtc.statsd.prefix = strdup(prefix);
+        cfg->mtc.statsd.prefix = mm_strdup(prefix);
     }
 }
 
@@ -674,13 +675,13 @@ void
 cfgCmdDirSet(config_t* cfg, const char* path)
 {
     if (!cfg) return;
-    if (cfg->commanddir) free(cfg->commanddir);
+    if (cfg->commanddir) mm_free(cfg->commanddir);
     if (!path || (path[0] == '\0')) {
-        cfg->commanddir = (DEFAULT_COMMAND_DIR) ? strdup(DEFAULT_COMMAND_DIR) : NULL;
+        cfg->commanddir = (DEFAULT_COMMAND_DIR) ? mm_strdup(DEFAULT_COMMAND_DIR) : NULL;
         return;
     }
 
-    cfg->commanddir = strdup(path);
+    cfg->commanddir = mm_strdup(path);
 }
 
 void
@@ -730,39 +731,39 @@ void
 cfgEvtFormatValueFilterSet(config_t* cfg, watch_t src, const char* filter)
 {
     if (!cfg || src < 0 || src >= CFG_SRC_MAX) return;
-    if (cfg->evt.valuefilter[src]) free (cfg->evt.valuefilter[src]);
+    if (cfg->evt.valuefilter[src]) mm_free (cfg->evt.valuefilter[src]);
     if (!filter || (filter[0] == '\0')) {
         const char* vdefault = valueFilterDefault[src];
-        cfg->evt.valuefilter[src] = (vdefault) ? strdup(vdefault) : NULL;
+        cfg->evt.valuefilter[src] = (vdefault) ? mm_strdup(vdefault) : NULL;
         return;
     }
-    cfg->evt.valuefilter[src] = strdup(filter);
+    cfg->evt.valuefilter[src] = mm_strdup(filter);
 }
 
 void
 cfgEvtFormatFieldFilterSet(config_t* cfg, watch_t src, const char* filter)
 {
     if (!cfg || src < 0 || src >= CFG_SRC_MAX) return;
-    if (cfg->evt.fieldfilter[src]) free (cfg->evt.fieldfilter[src]);
+    if (cfg->evt.fieldfilter[src]) mm_free (cfg->evt.fieldfilter[src]);
     if (!filter || (filter[0] == '\0')) {
         const char* fdefault = fieldFilterDefault[src];
-        cfg->evt.fieldfilter[src] = (fdefault) ? strdup(fdefault) : NULL;
+        cfg->evt.fieldfilter[src] = (fdefault) ? mm_strdup(fdefault) : NULL;
         return;
     }
-    cfg->evt.fieldfilter[src] = strdup(filter);
+    cfg->evt.fieldfilter[src] = mm_strdup(filter);
 }
 
 void
 cfgEvtFormatNameFilterSet(config_t* cfg, watch_t src, const char* filter)
 {
     if (!cfg || src < 0 || src >= CFG_SRC_MAX) return;
-    if (cfg->evt.namefilter[src]) free (cfg->evt.namefilter[src]);
+    if (cfg->evt.namefilter[src]) mm_free (cfg->evt.namefilter[src]);
     if (!filter || (filter[0] == '\0')) {
         const char* ndefault = nameFilterDefault[src];
-        cfg->evt.namefilter[src] = (ndefault) ? strdup(ndefault) : NULL;
+        cfg->evt.namefilter[src] = (ndefault) ? mm_strdup(ndefault) : NULL;
         return;
     }
-    cfg->evt.namefilter[src] = strdup(filter);
+    cfg->evt.namefilter[src] = mm_strdup(filter);
 }
 
 void
@@ -772,7 +773,7 @@ cfgEvtFormatHeaderSet(config_t *cfg, const char *filter)
 
     size_t headnum = cfg->evt.numHeaders + 1;
 
-    header_extract_t **tempex = realloc(cfg->evt.hextract, headnum * sizeof(header_extract_t *));
+    header_extract_t **tempex = mm_realloc(cfg->evt.hextract, headnum * sizeof(header_extract_t *));
     if (!tempex) {
         DBG(NULL);
         return;
@@ -780,10 +781,10 @@ cfgEvtFormatHeaderSet(config_t *cfg, const char *filter)
 
     cfg->evt.hextract = tempex;
 
-    header_extract_t *hextract = calloc(1, sizeof(header_extract_t));
+    header_extract_t *hextract = mm_calloc(1, sizeof(header_extract_t));
     if (hextract) {
         if (!regcomp(&hextract->re, filter, REG_EXTENDED | REG_NOSUB)) {
-            hextract->filter = strdup(filter);
+            hextract->filter = mm_strdup(filter);
             hextract->valid = TRUE;
         } else {
             hextract->valid = FALSE;
@@ -814,8 +815,8 @@ void
 cfgTransportHostSet(config_t* cfg, which_transport_t t, const char* host)
 {
     if (!cfg || t < 0 || t >= CFG_WHICH_MAX) return;
-    if (cfg->transport[t].net.host) free(cfg->transport[t].net.host);
-    cfg->transport[t].net.host = (host) ? strdup(host) : NULL;
+    if (cfg->transport[t].net.host) mm_free(cfg->transport[t].net.host);
+    cfg->transport[t].net.host = (host) ? mm_strdup(host) : NULL;
 
 }
 
@@ -823,16 +824,16 @@ void
 cfgTransportPortSet(config_t* cfg, which_transport_t t, const char* port)
 {
     if (!cfg || t < 0 || t >= CFG_WHICH_MAX) return;
-    if (cfg->transport[t].net.port) free(cfg->transport[t].net.port);
-    cfg->transport[t].net.port = (port) ? strdup(port) : NULL;
+    if (cfg->transport[t].net.port) mm_free(cfg->transport[t].net.port);
+    cfg->transport[t].net.port = (port) ? mm_strdup(port) : NULL;
 }
 
 void
 cfgTransportPathSet(config_t* cfg, which_transport_t t, const char* path)
 {
     if (!cfg || t < 0 || t >= CFG_WHICH_MAX) return;
-    if (cfg->transport[t].file.path) free(cfg->transport[t].file.path);
-    cfg->transport[t].file.path = (path) ? strdup(path) : NULL;
+    if (cfg->transport[t].file.path) mm_free(cfg->transport[t].file.path);
+    cfg->transport[t].file.path = (path) ? mm_strdup(path) : NULL;
 }
 
 void
@@ -861,12 +862,12 @@ void
 cfgTransportTlsCACertPathSet(config_t *cfg, which_transport_t t, const char *path)
 {
     if (!cfg || t < 0 || t >= CFG_WHICH_MAX) return;
-    if (cfg->transport[t].net.tls.cacertpath) free(cfg->transport[t].net.tls.cacertpath);
+    if (cfg->transport[t].net.tls.cacertpath) mm_free(cfg->transport[t].net.tls.cacertpath);
     if (!path || (path[0] == '\0')) {
         cfg->transport[t].net.tls.cacertpath = NULL;
         return;
     }
-    cfg->transport[t].net.tls.cacertpath = strdup(path);
+    cfg->transport[t].net.tls.cacertpath = mm_strdup(path);
 }
 
 void
@@ -878,9 +879,9 @@ cfgCustomTagAdd(config_t* c, const char* name, const char* value)
     {
         custom_tag_t* t;
         if ((t=cfgCustomTag(c, name))) {
-            char* newvalue = strdup(value);
+            char* newvalue = mm_strdup(value);
             if (newvalue) {
-                free(t->value);
+                mm_free(t->value);
                 t->value = newvalue;
                 return;
             }
@@ -889,7 +890,7 @@ cfgCustomTagAdd(config_t* c, const char* name, const char* value)
 
     // Create space if it's the first add
     if (!c->tags) {
-        c->tags = calloc(1, sizeof(custom_tag_t*) * c->max_tags);
+        c->tags = mm_calloc(1, sizeof(custom_tag_t*) * c->max_tags);
         if (!c->tags) {
             DBG("%s %s", name, value);
             return;
@@ -903,7 +904,7 @@ cfgCustomTagAdd(config_t* c, const char* name, const char* value)
     // If we're out of space, try to get more space
     if (i >= c->max_tags-1) {     // null delimiter is always required
         int tmp_max_tags = c->max_tags * 2;  // double each time
-        custom_tag_t** temp = realloc(c->tags, sizeof(custom_tag_t*) * tmp_max_tags);
+        custom_tag_t** temp = mm_realloc(c->tags, sizeof(custom_tag_t*) * tmp_max_tags);
         if (!temp) {
             DBG("%s %s", name, value);
             return;
@@ -916,14 +917,14 @@ cfgCustomTagAdd(config_t* c, const char* name, const char* value)
 
     // save it
     {
-        custom_tag_t* t = calloc(1,sizeof(custom_tag_t));
-        char* n = strdup(name);
-        char* v = strdup(value);
+        custom_tag_t* t = mm_calloc(1,sizeof(custom_tag_t));
+        char* n = mm_strdup(name);
+        char* v = mm_strdup(value);
         if (!t || !n || !v) {
-            if (t) free(t);
-            if (n) free(n);
-            if (v) free(v);
             DBG("t=%p n=%p v=%p", t, n, v);
+            if (t) mm_free(t);
+            if (n) mm_free(n);
+            if (v) mm_free(v);
             return;
         }
         c->tags[i] = t;
@@ -950,13 +951,13 @@ void
 cfgPayDirSet(config_t *cfg, const char *dir)
 {
     if (!cfg) return;
-    if (cfg->pay.dir) free(cfg->pay.dir);
+    if (cfg->pay.dir) mm_free(cfg->pay.dir);
     if (!dir || (dir[0] == '\0')) {
-        cfg->pay.dir = (DEFAULT_PAYLOAD_DIR) ? strdup(DEFAULT_PAYLOAD_DIR) : NULL;
+        cfg->pay.dir = (DEFAULT_PAYLOAD_DIR) ? mm_strdup(DEFAULT_PAYLOAD_DIR) : NULL;
         return;
     }
 
-    cfg->pay.dir = strdup(dir);
+    cfg->pay.dir = mm_strdup(dir);
 }
 
 void
@@ -977,11 +978,11 @@ void
 cfgAuthTokenSet(config_t * cfg, const char * authtoken)
 {
     if (!cfg) return;
-    if (cfg->authtoken) free(cfg->authtoken);
+    if (cfg->authtoken) mm_free(cfg->authtoken);
     if (!authtoken || (authtoken[0] == '\0')) {
         cfg->authtoken = NULL;
         return;
     }
 
-    cfg->authtoken = strdup(authtoken);
+    cfg->authtoken = mm_strdup(authtoken);
 }
