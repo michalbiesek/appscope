@@ -39,6 +39,7 @@
 #include "runtimecfg.h"
 #include "javaagent.h"
 #include "inject.h"
+#include "mm.h"
 #include "../contrib/libmusl/musl.h"
 
 #define SSL_FUNC_READ "SSL_read"
@@ -399,9 +400,9 @@ freeNssEntry(void *data)
     nss_list *nssentry = data;
 
     if (!nssentry) return;
-    if (nssentry->ssl_methods) free(nssentry->ssl_methods);
-    if (nssentry->ssl_int_methods) free(nssentry->ssl_int_methods);
-    free(nssentry);
+    if (nssentry->ssl_methods) mm_free(nssentry->ssl_methods);
+    if (nssentry->ssl_int_methods) mm_free(nssentry->ssl_int_methods);
+    mm_free(nssentry);
 }
 
 static time_t
@@ -527,7 +528,7 @@ remoteConfig()
             sb.st_size = DEFAULT_CONFIG_SIZE;
         }
 
-        cmd = calloc(1, sb.st_size);
+        cmd = mm_calloc(1, sb.st_size);
         if (!cmd) {
             g_fn.fclose(fs);
             unlink(path);
@@ -538,7 +539,7 @@ remoteConfig()
         if (g_fn.fread(cmd, sb.st_size, 1, fs) == 0) {
             g_fn.fclose(fs);
             unlink(path);
-            free(cmd);
+            mm_free(cmd);
             cmdSendInfoStr(g_ctl, "Error in receive from stream.  Read error in scope.");
             return;
         }
@@ -603,7 +604,7 @@ remoteConfig()
             cmdSendInfoStr(g_ctl, "Error in receive from stream.  Memory error in scope parsing.");
         }
 
-        free(cmd);
+        mm_free(cmd);
     } else {
         cmdSendInfoStr(g_ctl, "Error in receive from stream.  Scope receive retries exhausted.");
     }
@@ -853,7 +854,7 @@ setProcId(proc_id_t *proc)
     osGetProcname(proc->procname, sizeof(proc->procname));
 
     // free old value of cmd, if an old value exists
-    if (proc->cmd) free(proc->cmd);
+    if (proc->cmd) mm_free(proc->cmd);
     proc->cmd = NULL;
     osGetCmdline(proc->pid, &proc->cmd);
 
@@ -867,10 +868,10 @@ setProcId(proc_id_t *proc)
     }
 
     proc->uid = getuid();
-    if (proc->username) free(proc->username);
+    if (proc->username) mm_free(proc->username);
     proc->username = osGetUserName(proc->uid);
     proc->gid = getgid();
-    if (proc->groupname) free(proc->groupname);
+    if (proc->groupname) mm_free(proc->groupname);
     proc->groupname = osGetGroupName(proc->gid);
     if (osGetCgroup(proc->pid, proc->cgroup, MAX_CGROUP) == FALSE) {
         proc->cgroup[0] = '\0';
@@ -1334,7 +1335,7 @@ initHook(int attachedFlag)
             : "%r11"                      //clobbered register
             );
 
-        if (full_path) free(full_path);
+        if (full_path) mm_free(full_path);
         if (ebuf) freeElf(ebuf->buf, ebuf->len);
         return;
 #endif  // __GO__
@@ -1349,7 +1350,7 @@ initHook(int attachedFlag)
         scopeLog(CFG_LOG_TRACE, "%s:%d uv__read at %p", __FUNCTION__, __LINE__, g_fn.uv__read);
     }
 
-    if (full_path) free(full_path);
+    if (full_path) mm_free(full_path);
     if (ebuf) freeElf(ebuf->buf, ebuf->len);
 
     if (attachedFlag) {
@@ -1561,7 +1562,7 @@ init(void)
             !is_go(ebuf->buf) &&
             is_musl(ebuf->buf));
 
-        if (full_path) free(full_path);
+        if (full_path) mm_free(full_path);
         if (ebuf) freeElf(ebuf->buf, ebuf->len);
     }
 
@@ -1606,7 +1607,7 @@ init(void)
 
     doConfig(cfg);
     g_staticfg = cfg;
-    if (path) free(path);
+    if (path) mm_free(path);
     if (!g_dbg) dbgInit();
     g_getdelim = 0;
 
@@ -2663,7 +2664,7 @@ execve(const char *pathname, char *const argv[], char *const envp[])
     while ((argv[nargs] != NULL)) nargs++;
 
     size_t plen = sizeof(char *);
-    if ((nargs == 0) || (nargv = calloc(1, ((nargs * plen) + (plen * 2)))) == NULL) {
+    if ((nargs == 0) || (nargv = mm_calloc(1, ((nargs * plen) + (plen * 2)))) == NULL) {
         return g_fn.execve(pathname, argv, envp);
     }
 
@@ -2676,8 +2677,8 @@ execve(const char *pathname, char *const argv[], char *const envp[])
 
     g_fn.execve(nargv[0], nargv, environ);
     saverr = errno;
-    if (nargv) free(nargv);
-    if (scopexec) free(scopexec);
+    if (nargv) mm_free(nargv);
+    if (scopexec) mm_free(scopexec);
     errno = saverr;
     return -1;
 }
@@ -3400,9 +3401,9 @@ SSL_ImportFD(PRFileDesc *model, PRFileDesc *currFd)
     if (result != NULL) {
         nss_list *nssentry;
 
-        if ((((nssentry = calloc(1, sizeof(nss_list))) != NULL)) &&
-            ((nssentry->ssl_methods = calloc(1, sizeof(PRIOMethods))) != NULL) &&
-            ((nssentry->ssl_int_methods = calloc(1, sizeof(PRIOMethods))) != NULL)) {
+        if ((((nssentry = mm_calloc(1, sizeof(nss_list))) != NULL)) &&
+            ((nssentry->ssl_methods = mm_calloc(1, sizeof(PRIOMethods))) != NULL) &&
+            ((nssentry->ssl_int_methods = mm_calloc(1, sizeof(PRIOMethods))) != NULL)) {
 
             memmove(nssentry->ssl_methods, result->methods, sizeof(PRIOMethods));
             memmove(nssentry->ssl_int_methods, result->methods, sizeof(PRIOMethods));

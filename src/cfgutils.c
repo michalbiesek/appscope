@@ -19,6 +19,7 @@
 #include "utils.h"
 #include "fn.h"
 #include "state.h"
+#include "mm.h"
 
 #ifndef NO_YAML
 #include "yaml.h"
@@ -210,34 +211,34 @@ cfgPathSearch(const char* cfgname)
     if (scope_home &&
        (snprintf(path, sizeof(path), "%s/conf/%s", scope_home, cfgname) > 0) &&
         !g_fn.access(path, R_OK)) {
-        return realpath(path, NULL);
+        return mm_realpath(path);
     }
     if (scope_home &&
        (snprintf(path, sizeof(path), "%s/%s", scope_home, cfgname) > 0) &&
         !g_fn.access(path, R_OK)) {
-        return realpath(path, NULL);
+        return mm_realpath(path);
     }
     if ((snprintf(path, sizeof(path), "/etc/scope/%s", cfgname) > 0 ) &&
         !g_fn.access(path, R_OK)) {
-        return realpath(path, NULL);
+        return mm_realpath(path);
     }
     if (homedir &&
        (snprintf(path, sizeof(path), "%s/conf/%s", homedir, cfgname) > 0) &&
         !g_fn.access(path, R_OK)) {
-        return realpath(path, NULL);
+        return mm_realpath(path);
     }
     if (homedir &&
        (snprintf(path, sizeof(path), "%s/%s", homedir, cfgname) > 0) &&
         !g_fn.access(path, R_OK)) {
-        return realpath(path, NULL);
+        return mm_realpath(path);
     }
     if ((snprintf(path, sizeof(path), "./conf/%s", cfgname) > 0) &&
         !g_fn.access(path, R_OK)) {
-        return realpath(path, NULL);
+        return mm_realpath(path);
     }
     if ((snprintf(path, sizeof(path), "./%s", cfgname) > 0) &&
         !g_fn.access(path, R_OK)) {
-        return realpath(path, NULL);
+        return mm_realpath(path);
     }
 
     return NULL;
@@ -250,7 +251,7 @@ cfgPath(void)
 
     // If SCOPE_CONF_PATH is set, and the file can be opened, use it.
     char *path;
-    if (envPath && (path = strdup(envPath))) {
+    if (envPath && (path = mm_strdup(envPath))) {
 
         FILE *fp = NULL;
         if (g_fn.fopen && g_fn.fclose && (fp = g_fn.fopen(path, "rb"))) {
@@ -259,7 +260,7 @@ cfgPath(void)
         }
 
         // Couldn't open the file
-        free(path);
+        mm_free(path);
     }
 
     // Otherwise, search for scope.yml
@@ -288,7 +289,7 @@ envRegex()
 {
     if (g_regex) return g_regex;
 
-    if (!(g_regex = calloc(1, sizeof(regex_t)))) {
+    if (!(g_regex = mm_calloc(1, sizeof(regex_t)))) {
         DBG(NULL);
         return g_regex;
     }
@@ -296,7 +297,7 @@ envRegex()
     if (regcomp(g_regex, "\\$[a-zA-Z0-9_]+", REG_EXTENDED)) {
         // regcomp failed.
         DBG(NULL);
-        free(g_regex);
+        mm_free(g_regex);
         g_regex = NULL;
     }
     return g_regex;
@@ -309,7 +310,7 @@ envRegexFree(void** state)
 {
     if (!g_regex) return;
     regfree(g_regex);
-    free(g_regex);
+    mm_free(g_regex);
 }
 
 static char*
@@ -321,7 +322,7 @@ doEnvVariableSubstitution(const char* value)
     regmatch_t match = {0};
 
     int out_size = strlen(value) + 1;
-    char* outval = calloc(1, out_size);
+    char* outval = mm_calloc(1, out_size);
     if (!outval) {
         DBG("%s", value);
         return NULL;
@@ -357,14 +358,14 @@ doEnvVariableSubstitution(const char* value)
         // Grow outval buffer any time env_value is bigger than env_name
         int size_growth = (!env_value) ? 0 : strlen(env_value) - match_size;
         if (size_growth > 0) {
-            char* new_outval = realloc (outval, out_size + size_growth);
+            char* new_outval = mm_realloc(outval, out_size + size_growth);
             if (new_outval) {
                 out_size += size_growth;
                 outptr = new_outval + (outptr - outval);
                 outval = new_outval;
             } else {
                 DBG("%s", value);
-                free(outval);
+                mm_free(outval);
                 return NULL;
             }
         }
@@ -404,7 +405,7 @@ processReloadConfig(config_t *cfg, const char* value)
     if (enable == TRUE) {
         char *path = cfgPath();
         cfgSetFromFile(cfg, path);
-        if (path) free(path);
+        if (path) mm_free(path);
     } else {
         cfgSetFromFile(cfg, value);
     }
@@ -431,7 +432,7 @@ processEnvStyleInput(config_t *cfg, const char *env_line)
     char *env_name = NULL;
     char *value = NULL;
     char *env_ptr;
-    env_name = strdup(env_line);
+    env_name = mm_strdup(env_line);
     if (!env_name) goto cleanup;
     if (!(env_ptr = strchr(env_name, '='))) goto cleanup;
     *env_ptr = '\0'; // Delimiting env_name
@@ -582,8 +583,8 @@ processEnvStyleInput(config_t *cfg, const char *env_line)
     }
 
 cleanup:
-    if (value) free(value);
-    if (env_name) free(env_name);
+    if (value) mm_free(value);
+    if (env_name) mm_free(env_name);
 }
 
 
@@ -624,7 +625,7 @@ cfgProcessCommands(config_t* cfg, FILE* file)
         line[0] = '\0';
     }
 
-    if (line) free(line);
+    if (line) mm_free(line);
 }
 
 void
@@ -939,7 +940,7 @@ processLevel(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgLogLevelSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -948,7 +949,7 @@ processTransportType(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportTypeSet(config, c, strToVal(transportTypeMap, value));
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -957,7 +958,7 @@ processHost(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportHostSet(config, c, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -966,7 +967,7 @@ processPort(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportPortSet(config, c, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -975,7 +976,7 @@ processPath(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportPathSet(config, c, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -984,7 +985,7 @@ processBuf(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportBufSet(config, c, strToVal(bufferMap, value));
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -993,7 +994,7 @@ processTlsEnable(config_t *config, yaml_document_t *doc, yaml_node_t *node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportTlsEnableSetFromStr(config, c, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1002,7 +1003,7 @@ processTlsValidate(config_t *config, yaml_document_t *doc, yaml_node_t *node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportTlsValidateServerSetFromStr(config, c, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1011,7 +1012,7 @@ processTlsCaCert(config_t *config, yaml_document_t *doc, yaml_node_t *node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportTlsCACertPathSetFromStr(config, c, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1107,8 +1108,8 @@ processTags(config_t* config, yaml_document_t* doc, yaml_node_t* node)
         char* value_str = stringVal(value);
 
         cfgCustomTagAddFromStr(config, key_str, value_str);
-        if (key_str) free(key_str);
-        if (value_str) free(value_str);
+        if (key_str) mm_free(key_str);
+        if (value_str) mm_free(value_str);
     }
 }
 
@@ -1117,7 +1118,7 @@ processFormatTypeMetric(config_t* config, yaml_document_t* doc, yaml_node_t* nod
 {
     char* value = stringVal(node);
     cfgMtcFormatSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1125,7 +1126,7 @@ processFormatTypeEvent(config_t* config, yaml_document_t* doc, yaml_node_t* node
 {
     char* value = stringVal(node);
     cfgEventFormatSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1133,7 +1134,7 @@ processFormatMaxEps(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgEvtRateLimitSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1141,7 +1142,7 @@ processEnhanceFs(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgEnhanceFsSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1149,7 +1150,7 @@ processStatsDPrefix(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgMtcStatsDPrefixSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1157,7 +1158,7 @@ processStatsDMaxLen(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgMtcStatsDMaxLenSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1165,7 +1166,7 @@ processVerbosity(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgMtcVerbositySetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1173,7 +1174,7 @@ processMetricEnable(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgMtcEnableSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1200,7 +1201,7 @@ processSummaryPeriod(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgMtcPeriodSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1208,7 +1209,7 @@ processCommandDir(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgCmdDirSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1216,7 +1217,7 @@ processConfigEvent(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgConfigEventSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1242,7 +1243,7 @@ processEvtEnable(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgEvtEnableSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1271,7 +1272,7 @@ processWatchType(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* value = stringVal(node);
     watch_context = strToVal(watchTypeMap, value);
     cfgEvtFormatSourceEnabledSet(config, watch_context, 1);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1281,7 +1282,7 @@ processWatchName(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 
     char* value = stringVal(node);
     cfgEvtFormatNameFilterSetFromStr(config, watch_context, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1291,7 +1292,7 @@ processWatchField(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 
     char* value = stringVal(node);
     cfgEvtFormatFieldFilterSetFromStr(config, watch_context, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1301,7 +1302,7 @@ processWatchValue(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 
     char* value = stringVal(node);
     cfgEvtFormatValueFilterSetFromStr(config, watch_context, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1318,7 +1319,7 @@ processWatchHeader(config_t *config, yaml_document_t *doc, yaml_node_t *node)
         yaml_node_t *node = yaml_document_get_node(doc, *item);
         char *value = stringVal(node);
         cfgEvtFormatHeaderSet(config, value);
-        if (value) free(value);
+        if (value) mm_free(value);
     }
 }
 
@@ -1429,7 +1430,7 @@ processPayloadEnable(config_t *config, yaml_document_t *doc, yaml_node_t *node)
 {
     char* value = stringVal(node);
     cfgPayEnableSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1437,7 +1438,7 @@ processPayloadDir(config_t *config, yaml_document_t *doc, yaml_node_t *node)
 {
     char* value = stringVal(node);
     cfgPayDirSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1462,7 +1463,7 @@ processCriblEnable(config_t *config, yaml_document_t *doc, yaml_node_t *node)
 {
     char *value = stringVal(node);
     cfgCriblEnableSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1477,7 +1478,7 @@ processAuthToken(config_t *config, yaml_document_t *doc, yaml_node_t *node)
 {
     char* value = stringVal(node);
     cfgAuthTokenSetFromStr(config, value);
-    if (value) free(value);
+    if (value) mm_free(value);
 }
 
 static void
@@ -1502,7 +1503,7 @@ static void
 processProtocolName(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     if (node->type != YAML_SCALAR_NODE || !protocol_context) return;
-    if (protocol_context->protname) free(protocol_context->protname);
+    if (protocol_context->protname) mm_free(protocol_context->protname);
     protocol_context->protname = stringVal(node);
 }
 
@@ -1510,7 +1511,7 @@ static void
 processProtocolRegex(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     if (node->type != YAML_SCALAR_NODE || !protocol_context) return;
-    if (protocol_context->regex) free(protocol_context->regex);
+    if (protocol_context->regex) mm_free(protocol_context->regex);
     protocol_context->regex = stringVal(node);
 }
 
@@ -1521,7 +1522,7 @@ processProtocolBinary(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* sVal = stringVal(node);
     unsigned iVal = strToVal(boolMap, sVal);
     if (iVal <= 1) protocol_context->binary = iVal;
-    if (sVal) free(sVal);
+    if (sVal) mm_free(sVal);
 }
 
 static void
@@ -1533,7 +1534,7 @@ processProtocolLen(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     errno = 0;
     unsigned long iVal = strtoul(sVal, &endInt, 10);
     if (!errno && !*endInt) protocol_context->len = iVal;
-    if (sVal) free(sVal);
+    if (sVal) mm_free(sVal);
 }
 
 static void
@@ -1543,7 +1544,7 @@ processProtocolDetect(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* sVal = stringVal(node);
     unsigned iVal = strToVal(boolMap, sVal);
     if (iVal <= 1) protocol_context->detect = iVal;
-    if (sVal) free(sVal);
+    if (sVal) mm_free(sVal);
 }
 
 static void
@@ -1553,7 +1554,7 @@ processProtocolPayload(config_t* config, yaml_document_t* doc, yaml_node_t* node
     char* sVal = stringVal(node);
     unsigned iVal = strToVal(boolMap, sVal);
     if (iVal <= 1) protocol_context->payload = iVal;
-    if (sVal) free(sVal);
+    if (sVal) mm_free(sVal);
 }
 
 static void
@@ -1572,7 +1573,7 @@ processProtocolEntry(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     }
 
     // protocol object to populate
-    protocol_context = calloc(1, sizeof(protocol_def_t));
+    protocol_context = mm_calloc(1, sizeof(protocol_def_t));
     if (!protocol_context) {
         DBG(NULL);
         return;
@@ -1670,13 +1671,13 @@ processCustomFilterProcname(config_t* config, yaml_document_t* doc, yaml_node_t*
     char *valueStr = stringVal(node);
     if (valueStr && !strcmp(valueStr, g_proc.procname)) {
         ++custom_match_count;
-        free(valueStr);
+        mm_free(valueStr);
         return;
     }
 
 
     custom_matched = FALSE;
-    if (valueStr) free(valueStr);
+    if (valueStr) mm_free(valueStr);
 }
 
 static void
@@ -1691,12 +1692,12 @@ processCustomFilterArg(config_t* config, yaml_document_t* doc, yaml_node_t* node
     char *valueStr = stringVal(node);
     if (valueStr && strstr(g_proc.cmd, valueStr)) {
         ++custom_match_count;
-        free(valueStr);
+        mm_free(valueStr);
         return;
     }
 
     custom_matched = FALSE;
-    if (valueStr) free(valueStr);
+    if (valueStr) mm_free(valueStr);
 }
 
 static void
@@ -1713,12 +1714,12 @@ processCustomFilterHostname(config_t* config, yaml_document_t* doc, yaml_node_t*
     char *valueStr = stringVal(node);
     if (valueStr && !strcasecmp(valueStr, g_proc.hostname)) {
         ++custom_match_count;
-        free(valueStr);
+        mm_free(valueStr);
         return;
     }
 
     custom_matched = FALSE;
-    if (valueStr) free(valueStr);
+    if (valueStr) mm_free(valueStr);
 }
 
 static void
@@ -1734,12 +1735,12 @@ processCustomFilterUsername(config_t* config, yaml_document_t* doc, yaml_node_t*
     struct passwd *pw = getpwuid(g_proc.uid);
     if (valueStr && pw && !strcmp(valueStr, pw->pw_name)) {
         ++custom_match_count;
-        free(valueStr);
+        mm_free(valueStr);
         return;
     }
 
     custom_matched = FALSE;
-    if (valueStr) free(valueStr);
+    if (valueStr) mm_free(valueStr);
 }
 
 static void
@@ -1762,19 +1763,19 @@ processCustomFilterEnv(config_t* config, yaml_document_t* doc, yaml_node_t* node
             if (envVal) {
                 if (!strcmp(env, envVal)) {
                     ++custom_match_count;
-                    free(valueStr);
+                    mm_free(valueStr);
                     return;
                 }
             } else {
                 ++custom_match_count;
-                free(valueStr);
+                mm_free(valueStr);
                 return;
             }
         }
     }
 
     custom_matched = FALSE;
-    if (valueStr) free(valueStr);
+    if (valueStr) mm_free(valueStr);
 }
 
 static void
@@ -1814,7 +1815,7 @@ processCustomFilterAncestor(config_t* config, yaml_document_t* doc, yaml_node_t*
             name = basename(exe);
             if (!strcmp(valueStr, name)) {
                 ++custom_match_count;
-                free(valueStr);
+                mm_free(valueStr);
                 return;
             }
 
@@ -1841,7 +1842,7 @@ processCustomFilterAncestor(config_t* config, yaml_document_t* doc, yaml_node_t*
     }
 
     custom_matched = FALSE;
-    if (valueStr) free(valueStr);
+    if (valueStr) mm_free(valueStr);
 }
 
 static void
@@ -2688,7 +2689,7 @@ destroyProtEntry(void *data)
 
     protocol_def_t *pre = data;
     if (pre->re) pcre2_code_free(pre->re);
-    if (pre->regex) free(pre->regex);
-    if (pre->protname) free(pre->protname);
-    free(pre);
+    if (pre->regex) mm_free(pre->regex);
+    if (pre->protname) mm_free(pre->protname);
+    mm_free(pre);
 }

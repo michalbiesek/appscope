@@ -27,6 +27,7 @@
 #include "utils.h"
 #include "runtimecfg.h"
 #include "cfg.h"
+#include "mm.h"
 
 #ifndef AF_NETLINK
 #define AF_NETLINK 16
@@ -159,9 +160,9 @@ destroyHttpMap(void *data)
     if (!data) return;
     http_map *map = (http_map *)data;
 
-    if (map->req) free(map->req);
-    if (map->resp) free(map->resp);
-    if (map) free(map);
+    if (map->req) mm_free(map->req);
+    if (map->resp) mm_free(map->resp);
+    if (map) mm_free(map);
 }
 
 static void
@@ -175,7 +176,7 @@ destroyHttp2Channel(void *data)
         lstDestroy(&info->streams);
     }
 
-    free(info);
+    mm_free(info);
 }
 
 static void
@@ -188,7 +189,7 @@ destroyHttp2Stream(void *data)
         cJSON_Delete(info->jsonData);
     }
 
-    free(info);
+    mm_free(info);
 }
 
 void
@@ -234,9 +235,9 @@ destroyProto(protocol_info *proto)
         // comment above doesn't apply to HTTP/2 protocol events
         if (proto->ptype == EVT_H2FRAME) {
             http_post *post = (http_post *)proto->data;
-            free(post->hdr);
+            mm_free(post->hdr);
         }
-        free(proto->data);
+        mm_free(proto->data);
     }
 }
 
@@ -544,7 +545,7 @@ doHttp1Header(protocol_info *proto)
 
     if ((map = lstFind(g_maplist, post->id)) == NULL) {
         // lazy open
-        if ((map = calloc(1, sizeof(http_map))) == NULL) {
+        if ((map = mm_calloc(1, sizeof(http_map))) == NULL) {
             destroyProto(proto);
             return;
         }
@@ -586,7 +587,7 @@ doHttp1Header(protocol_info *proto)
     char header[map->req_len];
     // we're either building a new req or we have a previous req
     if (map->req) {
-        if ((hreport.hreq = calloc(1, map->req_len)) == NULL) {
+        if ((hreport.hreq = mm_calloc(1, map->req_len)) == NULL) {
             scopeLogError("fd:%d ERROR: doHttp1Header: hreq memory allocation failure", proto->fd);
             return;
         }
@@ -596,7 +597,7 @@ doHttp1Header(protocol_info *proto)
 
         char *headertok = strtok_r(header, "\r\n", &savea);
         if (!headertok) {
-            free(hreport.hreq);
+            mm_free(hreport.hreq);
             scopeLogWarn("fd:%d WARN: doHttp1Header: parse an http request header", proto->fd);
             return;
         }
@@ -666,7 +667,7 @@ doHttp1Header(protocol_info *proto)
     * Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
     */
     if (proto->ptype == EVT_HRES) {
-        if ((hreport.hres = calloc(1, proto->len)) == NULL) {
+        if ((hreport.hres = mm_calloc(1, proto->len)) == NULL) {
             scopeLogError("fd:%d ERROR: doHttp1Header: hres memory allocation failure", proto->fd);
             return;
         }
@@ -767,8 +768,8 @@ doHttp1Header(protocol_info *proto)
         if (lstDelete(g_maplist, post->id) == FALSE) DBG(NULL);
     }
 
-    if (hreport.hreq) free(hreport.hreq);
-    if (hreport.hres) free(hreport.hres);
+    if (hreport.hreq) mm_free(hreport.hreq);
+    if (hreport.hres) mm_free(hreport.hres);
     destroyProto(proto);
 }
 
@@ -1044,7 +1045,7 @@ doHttp2Frame(protocol_info *proto)
         // get/create the channel info
         http2Channel_t *channel = lstFind(g_http2_channels, proto->uid);
         if (!channel) {
-            channel = calloc(1, sizeof(http2Channel_t));
+            channel = mm_calloc(1, sizeof(http2Channel_t));
             if (!channel) {
                 scopeLogError("ERROR: failed to create channel info");
                 DBG(NULL);
@@ -1066,7 +1067,7 @@ doHttp2Frame(protocol_info *proto)
         // get/create the stream info
         http2Stream_t *stream = lstFind(channel->streams, fStream);
         if (!stream) {
-            stream = calloc(1, sizeof(http2Stream_t));
+            stream = mm_calloc(1, sizeof(http2Stream_t));
             if (!stream) {
                 scopeLogError("ERROR: failed to create http2Stream");
                 DBG(NULL);
@@ -3129,7 +3130,7 @@ typeFromStr(const unsigned char *string)
 static event_field_t *
 createFieldsForCapturedMetrics(const unsigned char *alldims)
 {
-    event_field_t *fields = calloc(HTTP_MAX_FIELDS, sizeof(event_field_t));
+    event_field_t *fields = mm_calloc(HTTP_MAX_FIELDS, sizeof(event_field_t));
     if (!fields) return NULL;
     int ix = 0;
 
@@ -3220,7 +3221,7 @@ reportCapturedMetric(const captured_metric_t *metric)
     }
 
 out:
-    if (fields) free(fields);
+    if (fields) mm_free(fields);
 }
 
 bool
@@ -3296,7 +3297,7 @@ doEvent()
                 return;
             }
 
-            free(event);
+            mm_free(event);
         }
     }
     reportAllCapturedMetrics();
@@ -3395,8 +3396,8 @@ doPayload()
                               g_proc.id, g_proc.pid, g_proc.ppid, pinfo->sockfd, srcstr, netid, pinfo->len, lip, lport, rip, rport, protoName, timestamp);
             if (rc < 0) {
                 // unlikely
-                if (pinfo->data) free(pinfo->data);
-                if (pinfo) free(pinfo);
+                if (pinfo->data) mm_free(pinfo->data);
+                if (pinfo) mm_free(pinfo);
                 DBG(NULL);
                 return;
             }
@@ -3411,7 +3412,7 @@ doPayload()
             char *bdata = NULL;
 
             if (cfgLogStreamEnable(g_cfg.staticfg)) {
-                bdata = calloc(1, hlen + pinfo->len);
+                bdata = mm_calloc(1, hlen + pinfo->len);
                 if (bdata) {
                     memmove(bdata, pay, hlen);
                     strncat(bdata, "\n", hlen);
@@ -3466,9 +3467,9 @@ doPayload()
                 }
             }
 
-            if (bdata) free(bdata);
-            if (pinfo->data) free(pinfo->data);
-            if (pinfo) free(pinfo);
+            if (bdata) mm_free(bdata);
+            if (pinfo->data) mm_free(pinfo->data);
+            if (pinfo) mm_free(pinfo);
         }
     }
 }

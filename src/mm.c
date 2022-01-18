@@ -1,0 +1,95 @@
+#define _GNU_SOURCE
+
+#include "mm.h"
+#include "atomic.h"
+#include <limits.h>
+#include <malloc.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+static uint64_t alloc_size;
+
+void *mm_malloc(size_t size) {
+    void *ptr = malloc(size);
+    atomicAddU64(&alloc_size, malloc_usable_size(ptr));
+    return ptr;
+}
+
+void mm_free(void *ptr) {
+    atomicSubU64(&alloc_size, malloc_usable_size(ptr));
+    free(ptr);
+}
+
+void *mm_calloc(size_t nmemb, size_t size) {
+    void *ptr = calloc(nmemb, size);
+    atomicAddU64(&alloc_size, malloc_usable_size(ptr));
+    return ptr;
+}
+
+void *mm_realloc(void *ptr, size_t size) {
+    atomicSubU64(&alloc_size, malloc_usable_size(ptr));
+    void* new_ptr = realloc(ptr, size);
+    atomicAddU64(&alloc_size, malloc_usable_size(new_ptr));
+    return new_ptr;
+}
+
+int mm_posix_memalign(void **memptr, size_t alignment, size_t size) {
+    int res = posix_memalign(memptr, alignment, size);
+    atomicAddU64(&alloc_size, malloc_usable_size(*memptr));
+    return res;
+}
+
+char *mm_strdup(const char *s) {
+    char *ptr = strdup(s);
+    atomicAddU64(&alloc_size, malloc_usable_size(ptr));
+    return ptr;
+}
+
+char *mm_strndup(const char *s, size_t n) {
+    char *ptr = strndup(s, n);
+    atomicAddU64(&alloc_size, malloc_usable_size(ptr));
+    return ptr;
+}
+
+wchar_t *mm_wcsdup(const wchar_t *s) {
+    wchar_t *res = wcsdup(s);
+    atomicAddU64(&alloc_size, malloc_usable_size(res));
+    return res;
+}
+
+char *mm_realpath(const char *restrict path) {
+    char* new_path = realpath(path, NULL);
+    atomicAddU64(&alloc_size, malloc_usable_size(new_path));
+    return new_path;
+}
+
+int mm_asprintf(char **restrict strp, const char *restrict fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    int res = vasprintf(strp, fmt, args);
+    va_end(args);
+    atomicAddU64(&alloc_size, malloc_usable_size(strp));
+    return res;
+}
+
+void *mm_mmap(void *addr, size_t length, int prot, int flags,
+                  int fd, off_t offset) {
+    void* ptr = mmap(addr, length, prot, flags, fd, offset);
+    if (ptr != MAP_FAILED) {
+        atomicAddU64(&alloc_size, length);
+    }
+    return ptr;
+}
+
+int mm_munmap(void *addr, size_t length) {
+    int res = munmap(addr, length);
+    atomicSubU64(&alloc_size, length);
+    return res;
+}
+
+size_t mm_get_alloc_size(void) {
+    return alloc_size;
+}
