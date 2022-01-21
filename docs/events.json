@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/address.schema.json",
+  "description": "AppScope Event",
+  "type": "event",
+  "properties": {
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp"
+    },
+    "proc": {
+      "type": "integer",
+      "description": "Proccess ID"
+    },
+    "uid": {
+      "type": "integer",
+      "description": "User ID"
+    },
+    "source": {
+      "type": "string",
+      "description": "Source of event",
+      "oneOf": [
+        { "$ref": "#/$eventList/fsOpen" },
+        { "$ref": "#/$eventList/fsClose" }
+      ]
+    },
+    "sourcetypeE": {
+      "enum": ["file", "console", "syslog", "metric", "http", "net", "fs", "dns"]
+    },
+    "sourcetype": {
+      "type": "source type",
+      "description": "Source type of event",
+      "oneOf": [
+        {
+          "const": "file",
+          "title": "file",
+          "description": "file event"
+        },
+        {
+          "const": "console",
+          "title": "console",
+          "description": "console event"
+        },
+        {
+          "const": "syslog",
+          "title": "syslog",
+          "description": "syslog event"
+        },
+        {
+          "const": "metric",
+          "title": "metric",
+          "description": "metric event"
+        },
+        {
+          "const": "http",
+          "title": "http",
+          "description": "http event"
+        },
+        {
+          "const": "net",
+          "title": "net",
+          "description": "net event"
+        },
+        {
+          "const": "fs",
+          "title": "fs",
+          "description": "fs event"
+        },
+        {
+          "const": "dns",
+          "title": "dns",
+          "description": "dns event"
+        }
+      ]
+    }
+  },
+  "required": [ "timestamp", "proc", "uid", "source", "sourcetype"],
+  "$eventList": {
+    "fsOpen": {
+      "title": "fsOpen",
+      "description": "File open",
+      "additionalProperties": false,
+      "allOf": [
+        { "$ref": "#/$filePropList/name" },
+        { "$ref": "#/$procPropList/uid" },
+        { "$ref": "#/$procPropList/gid" },
+        { "$ref": "#/$procPropList/cgroup" },
+        { "$ref": "#/$filePropList/permission" },
+        { "$ref": "#/$filePropList/owner" },
+        { "$ref": "#/$filePropList/group" },
+        { "$ref": "#/$otherPropList/op" }
+      ],
+      "required": ["name", "uid", "gid", "cgroup", "permission", "owner", "group", "op"]
+    },
+    "fsClose": {
+      "title": "fsClose",
+      "description": "File close",
+      "additionalProperties": false
+    }
+  },
+  "$filePropList": {
+    "name": {
+      "title": "name",
+      "description": "File name",
+      "type": "string",
+      "additionalProperties": false
+    },
+    "permission": {
+      "title": "permission",
+      "description": "File permission",
+      "type": "number",
+      "additionalProperties": false
+    },
+    "owner": {
+      "title": "owner",
+      "description": "File Owner",
+      "type": "number",
+      "additionalProperties": false
+    },
+    "group": {
+      "title": "group",
+      "description": "File Group",
+      "type": "number",
+      "additionalProperties": false
+    }
+  },
+  "$procPropList": {
+    "pid": {
+      "title": "pid",
+      "description": "Process Identifier",
+      "type": "number",
+      "additionalProperties": false
+    },
+    "uid": {
+      "title": "uid",
+      "description": "User Identifier",
+      "type": "number",
+
+      "additionalProperties": false
+    },
+    "gid": {
+      "title": "gid",
+      "description": "Group Identifier",
+      "type": "number",
+      "additionalProperties": false
+    },
+    "cgroup": {
+      "title": "cgroup",
+      "description": "Control Group",
+      "type": "string",
+      "additionalProperties": false
+    }
+  },
+  "$otherPropList": {
+    "op": {
+      "title": "op",
+      "description": "Operation",
+      "type": "string",
+      "additionalProperties": false
+    }
+  }
+}
