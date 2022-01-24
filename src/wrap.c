@@ -1593,7 +1593,7 @@ init(void)
     int attachedFlag = 0;
     initEnv(&attachedFlag);
     // logging inside constructor start from this line
-    g_constructor_debug_enabled = checkEnv("SCOPE_ALLOW_CONSTRUCT_DBG", "true");
+    g_constructor_debug_enabled = 1;
 
     initState();
 
@@ -1634,7 +1634,7 @@ init(void)
         // enable a timer/signal.
         threadInit();
     }
-
+    scopeLogError("Memory used %zu", mm_get_alloc_size());
     osInitJavaAgent();
 }
 
