@@ -177,7 +177,16 @@ image: require-qemu-binfmt
 		--platform linux/$(PLATFORM_$(ARCH)) \
 		--file docker/base/Dockerfile \
 		--load \
-                .
+		.
+
+docs: TAG := cribl/scope:docs-$(ARCH)
+docs: require-docker-buildx-builder
+	@echo Running the AppScope Document generator
+	@docker buildx build \
+		--tag $(TAG) \
+		--platform linux/$(PLATFORM_$(ARCH)) \
+		--file docker/docs/Dockerfile \
+		.
 
 k8s-test: require-kind require-kubectl image
 	docker tag cribl/scope:dev-x86_64 cribl/scope:$(VERSION)
@@ -228,6 +237,7 @@ require-kubectl:
 .PHONY: all test clean
 .PHONY: cli% scope
 .PHONY: docker-build docker-run 
-.PHONY: build-arch builder-arch 
+.PHONY: build-arch builder-arch
+.PHONY: docs
 .PHONY: image
 .PHONY: require-docker-buildx-builder require-docker require-docker-buildx require-qemu-binfmt require-kind require-kubectl

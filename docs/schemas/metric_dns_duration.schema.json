@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://appscope.dev/docs/schemas/metric_dns_duration.schema.json",
+  "type": "object",
+  "title": "AppScope Metric",
+  "description": "A structure described AppScope dns.duration metric message",
+  "required": [
+    "type",
+    "body"
+  ],
+  "properties": {
+    "type": {
+      "$ref": "definitions/metadata.schema.json#/$defs/metric_type"
+    },
+    "body": {
+      "title": "body",
+      "description": "body",
+      "type": "object",
+      "required": [
+        "_metric",
+        "_metric_type",
+        "_value",
+        "proc",
+        "pid",
+        "host",
+        "domain",
+        "numops",
+        "unit",
+        "_time"
+      ],
+      "properties": {
+        "_metric": {
+          "$ref": "definitions/body.schema.json#/$defs/sourcednsduration"
+        },
+        "_metric_type": {
+          "$ref": "definitions/body.schema.json#/$defs/metric_type_counter"
+        },
+        "_value": {
+          "$ref": "definitions/body.schema.json#/$defs/_value"
+        },
+        "proc": {
+          "$ref": "definitions/data.schema.json#/$defs/proc"
+        },
+        "pid": {
+          "$ref": "definitions/data.schema.json#/$defs/pid"
+        },
+        "host": {
+          "$ref": "definitions/data.schema.json#/$defs/host"
+        },
+        "domain": {
+          "$ref": "definitions/data.schema.json#/$defs/domain"
+        },
+        "numops": {
+          "$ref": "definitions/data.schema.json#/$defs/numops"
+        },
+        "unit": {
+          "$ref": "definitions/data.schema.json#/$defs/unit_millisecond"
+        },
+        "_time": {
+          "$ref": "definitions/body.schema.json#/$defs/_time"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
