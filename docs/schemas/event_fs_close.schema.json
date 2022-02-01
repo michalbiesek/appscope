@@ -4,6 +4,7 @@
   "type": "object",
   "title": "AppScope Event",
   "description": "A structure described AppScope fs.close event message",
+  "examples": ["Hey form fs_close message"],
   "required": [
     "type",
     "id",

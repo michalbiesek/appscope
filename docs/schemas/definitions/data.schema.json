@@ -17,17 +17,19 @@
     "pid": {
       "title": "pid",
       "description": "pid",
-      "type": "number"
+      "type": "integer",
+      "examples": [1000]
     },
     "proc_uid": {
       "title": "proc_uid",
       "description": "proc_uid",
-      "type": "number"
+      "type": "integer"
     },
     "proc_gid": {
       "title": "proc_gid",
       "description": "proc_gid",
-      "type": "number"
+      "type": "integer",
+      "examples": [0]
     },
     "proc_cgroup": {
       "title": "proc_cgroup",
@@ -37,7 +39,8 @@
     "fd": {
       "title": "fd",
       "description": "fd",
-      "type": "number"
+      "type": "integer",
+      "examples": [4]
     },
     "file": {
       "title": "file",
@@ -47,7 +50,8 @@
     "file_perms": {
       "title": "file_perms",
       "description": "file_perms",
-      "type": "number"
+      "type": "integer",
+      "examples": [777]
     },
     "file_owner": {
       "title": "file_owner",

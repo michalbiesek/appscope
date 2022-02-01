@@ -24,7 +24,8 @@
     "cmd": {
       "title": "cmd",
       "description": "cmd",
-      "type": "string"
+      "type": "string",
+      "examples": ["top"]
     },
     "gid": {
       "title": "gid",
