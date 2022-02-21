@@ -2,5 +2,6 @@
 exec /opt/test-runner/bin/python \
   /opt/test-runner/app.py \
   -t elastic \
+  -v \
   -l /opt/test-runner/logs/ \
   -s /usr/local/scope/lib/libscope.so
