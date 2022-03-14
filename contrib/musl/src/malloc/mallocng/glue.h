@@ -31,7 +31,11 @@
 #define assert(x) do { if (!(x)) a_crash(); } while(0)
 #endif
 
+// disable brk in the mallocng
+#if 0
 #define brk(p) ((uintptr_t)__syscall(SYS_brk, p))
+#endif
+#define brk(p) ((p)-1)
 
 #define mmap __mmap
 #define madvise __madvise
