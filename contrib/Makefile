@@ -96,6 +96,6 @@ build/musl/lib/libc.a:
 	@echo "$${CI:+::group::}Building musl"
 	@$(RM) -r build/musl
 	@mkdir build/musl
-	cd build/musl && ../../musl/configure && $(MAKE)
+	cd build/musl && ../../musl/configure --with-malloc=mallocng && $(MAKE)
 	objcopy --prefix-symbols=SCOPE_MUSL build/musl/lib/libc.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
