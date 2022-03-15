@@ -848,11 +848,17 @@ doGetProcCPU() {
         ((long long)ruse.ru_utime.tv_usec + (long long)ruse.ru_stime.tv_usec);
 }
 
+static void wait_loop(int test_arg)
+{
+    while(test_arg) {
+        sleep(test_arg);
+    }
+}
+
 static void
 setProcId(proc_id_t *proc)
 {
     if (!proc) return;
-
     proc->pid = getpid();
     proc->ppid = getppid();
     if (gethostname(proc->hostname, sizeof(proc->hostname)) != 0) {
@@ -880,6 +886,8 @@ setProcId(proc_id_t *proc)
     proc->gid = getgid();
     if (proc->groupname) mm_free(proc->groupname);
     proc->groupname = osGetGroupName(proc->gid);
+    volatile int test_loop = 1;
+    wait_loop(test_loop);
     if (osGetCgroup(proc->pid, proc->cgroup, MAX_CGROUP) == FALSE) {
         proc->cgroup[0] = '\0';
     }

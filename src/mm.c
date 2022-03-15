@@ -24,6 +24,24 @@ extern void* scopelibc_mmap(void *addr, size_t length, int prot, int flags, int 
 extern int scopelibc_munmap(void *addr, size_t length);
 extern void  scopelibc_free(void *ptr);
 extern size_t scopelibc_malloc_usable_size(void* ptr);
+extern ssize_t scopelibc_getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream);
+extern FILE *scopelibc_fopen(const char *restrict pathname, const char *restrict mode);
+extern int scopelibc_fclose(FILE *stream);
+
+FILE *mm_fopen(const char *restrict pathname, const char *restrict mode)
+{
+    return scopelibc_fopen(pathname, mode);
+}
+
+int mm_fclose(FILE *stream)
+{
+    return scopelibc_fclose(stream);
+}
+
+ssize_t mm_getline(char **restrict lineptr, size_t *restrict n,
+                       FILE *restrict stream){
+    return scopelibc_getline(lineptr, n, stream);
+}
 
 void *mm_malloc(size_t size) {
     void *ptr = scopelibc_malloc(size);

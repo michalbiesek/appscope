@@ -2,7 +2,11 @@
 #define __MM_H__
 #include <sys/mman.h>
 #include <wchar.h>
+#include <stdio.h>
 
+FILE *mm_fopen(const char *restrict pathname, const char *restrict mode);
+int mm_fclose(FILE *stream);
+ssize_t mm_getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream);
 void *mm_malloc(size_t );
 void mm_free(void *);
 void *mm_calloc(size_t, size_t);

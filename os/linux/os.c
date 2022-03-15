@@ -624,31 +624,27 @@ osGetPageProt(uint64_t addr)
     size_t len = 0;
     char *buf = NULL;
 
-    if (!g_fn.fopen || !g_fn.getline || !g_fn.fclose) {
-        return -1;
-    }
-
     if (addr == 0) {
         return -1;
     }
 
-    FILE *fstream = g_fn.fopen("/proc/self/maps", "r");
+    FILE *fstream = mm_fopen("/proc/self/maps", "r");
     if (fstream == NULL) return -1;
 
-    while (g_fn.getline(&buf, &len, fstream) != -1) {
+    while (mm_getline(&buf, &len, fstream) != -1) {
         char *end = NULL;
         errno = 0;
         uint64_t addr1 = strtoull(buf, &end, 0x10);
         if ((addr1 == 0) || (errno != 0)) {
             if (buf) mm_free(buf);
-            g_fn.fclose(fstream);
+            mm_fclose(fstream);
             return -1;
         }
 
         uint64_t addr2 = strtoull(end + 1, &end, 0x10);
         if ((addr2 == 0) || (errno != 0)) {
             if (buf) mm_free(buf);
-            g_fn.fclose(fstream);
+            mm_fclose(fstream);
             return -1;
         }
 
@@ -673,7 +669,7 @@ osGetPageProt(uint64_t addr)
         len = 0;
     }
 
-    g_fn.fclose(fstream);
+    mm_fclose(fstream);
     return prot;
 }
 
@@ -720,23 +716,23 @@ osGetCgroup(pid_t pid, char *cgroup, size_t cglen)
     char *buf = NULL;
     char path[PATH_MAX];
 
-    if (!g_fn.fopen || !g_fn.getline || !g_fn.fclose || (cglen <= 0)) {
+    if (cglen <= 0) {
         return FALSE;
     }
 
     if (snprintf(path, sizeof(path), "/proc/%d/cgroup", pid) < 0) return FALSE;
 
-    FILE *fstream = g_fn.fopen(path, "r");
+    FILE *fstream = mm_fopen(path, "r");
     if (fstream == NULL) return FALSE;
 
-    while (g_fn.getline(&buf, &len, fstream) != -1) {
+    while (mm_getline(&buf, &len, fstream) != -1) {
         if (buf && strstr(buf, "0::")) {
             strncpy(cgroup, buf, cglen);
             char *nonl = strchr(cgroup, '\n');
             if (nonl) *nonl = '\0';
 
             mm_free(buf);
-            g_fn.fclose(fstream);
+            mm_fclose(fstream);
             return TRUE;
         }
 
@@ -745,7 +741,7 @@ osGetCgroup(pid_t pid, char *cgroup, size_t cglen)
         len = 0;
     }
 
-    g_fn.fclose(fstream);
+    mm_fclose(fstream);
     return FALSE;
 }
 

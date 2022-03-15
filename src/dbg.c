@@ -34,7 +34,7 @@ struct _dbg_t {
 dbg_t *g_dbg = NULL;
 log_t *g_log = NULL;
 proc_id_t g_proc = {0};
-bool g_constructor_debug_enabled;
+bool g_constructor_debug_enabled = TRUE;
 uint64_t g_cbuf_drop_count = 0;
 bool g_ismusl = FALSE;
 

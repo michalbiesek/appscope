@@ -619,12 +619,12 @@ cfgProcessEnvironment(config_t* cfg)
 void
 cfgProcessCommands(config_t* cfg, FILE* file)
 {
-    if (!cfg || !file || !g_fn.getline) return;
+    if (!cfg || !file) return;
 
     char *line = NULL;
     size_t len = 0;
-
-    while (g_fn.getline(&line, &len, file) != -1) {
+    
+    while (mm_getline(&line, &len, file) != -1) {
         line[strcspn(line, "\r\n")] = '\0'; //overwrite first \r or \n with null
         processEnvStyleInput(cfg, line);
         line[0] = '\0';
@@ -2029,11 +2029,9 @@ cfgSetFromFile(config_t *config, const char* path)
     yaml_parser_t parser;
     yaml_document_t doc;
 
-    if (!g_fn.fopen || !g_fn.fclose) goto cleanup;
-
     if (!config) goto cleanup;
     if (!path) goto cleanup;
-    fp = g_fn.fopen(path, "rb");
+    fp = mm_fopen(path, "rb");
     if (!fp) goto cleanup;
 
     parser_successful = yaml_parser_initialize(&parser);
@@ -2050,7 +2048,7 @@ cfgSetFromFile(config_t *config, const char* path)
 cleanup:
     if (doc_successful) yaml_document_delete(&doc);
     if (parser_successful) yaml_parser_delete(&parser);
-    if (fp) g_fn.fclose(fp);
+    if (fp) mm_fclose(fp);
 }
 
 config_t *
