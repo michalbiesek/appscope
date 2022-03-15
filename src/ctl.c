@@ -573,6 +573,17 @@ out:
     return msg;
 }
 
+static void
+ctlInitJson(void)
+{
+    static cJSON_Hooks mm_hooks = {
+        mm_malloc,
+        mm_free,
+        
+    };
+    cJSON_InitHooks(&mm_hooks);
+}
+
 ctl_t *
 ctlCreate()
 {
@@ -623,7 +634,7 @@ ctlCreate()
         DBG(NULL);
         goto err;
     }
-
+    ctlInitJson();
     return ctl;
 err:
     ctlDestroy(&ctl);
