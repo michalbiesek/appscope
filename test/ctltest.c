@@ -10,11 +10,23 @@
 #include "cfgutils.h"
 #include "state.h"
 #include "fn.h"
+#include "scopestdlib.h"
 #include "test.h"
 
 #define BUFSIZE 500
 static char cbuf_data[BUFSIZE];
 static bool enable_cbuf_data;
+
+int
+ctlTestSetup(void** state)
+{
+    cJSON_Hooks test_hooks = {
+        scope_malloc,
+        scope_free
+    };
+    cJSON_InitHooks(&test_hooks);
+    return groupSetup(state);
+}
 
 static
 void allow_copy_buf_data(bool enable)
@@ -189,10 +201,10 @@ ctlParseRxMsgSetCfgWithoutDataObjectReturnsParamErr(void** state)
 
     const char** test;
     for (test=body; *test; test++) {
-        assert_return_code(asprintf(&msg, base, *test), errno);
+        assert_return_code(scope_asprintf(&msg, base, *test), errno);
         //printf("%s\n", msg);
         request_t* req = ctlParseRxMsg(msg);
-        free(msg);
+        scope_free(msg);
         assert_non_null(req);
 
         // body is missing, so expect REQ_PARAM_ERR
@@ -271,10 +283,10 @@ ctlParseRxMsgSetCfg(void** state)
     const char** test;
     int run=1;
     for (test=body; *test; test++) {
-        assert_return_code(asprintf(&msg, base, *test), errno);
+        assert_return_code(scope_asprintf(&msg, base, *test), errno);
         //printf("%s\n", msg);
         request_t* req = ctlParseRxMsg(msg);
-        free(msg);
+        scope_free(msg);
         assert_non_null(req);
 
         // body exists! expect REQ_SET_CFG, and non-null req->cfg
@@ -492,7 +504,7 @@ ctlCreateTxMsgInfo(void** state)
         "{\"type\":\"info\",\"body\":\"yeah, dude\"}";
     assert_string_equal(msg, expected_msg);
 
-    free(msg);
+    scope_free(msg);
 }
 
 typedef struct {
@@ -591,7 +603,7 @@ ctlCreateTxMsgResp(void** state)
             assert_null(strstr(tx_msg, "\"message\":"));
         }
 
-        free(tx_msg);
+        scope_free(tx_msg);
         destroyReq(&upload.req);
     }
 
@@ -602,7 +614,7 @@ ctlCreateTxMsgResp(void** state)
     //printf("%s\n", tx_msg);
     assert_non_null(tx_msg);
     assert_non_null(strstr(tx_msg, "\"body\":\"Gnarly\""));
-    free(tx_msg);
+    scope_free(tx_msg);
     destroyReq(&upload.req);
 }
 
@@ -627,14 +639,14 @@ ctlCreateTxMsgEvt(void** state)
         "{\"type\":\"evt\",\"_channel\":\"none\",\"body\":\"yeah, dude\"}";
     assert_string_equal(msg, expected_msg);
 
-    free(msg);
+    scope_free(msg);
 }
 
 
 static void
 ctlSendMsgForNullMtcDoesntCrash(void** state)
 {
-    char* msg = strdup("Hey, this is cool!\n");
+    char* msg = scope_strdup("Hey, this is cool!\n");
     ctlSendMsg(NULL, msg);
 }
 
@@ -670,7 +682,7 @@ ctlTransportSetAndMtcSend(void** state)
     // Test that transport is set by testing side effects of ctlSendMsg
     // affecting the file at file_path when connected to a file transport.
     long file_pos_before = fileEndPosition(file_path);
-    char* msg = strdup("Something to send\n");
+    char* msg = scope_strdup("Something to send\n");
     ctlSendMsg(ctl, msg);
 
     // With CFG_BUFFER_FULLY, this output only happens with the flush
@@ -684,7 +696,7 @@ ctlTransportSetAndMtcSend(void** state)
     // Test that transport is cleared by seeing no side effects.
     ctlTransportSet(ctl, NULL, CFG_CTL);
     file_pos_before = fileEndPosition(file_path);
-    msg = strdup("Something else to send\n");
+    msg = scope_strdup("Something else to send\n");
     ctlSendMsg(ctl, msg);
     file_pos_after = fileEndPosition(file_path);
     assert_int_equal(file_pos_before, file_pos_after);
@@ -779,7 +791,7 @@ ctlSendLogConsoleNoneAsciiData(void **state)
     ctlFlushLog(ctl);
     const char *val = get_cbuf_data();
     assert_string_equal(binary_data_event_msg, val);
-    free(non_basic_ascii_text);
+    scope_free(non_basic_ascii_text);
     ctlDestroy(&ctl);
     allow_copy_buf_data(FALSE);
 }
@@ -815,6 +827,6 @@ main(int argc, char* argv[])
         cmocka_unit_test(dbgHasNoUnexpectedFailures),
     };
 
-    return cmocka_run_group_tests(tests, groupSetup, groupTeardown);
+    return cmocka_run_group_tests(tests, ctlTestSetup, groupTeardown);
 }
 
