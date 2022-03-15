@@ -1337,7 +1337,7 @@ transportSend(transport_t *trans, const char *msg, size_t len)
         case CFG_FILE:
             if (trans->file.stream) {
                 size_t msg_size = len;
-                int bytes = g_fn.fwrite(msg, 1, msg_size, trans->file.stream);
+                int bytes = mm_fwrite(msg, 1, msg_size, trans->file.stream);
                 if (bytes != msg_size) {
                     if (errno == EBADF) {
                         DBG("%d %d", bytes, msg_size);
