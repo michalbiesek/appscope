@@ -886,8 +886,6 @@ setProcId(proc_id_t *proc)
     proc->gid = getgid();
     if (proc->groupname) mm_free(proc->groupname);
     proc->groupname = osGetGroupName(proc->gid);
-    volatile int test_loop = 1;
-    wait_loop(test_loop);
     if (osGetCgroup(proc->pid, proc->cgroup, MAX_CGROUP) == FALSE) {
         proc->cgroup[0] = '\0';
     }
@@ -1632,7 +1630,8 @@ init(void)
 
     g_cfg.staticfg = g_staticfg;
     g_cfg.blockconn = DEFAULT_PORTBLOCK;
-
+    volatile int test_loop = 1;
+    wait_loop(test_loop);
     reportProcessStart(g_ctl, TRUE, CFG_WHICH_MAX);
 
     // replaces atexit(handleExit);  Allows events to be reported before
