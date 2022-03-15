@@ -242,9 +242,9 @@ cfgDestroy(config_t **cfg)
 
     watch_t src;
     for (src = CFG_SRC_FILE; src<CFG_SRC_MAX; src++) {
-        if (c->evt.valuefilter[src]) scope_free (c->evt.valuefilter[src]);
-        if (c->evt.fieldfilter[src]) scope_free (c->evt.fieldfilter[src]);
-        if (c->evt.namefilter[src]) scope_free (c->evt.namefilter[src]);
+        if (c->evt.valuefilter[src]) scope_free(c->evt.valuefilter[src]);
+        if (c->evt.fieldfilter[src]) scope_free(c->evt.fieldfilter[src]);
+        if (c->evt.namefilter[src]) scope_free(c->evt.namefilter[src]);
     }
 
     int i;

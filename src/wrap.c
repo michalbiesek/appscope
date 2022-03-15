@@ -1223,7 +1223,7 @@ findLibSym(struct dl_phdr_info *info, size_t size, void *data)
  */
 static ssize_t __write_libc(int, const void *, size_t);
 static ssize_t __write_pthread(int, const void *, size_t);
-static ssize_t scope_write(int, const void *, size_t);
+static ssize_t wrap_scope_write(int, const void *, size_t);
 static int internal_sendmmsg(int, struct mmsghdr *, unsigned int, int);
 static ssize_t internal_sendto(int, const void *, size_t, int, const struct sockaddr *, socklen_t);
 static ssize_t internal_recvfrom(int, void *, size_t, int, struct sockaddr *, socklen_t *);
@@ -1484,7 +1484,7 @@ initHook(int attachedFlag)
             // We want to be able to use g_fn.write without
             // accidentally interposing this function.  This resolves
             // https://github.com/criblio/appscope/issues/472
-            g_fn.write = scope_write;
+            g_fn.write = wrap_scope_write;
         }
 
         // hook 'em
@@ -2871,13 +2871,13 @@ scope_syscall(long number, ...)
 }
 
 static ssize_t
-scope_write(int fd, const void* buf, size_t size)
+wrap_scope_write(int fd, const void* buf, size_t size)
 {
     return (ssize_t)syscall(SYS_write, fd, buf, size);
 }
 
 static int
-scope_open(const char* pathname)
+wrap_scope_open(const char* pathname)
 {
     // This implementation is largely based on transportConnectFile().
     int fd = g_fn.open(pathname, O_CREAT|O_WRONLY|O_APPEND|O_CLOEXEC, 0666);
@@ -2893,7 +2893,7 @@ scope_open(const char* pathname)
     return fd;
 }
 
-#define scope_close(fd) g_fn.close(fd)
+#define wrap_scope_close(fd) g_fn.close(fd)
 
 EXPORTON size_t
 fwrite_unlocked(const void *ptr, size_t size, size_t nitems, FILE *stream)
@@ -5093,7 +5093,7 @@ scopeLog(cfg_log_level_t level, const char *format, ...)
 
         if (DEFAULT_LOG_LEVEL > level) return;
 
-        int fd = scope_open(DEFAULT_LOG_PATH);
+        int fd = wrap_scope_open(DEFAULT_LOG_PATH);
         if (fd == -1) {
             DBG(NULL);
             return;
@@ -5101,11 +5101,11 @@ scopeLog(cfg_log_level_t level, const char *format, ...)
 
         if (msg_len >= local_buf_len) {
             DBG(NULL);
-            scope_write(fd, overflow_msg, sizeof(overflow_msg));
+            wrap_scope_write(fd, overflow_msg, sizeof(overflow_msg));
         } else {
-            scope_write(fd, scope_log_var_buf, local_buf - scope_log_var_buf);
+            wrap_scope_write(fd, scope_log_var_buf, local_buf - scope_log_var_buf);
         }
-        scope_close(fd);
+        wrap_scope_close(fd);
         return;
     }
 

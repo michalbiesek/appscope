@@ -872,7 +872,7 @@ transportConnectFile(transport_t *t)
     }
 
     FILE *f;
-    if (!(f = fdopen(fd, "a"))) {
+    if (!(f = scope_fdopen(fd, "a"))) {
         transportDisconnect(t);
         return 0;
     }
@@ -892,7 +892,7 @@ transportConnectFile(transport_t *t)
         default:
             DBG("%d", t->file.buf_policy);
     }
-    if (setvbuf(t->file.stream, NULL, buf_mode, BUFSIZ)) {
+    if (scope_setvbuf(t->file.stream, NULL, buf_mode, BUFSIZ)) {
         DBG(NULL);
     }
 
@@ -1185,8 +1185,8 @@ transportDestroy(transport_t **transport)
         case CFG_UDP:
         case CFG_TCP:
             transportDisconnect(trans);
-            if (trans->net.host) scope_free (trans->net.host);
-            if (trans->net.port) scope_free (trans->net.port);
+            if (trans->net.host) scope_free(trans->net.host);
+            if (trans->net.port) scope_free(trans->net.port);
             if (trans->net.tls.cacertpath) scope_free(trans->net.tls.cacertpath);
             freeAddressList(trans);
             break;
@@ -1199,7 +1199,7 @@ transportDestroy(transport_t **transport)
             if (trans->file.path) scope_free(trans->file.path);
             if (!trans->file.stdout && !trans->file.stderr) {
                 // if stdout/stderr, we didn't open stream, so don't close it
-                if (trans->file.stream) g_fn.fclose(trans->file.stream);
+                if (trans->file.stream) scope_fclose(trans->file.stream);
             }
             break;
         case CFG_SYSLOG:
@@ -1337,7 +1337,7 @@ transportSend(transport_t *trans, const char *msg, size_t len)
         case CFG_FILE:
             if (trans->file.stream) {
                 size_t msg_size = len;
-                int bytes = g_fn.fwrite(msg, 1, msg_size, trans->file.stream);
+                int bytes = scope_fwrite(msg, 1, msg_size, trans->file.stream);
                 if (bytes != msg_size) {
                     if (errno == EBADF) {
                         DBG("%d %d", bytes, msg_size);
@@ -1401,7 +1401,7 @@ transportFlush(transport_t* t)
         case CFG_TCP:
             break;
         case CFG_FILE:
-            if (fflush(t->file.stream) == EOF) {
+            if (scope_fflush(t->file.stream) == EOF) {
                 DBG(NULL);
             }
             break;
