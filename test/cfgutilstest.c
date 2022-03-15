@@ -11,18 +11,29 @@
 #include "fn.h"
 #include "com.h"
 #include "cfgutils.h"
+#include "scopestdlib.h"
 #include "test.h"
 #include "dbg.h"
 
 #define MAX_PATH 1024
 
+int
+cfgUtilTestSetup(void** state)
+{
+    cJSON_Hooks test_hooks = {
+        scope_malloc,
+        scope_free
+    };
+    cJSON_InitHooks(&test_hooks);
+    return groupSetup(state);
+}
 
 static void
 openFileAndExecuteCfgProcessCommands(const char* path, config_t* cfg)
 {
-    FILE* f = fopen(path, "r");
+    FILE* f = scope_fopen(path, "r");
     cfgProcessCommands(cfg, f);
-    fclose(f);
+    scope_fclose(f);
 }
 
 static void
@@ -56,7 +67,7 @@ cfgPathHonorsEnvVar(void** state)
     assert_string_equal(path, file_path);
 
     // cleanup
-    free(path);
+    scope_free(path);
     unlink(file_path);
     assert_int_equal(unsetenv("SCOPE_CONF_PATH"), 0);
 
@@ -1870,8 +1881,8 @@ jsonObjectFromCfgAndjsonStringFromCfgRoundTrip(void** state)
     g_prot_sequence = 0;
     cJSON_Delete(json1);
     cJSON_Delete(json2);
-    free(stringified_json1);
-    free(stringified_json2);
+    scope_free(stringified_json1);
+    scope_free(stringified_json2);
 }
 
 
@@ -2043,8 +2054,8 @@ initProc(const char *procname, const char *cmdline, const char *hostname)
     strncpy(g_proc.hostname, hostname, sizeof(g_proc.hostname));
     strncpy(g_proc.procname, procname, sizeof(g_proc.procname));
 
-    if (g_proc.cmd) { free(g_proc.cmd); g_proc.cmd = NULL; }
-    if (cmdline) g_proc.cmd = strdup(cmdline);
+    if (g_proc.cmd) { scope_free(g_proc.cmd); g_proc.cmd = NULL; }
+    if (cmdline) g_proc.cmd = scope_strdup(cmdline);
 }
 
 static void
@@ -2607,5 +2618,5 @@ main(int argc, char* argv[])
         cmocka_unit_test(cfgReadCustomAnchorExtend),
         cmocka_unit_test(envRegexFree),
     };
-    return cmocka_run_group_tests(tests, groupSetup, groupTeardown);
+    return cmocka_run_group_tests(tests, cfgUtilTestSetup, groupTeardown);
 }
