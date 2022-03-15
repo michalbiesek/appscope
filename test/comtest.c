@@ -4,7 +4,19 @@
 #include "ctl.h"
 #include "dbg.h"
 #include "test.h"
+#include "scopestdlib.h"
 #include "runtimecfg.h"
+
+int
+comTestSetup(void** state)
+{
+    cJSON_Hooks test_hooks = {
+        scope_malloc,
+        scope_free
+    };
+    cJSON_InitHooks(&test_hooks);
+    return groupSetup(state);
+}
 
 static void
 cmdPostInfoMsgDoesNotCrash(void** state)
@@ -133,5 +145,5 @@ main(int argc, char* argv[])
         cmocka_unit_test(msgStartHasExpectedSubNodes),
         cmocka_unit_test(dbgHasNoUnexpectedFailures),
     };
-    return cmocka_run_group_tests(tests, groupSetup, groupTeardown);
+    return cmocka_run_group_tests(tests, comTestSetup, groupTeardown);
 }

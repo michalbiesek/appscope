@@ -8,9 +8,20 @@
 #include <unistd.h>
 #include "dbg.h"
 #include "mtcformat.h"
+#include "scopestdlib.h"
 
 #include "test.h"
 
+int
+mtcTestSetup(void** state)
+{
+    cJSON_Hooks test_hooks = {
+        scope_malloc,
+        scope_free
+    };
+    cJSON_InitHooks(&test_hooks);
+    return groupSetup(state);
+}
 
 static void
 mtcFormatCreateReturnsValidPtrForGoodFormat(void** state)
@@ -480,7 +491,7 @@ mtcFormatEventForOutputVerifyEachStatsDType(void** state)
                 assert_string_equal(msg, "A:1|s\n");
                 break;
         }
-        free(msg);
+        scope_free(msg);
     }
 
     assert_int_equal(dbgCountMatchingLines("src/mtcformat.c"), 0);
@@ -488,7 +499,7 @@ mtcFormatEventForOutputVerifyEachStatsDType(void** state)
     // In undefined case, just don't crash...
     event_t e = INT_EVENT("A", 1, SET+1, NULL);
     char* msg = mtcFormatEventForOutput(fmt, &e, NULL);
-    if (msg) free(msg);
+    if (msg) scope_free(msg);
 
     assert_int_equal(dbgCountMatchingLines("src/mtcformat.c"), 1);
     dbgInit(); // reset dbg for the rest of the tests
@@ -561,13 +572,13 @@ mtcFormatEventForOutputHonorsCardinality(void** state)
     char* msg = mtcFormatEventForOutput(fmt, &e, NULL);
     assert_non_null(msg);
     assert_string_equal(msg, "metric:1|c|#A:Z\n");
-    free(msg);
+    scope_free(msg);
 
     mtcFormatVerbositySet(fmt, 5);
     msg = mtcFormatEventForOutput(fmt, &e, NULL);
     assert_non_null(msg);
     assert_string_equal(msg, "metric:1|c|#A:Z,B:987,C:Y,D:654,E:X,F:321\n");
-    free(msg);
+    scope_free(msg);
 
     mtcFormatVerbositySet(fmt, 9);
     msg = mtcFormatEventForOutput(fmt, &e, NULL);
@@ -580,7 +591,7 @@ mtcFormatEventForOutputHonorsCardinality(void** state)
         count++;
     }
     assert_true(count == 10);
-    free(msg);
+    scope_free(msg);
 
     mtcFormatDestroy(&fmt);
 }
@@ -707,5 +718,5 @@ main(int argc, char* argv[])
         cmocka_unit_test(fmtUrlDecodeToleratesBadData),
         cmocka_unit_test(dbgHasNoUnexpectedFailures),
     };
-    return cmocka_run_group_tests(tests, groupSetup, groupTeardown);
+    return cmocka_run_group_tests(tests, mtcTestSetup, groupTeardown);
 }
