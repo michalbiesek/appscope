@@ -619,12 +619,12 @@ cfgProcessEnvironment(config_t* cfg)
 void
 cfgProcessCommands(config_t* cfg, FILE* file)
 {
-    if (!cfg || !file || !g_fn.getline) return;
+    if (!cfg || !file) return;
 
     char *line = NULL;
     size_t len = 0;
 
-    while (g_fn.getline(&line, &len, file) != -1) {
+    while (scope_getline(&line, &len, file) != -1) {
         line[strcspn(line, "\r\n")] = '\0'; //overwrite first \r or \n with null
         processEnvStyleInput(cfg, line);
         line[0] = '\0';
