@@ -5126,7 +5126,7 @@ scopeLog(cfg_log_level_t level, const char *format, ...)
         tv.tv_sec++;
         msec = 0;
     }
-    localtime_r(&tv.tv_sec, &tm_info);
+    mm_localtime_r(&tv.tv_sec, &tm_info);
     strftime(time_buf, LOG_TIME_SIZE, "%Y-%m-%dT%H:%M:%S", &tm_info); 
     strftime(tz_buf, LOG_TZ_BUF_SIZE, "%z", &tm_info); 
 

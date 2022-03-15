@@ -3,6 +3,7 @@
 #include <sys/mman.h>
 #include <wchar.h>
 #include <stdio.h>
+#include <time.h>
 
 FILE *mm_fopen(const char *restrict pathname, const char *restrict mode);
 int mm_open(const char *pathname, int flags, mode_t mode);
@@ -26,5 +27,6 @@ int mm_munmap(void *, size_t);
 size_t mm_get_alloc_size(void);
 char *mm_realpath(const char *);
 int mm_asprintf(char **, const char *, ...);
+struct tm *mm_localtime_r(const time_t *restrict timer, struct tm *restrict result);
 
 #endif // __MM_H__

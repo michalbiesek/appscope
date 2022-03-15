@@ -10,6 +10,7 @@
 #include <string.h>
 
 //TODO make this atomic
+//TODO handle different category split - memory, file, time 
 static uint64_t alloc_size;
 
 extern void* scopelibc_malloc(size_t size);
@@ -31,8 +32,9 @@ extern int scopelibc_open(const char *pathname, int flags, mode_t mode);
 extern int scopelibc_close(int fd);
 extern size_t scopelibc_fread(void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
 extern size_t scopelibc_fwrite(const void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
-extern FILE *scopelibc_fdopen(int fd, const char *mode);
+extern FILE* scopelibc_fdopen(int fd, const char *mode);
 extern int scopelibc_setvbuf(FILE *restrict f, char *restrict buf, int type, size_t size);
+extern struct tm* scopelibc_localtime_r(const time_t *restrict timer, struct tm *restrict result);
 
 FILE *mm_fopen(const char *restrict pathname, const char *restrict mode) {
     return scopelibc_fopen(pathname, mode);
@@ -44,6 +46,10 @@ int mm_fclose(FILE *stream) {
 
 FILE *mm_fdopen(int fd, const char *mode) {
     return scopelibc_fdopen(fd, mode);
+}
+
+struct tm *mm_localtime_r(const time_t *restrict timer, struct tm *restrict result) {
+    return scopelibc_localtime_r(timer, result);
 }
 
 int mm_setvbuf(FILE *restrict f, char *restrict buf, int type, size_t size) {
