@@ -6,6 +6,8 @@
 
 FILE *mm_fopen(const char *restrict pathname, const char *restrict mode);
 int mm_fclose(FILE *stream);
+size_t mm_fread(void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
+size_t mm_fwrite(const void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
 ssize_t mm_getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream);
 void *mm_malloc(size_t );
 void mm_free(void *);
