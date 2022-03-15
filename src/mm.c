@@ -32,6 +32,7 @@ extern int scopelibc_close(int fd);
 extern size_t scopelibc_fread(void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
 extern size_t scopelibc_fwrite(const void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
 extern FILE *scopelibc_fdopen(int fd, const char *mode);
+extern int scopelibc_setvbuf(FILE *restrict f, char *restrict buf, int type, size_t size);
 
 FILE *mm_fopen(const char *restrict pathname, const char *restrict mode) {
     return scopelibc_fopen(pathname, mode);
@@ -43,6 +44,10 @@ int mm_fclose(FILE *stream) {
 
 FILE *mm_fdopen(int fd, const char *mode) {
     return scopelibc_fdopen(fd, mode);
+}
+
+int mm_setvbuf(FILE *restrict f, char *restrict buf, int type, size_t size) {
+    return scopelibc_setvbuf(f, buf, type, size);
 }
 
 int mm_open(const char *pathname, int flags, mode_t mode) {

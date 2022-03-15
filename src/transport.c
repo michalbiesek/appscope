@@ -892,7 +892,7 @@ transportConnectFile(transport_t *t)
         default:
             DBG("%d", t->file.buf_policy);
     }
-    if (setvbuf(t->file.stream, NULL, buf_mode, BUFSIZ)) {
+    if (mm_setvbuf(t->file.stream, NULL, buf_mode, BUFSIZ)) {
         DBG(NULL);
     }
 

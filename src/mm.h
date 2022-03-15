@@ -8,6 +8,7 @@ FILE *mm_fopen(const char *restrict pathname, const char *restrict mode);
 int mm_open(const char *pathname, int flags, mode_t mode);
 int mm_fclose(FILE *stream);
 FILE *mm_fdopen(int fd, const char *mode);
+int mm_setvbuf(FILE *restrict f, char *restrict buf, int type, size_t size);
 int mm_close(int fd);
 size_t mm_fread(void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
 size_t mm_fwrite(const void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
