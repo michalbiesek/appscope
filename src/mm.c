@@ -20,7 +20,8 @@ extern char* scopelibc_strndup(const char *s, size_t n);
 extern wchar_t* scopelibc_wcsdup(const wchar_t *s);
 extern int scopelibc_posix_memalign(void **memptr, size_t alignment, size_t size);
 extern char* scopelibc_realpath(const char *restrict path, char *restrict resolved_path);
-
+extern void* scopelibc_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+extern int scopelibc_munmap(void *addr, size_t length);
 extern void  scopelibc_free(void *ptr);
 extern size_t scopelibc_malloc_usable_size(void* ptr);
 
@@ -89,7 +90,7 @@ int mm_asprintf(char **restrict strp, const char *restrict fmt, ...) {
 
 void *mm_mmap(void *addr, size_t length, int prot, int flags,
                   int fd, off_t offset) {
-    void* ptr = mmap(addr, length, prot, flags, fd, offset);
+    void* ptr = scopelibc_mmap(addr, length, prot, flags, fd, offset);
     if (ptr != MAP_FAILED) {
         alloc_size += length;
     }
@@ -97,7 +98,7 @@ void *mm_mmap(void *addr, size_t length, int prot, int flags,
 }
 
 int mm_munmap(void *addr, size_t length) {
-    int res = munmap(addr, length);
+    int res = scopelibc_munmap(addr, length);
     alloc_size -= length;
     return res;
 }
