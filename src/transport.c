@@ -872,7 +872,7 @@ transportConnectFile(transport_t *t)
     }
 
     FILE *f;
-    if (!(f = fdopen(fd, "a"))) {
+    if (!(f = mm_fdopen(fd, "a"))) {
         transportDisconnect(t);
         return 0;
     }
