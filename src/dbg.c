@@ -247,7 +247,7 @@ dbgAddLine(const char *key, const char *fmt, ...)
     if (fmt) {
         va_list args;
         va_start(args, fmt);
-        int rv = vasprintf(&str, fmt, args);
+        int rv = scope_vasprintf(&str, fmt, args);
         va_end(args);
         if (rv == -1) {
             if (str) scope_free(str);

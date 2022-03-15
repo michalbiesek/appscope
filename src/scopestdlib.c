@@ -175,6 +175,11 @@ scope_asprintf(char **restrict strp, const char *restrict fmt, ...) {
     return res;
 }
 
+int
+scope_vasprintf(char **strp, const char *fmt, va_list ap){
+    return scopelibc_vasprintf(strp, fmt, ap);
+}
+
 
 // Other
 

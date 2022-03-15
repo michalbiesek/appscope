@@ -30,6 +30,7 @@ char*   scope_realpath(const char *, char *);
 ssize_t scope_readlink(const char *, char *, size_t);
 char*   scope_strdup(const char *);
 int     scope_asprintf(char **, const char *, ...);
+int     scope_vasprintf(char **strp, const char *fmt, va_list ap);
 
 // Other
 size_t scope_total_alloc_size(void);
