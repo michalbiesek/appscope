@@ -98,7 +98,7 @@ newTransport()
 
     // been inconsistent as to when we check for func pointers.
     // do it here early on and we're good.
-    if (!g_fn.send || !g_fn.open || !g_fn.dup2 || !g_fn.close ||
+    if (!g_fn.send || !g_fn.dup2 ||
         !g_fn.fcntl || !g_fn.fwrite || !g_fn.socket || !g_fn.access ||
         !g_fn.connect || !g_fn.getaddrinfo || !g_fn.fclose ||
         !g_fn.select) goto out;
@@ -108,10 +108,10 @@ newTransport()
     return t;
 
   out:
-    DBG("send=%p open=%p dup2=%p close=%p "
+    DBG("send=%p dup2=%p close=%p "
         "fcntl=%p fwrite=%p socket=%p access=%p connect=%p "
         "getaddrinfo=%p fclose=%p select=%p",
-        g_fn.send, g_fn.open, g_fn.dup2, g_fn.close,
+        g_fn.send, g_fn.dup2,
         g_fn.fcntl, g_fn.fwrite, g_fn.socket, g_fn.access, g_fn.connect,
         g_fn.getaddrinfo, g_fn.fclose, g_fn.select);
     mm_free(t);
@@ -147,7 +147,7 @@ placeDescriptor(int fd, transport_t *t)
 
             // This fd is available, try to dup it
             if ((dupfd = g_fn.dup2(fd, i)) == -1) continue;
-            g_fn.close(fd);
+            mm_close(fd);
 
             // Set close on exec. (dup2 does not preserve FD_CLOEXEC)
             int flags = g_fn.fcntl(dupfd, F_GETFD, 0);
@@ -160,7 +160,7 @@ placeDescriptor(int fd, transport_t *t)
         }
     }
     DBG("%d", t->type);
-    g_fn.close(fd);
+    mm_close(fd);
     return -1;
 }
 
@@ -308,7 +308,7 @@ shutdownTlsSession(transport_t *trans)
     }
 
     if (trans->net.sock != -1) {
-        g_fn.close(trans->net.sock);
+        mm_close(trans->net.sock);
         trans->net.sock = -1;
     }
 }
@@ -430,20 +430,20 @@ transportDisconnect(transport_t *trans)
             // appropriate for both tls and non-tls connections...
             shutdownTlsSession(trans);
             if (trans->net.pending_connect != -1) {
-                g_fn.close(trans->net.pending_connect);
+                mm_close(trans->net.pending_connect);
                 trans->net.pending_connect = -1;
             }
             break;
         case CFG_FILE:
             if (!trans->file.stdout && !trans->file.stderr) {
-                if (trans->file.stream) g_fn.fclose(trans->file.stream);
+                if (trans->file.stream) mm_fclose(trans->file.stream);
             }
             trans->file.stream = NULL;
             break;
         case CFG_UNIX:
         case CFG_EDGE:
             if (trans->local.sock != -1) {
-                g_fn.close(trans->local.sock);
+                mm_close(trans->local.sock);
                 trans->local.sock = -1;
             }
             break;
@@ -647,7 +647,7 @@ checkPendingSocketStatus(transport_t *trans)
             || opt) {
         scopeLogInfo("fd:%d connect failed", trans->net.pending_connect);
 
-        g_fn.close(trans->net.pending_connect);
+        mm_close(trans->net.pending_connect);
         trans->net.pending_connect = -1;
         return 0;
     }
@@ -797,7 +797,7 @@ socketConnectionStart(transport_t *trans)
             portptr = &addr6_ptr->sin6_port;
         } else {
             DBG("%d %s %s %d", sock, trans->net.host, trans->net.port, addr->ai_family);
-            g_fn.close(sock);
+            mm_close(sock);
             continue;
         }
         char addrstr[INET6_ADDRSTRLEN];
@@ -814,7 +814,7 @@ socketConnectionStart(transport_t *trans)
                 trans->net.failure_reason = CONN_FAIL;
 
                 // We could create a sock, but not connect.  Clean up.
-                g_fn.close(sock);
+                mm_close(sock);
                 continue;
             }
 
@@ -853,7 +853,7 @@ transportConnectFile(transport_t *t)
     }
 
     int fd;
-    fd = g_fn.open(t->file.path, O_CREAT|O_WRONLY|O_APPEND|O_CLOEXEC, 0666);
+    fd = mm_open(t->file.path, O_CREAT|O_WRONLY|O_APPEND|O_CLOEXEC, 0666);
     if (fd == -1) {
         DBG("%s", t->file.path);
         transportDisconnect(t);
@@ -983,7 +983,7 @@ transportConnect(transport_t *trans)
             if (g_fn.connect(trans->local.sock, (const struct sockaddr *)&trans->local.addr,
                              trans->local.addr_len) == -1) {
                 scopeLogInfo("fd:%d (%s) connect failed", trans->local.sock, trans->local.path);
-                g_fn.close(trans->local.sock);
+                mm_close(trans->local.sock);
                 trans->local.sock = -1;
                 return 0;
             }

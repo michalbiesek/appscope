@@ -27,23 +27,32 @@ extern size_t scopelibc_malloc_usable_size(void* ptr);
 extern ssize_t scopelibc_getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream);
 extern FILE* scopelibc_fopen(const char *restrict pathname, const char *restrict mode);
 extern int scopelibc_fclose(FILE *stream);
+extern int scopelibc_open(const char *pathname, int flags, mode_t mode);
+extern int scopelibc_close(int fd);
 extern size_t scopelibc_fread(void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
 extern size_t scopelibc_fwrite(const void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
 
-FILE *mm_fopen(const char *restrict pathname, const char *restrict mode)
-{
+FILE *mm_fopen(const char *restrict pathname, const char *restrict mode) {
     return scopelibc_fopen(pathname, mode);
 }
 
-int mm_fclose(FILE *stream)
-{
+int mm_fclose(FILE *stream) {
     return scopelibc_fclose(stream);
 }
 
-size_t mm_fread(void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream){
+int mm_open(const char *pathname, int flags, mode_t mode) {
+    return scopelibc_open(pathname, flags, mode);
+}
+
+int mm_close(int fd) {
+    return scopelibc_close(fd);
+}
+
+size_t mm_fread(void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream) {
     return scopelibc_fread(ptr, size, nmemb, stream);
 }
-size_t mm_fwrite(const void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream){
+
+size_t mm_fwrite(const void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream) {
     return scopelibc_fwrite(ptr, size, nmemb, stream);
 }
 

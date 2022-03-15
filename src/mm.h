@@ -5,7 +5,9 @@
 #include <stdio.h>
 
 FILE *mm_fopen(const char *restrict pathname, const char *restrict mode);
+int mm_open(const char *pathname, int flags, mode_t mode);
 int mm_fclose(FILE *stream);
+int mm_close(int fd);
 size_t mm_fread(void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
 size_t mm_fwrite(const void *restrict ptr, size_t size, size_t nmemb, FILE *restrict stream);
 ssize_t mm_getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream);
