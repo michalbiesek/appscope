@@ -8,6 +8,7 @@
 #include "dbg.h"
 #include "fn.h"
 #include "os.h"
+#include "scopestdlib.h"
 #include "scopetypes.h"
 #include "utils.h"
 
