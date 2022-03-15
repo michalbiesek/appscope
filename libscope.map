@@ -178,6 +178,7 @@
     rsaz_*;
     RSAZ_*;
     s2i_*;
+    scopelibc_*;
     SCRYPT_*;
     SCT_*;
     SEED_*;
