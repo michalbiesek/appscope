@@ -430,20 +430,20 @@ transportDisconnect(transport_t *trans)
             // appropriate for both tls and non-tls connections...
             shutdownTlsSession(trans);
             if (trans->net.pending_connect != -1) {
-                g_fn.close(trans->net.pending_connect);
+                scope_close(trans->net.pending_connect);
                 trans->net.pending_connect = -1;
             }
             break;
         case CFG_FILE:
             if (!trans->file.stdout && !trans->file.stderr) {
-                if (trans->file.stream) g_fn.fclose(trans->file.stream);
+                if (trans->file.stream) scope_fclose(trans->file.stream);
             }
             trans->file.stream = NULL;
             break;
         case CFG_UNIX:
         case CFG_EDGE:
             if (trans->local.sock != -1) {
-                g_fn.close(trans->local.sock);
+                scope_close(trans->local.sock);
                 trans->local.sock = -1;
             }
             break;
