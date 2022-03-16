@@ -98,4 +98,25 @@ build/musl/lib/libc.a:
 	@mkdir build/musl
 	cd build/musl && ../../musl/configure --with-malloc=oldmalloc && $(MAKE)
 	objcopy --prefix-symbols=scopelibc_ build/musl/lib/libc.a
+# TODO verify if the code below be done via mfloat-abi=soft not sure if aarch64 support soft though
+# https://developer.arm.com/documentation/dui0774/b/compiler-command-line-options/-mfloat-abi
+# -mgeneral-regs-only maybe ? https://gcc.gnu.org/onlinedocs/gcc/AArch64-Options.html
+	if [ "aarch64" = "$(ARCH)" ]; then \
+		objcopy --redefine-sym=scopelibc___addtf3=__addtf3 build/musl/lib/libc.a; \
+		objcopy --redefine-sym=scopelibc___extenddftf2=__extenddftf2 build/musl/lib/libc.a; \
+		objcopy --redefine-sym=scopelibc___fixtfsi=__fixtfsi build/musl/lib/libc.a; \
+		objcopy --redefine-sym=scopelibc___fixunstfsi=__fixunstfsi build/musl/lib/libc.a; \
+		objcopy --redefine-sym=scopelibc___floatsitf=__floatsitf build/musl/lib/libc.a; \
+		objcopy --redefine-sym=scopelibc___floatunsitf=__floatunsitf build/musl/lib/libc.a; \
+		objcopy --redefine-sym=scopelibc___multf3=__multf3 build/musl/lib/libc.a; \
+		objcopy --redefine-sym=scopelibc___netf2=__netf2 build/musl/lib/libc.a; \
+		objcopy --redefine-sym=scopelibc___subtf3=__subtf3 build/musl/lib/libc.a; \
+		objcopy --redefine-sym=scopelibc___trunctfsf2=__trunctfsf2 build/musl/lib/libc.a; \
+		objcopy --redefine-sym=scopelibc___trunctfdf2=__trunctfdf2 build/musl/lib/libc.a; \
+		objcopy --redefine-sym=scopelibc___divtf3=__divtf3 build/musl/lib/libc.a; \
+		objcopy --redefine-sym=scopelibc___eqtf2=__eqtf2 build/musl/lib/libc.a; \
+		objcopy --redefine-sym=scopelibc___getf2=__getf2 build/musl/lib/libc.a; \
+		objcopy --redefine-sym=scopelibc___extendsftf2=__extendsftf2 build/musl/lib/libc.a; \
+		objcopy --redefine-sym=scopelibc___letf2=__letf2 build/musl/lib/libc.a; \
+	fi
 	@[ -z "$(CI)" ] || echo "::endgroup::"
