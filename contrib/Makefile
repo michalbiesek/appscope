@@ -96,6 +96,7 @@ build/musl/lib/libc.a:
 	@echo "$${CI:+::group::}Building musl"
 	@$(RM) -r build/musl
 	@mkdir build/musl
-	cd build/musl && ../../musl/configure && $(MAKE)
+# To enable debug please add below --enable-debug --enable-optimize=no
+	cd build/musl && ../../musl/configure --disable-shared && $(MAKE)
 	objcopy --prefix-symbols=scopelibc_ build/musl/lib/libc.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
