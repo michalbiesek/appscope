@@ -173,8 +173,9 @@ dbgDumpAllOutputsVersionAndTime(void** state)
 
 
 int
-main(int argc, char* argv[])
+main(int argc, char **argv, char **env)
 {
+    scope_init_appscope_internal_lib(env);
     printf("running %s\n", argv[0]);
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(dbgInitSetsGlobal),

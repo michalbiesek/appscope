@@ -1542,6 +1542,7 @@ initEnv(int *attachedFlag)
 __attribute__((constructor)) void
 init(void)
 {
+    scope_init_appscope_internal_lib(environ);
 
     cJSON_Hooks cjson_hooks = {
             scope_malloc,
