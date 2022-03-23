@@ -308,40 +308,6 @@ void *malloc(size_t n)
 		c->psize = SIZE_ALIGN - OVERHEAD;
 		return CHUNK_TO_MEM(c);
 	}
-
-	i = bin_index_up(n);
-	if (i<63 && (mal.binmap & (1ULL<<i))) {
-		lock_bin(i);
-		c = mal.bins[i].head;
-		if (c != BIN_TO_CHUNK(i) && CHUNK_SIZE(c)-n <= DONTCARE) {
-			unbin(c, i);
-			unlock_bin(i);
-			return CHUNK_TO_MEM(c);
-		}
-		unlock_bin(i);
-	}
-	lock(mal.split_merge_lock);
-	for (mask = mal.binmap & -(1ULL<<i); mask; mask -= (mask&-mask)) {
-		j = first_set(mask);
-		lock_bin(j);
-		c = mal.bins[j].head;
-		if (c != BIN_TO_CHUNK(j)) {
-			unbin(c, j);
-			unlock_bin(j);
-			break;
-		}
-		unlock_bin(j);
-	}
-	if (!mask) {
-		c = expand_heap(n);
-		if (!c) {
-			unlock(mal.split_merge_lock);
-			return 0;
-		}
-	}
-	trim(c, n);
-	unlock(mal.split_merge_lock);
-	return CHUNK_TO_MEM(c);
 }
 
 int __malloc_allzerop(void *p)
