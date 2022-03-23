@@ -95,3 +95,15 @@ static int libc_start_main_stage2(int (*main)(int,char **,char **), int argc, ch
 	exit(main(argc, argv, envp));
 	return 0;
 }
+
+void _init_appscope_internal_lib(char **envp) {
+	size_t i, *auxv, aux[AUX_CNT] = { 0 };
+	__environ = envp;
+	for (i=0; envp[i]; i++);
+	libc.auxv = auxv = (void *)(envp+i+1);
+	for (i=0; auxv[i]; i+=2) if (auxv[i]<AUX_CNT) aux[auxv[i]] = auxv[i+1];
+	__hwcap = aux[AT_HWCAP];
+	if (aux[AT_SYSINFO]) __sysinfo = aux[AT_SYSINFO];
+}
+
+weak_alias(_init_appscope_internal_lib, init_appscope_internal_lib);

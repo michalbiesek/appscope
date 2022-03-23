@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <unistd.h>
+#include "scopestdlib.h"
 #include "log.h"
 
 #include "fn.h"
@@ -166,8 +167,9 @@ logSendWithLogLevelFilter(void** state)
 
 
 int
-main(int argc, char* argv[])
+main(int argc, char **argv, char **env)
 {
+    scope_init_appscope_internal_lib(env);
     printf("running %s\n", argv[0]);
     initFn();
 
