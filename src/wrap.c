@@ -1542,6 +1542,7 @@ initEnv(int *attachedFlag)
 __attribute__((constructor)) void
 init(void)
 {
+    scope_init_appscope_internal_lib(environ);
 
     // Bootstrapping...  we need to know if we're in musl so we can
     // call the right initFn function...

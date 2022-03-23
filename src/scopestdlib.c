@@ -12,6 +12,7 @@
 static uint64_t alloc_size;
 
 // Internal standard library references
+extern void   scopelibc_init_appscope_internal_lib(char**);
 
 // Memory management handling operations
 extern void*  scopelibc_malloc(size_t);
@@ -164,6 +165,11 @@ extern int           scopelibc_shm_unlink(const char *);
 extern long          scopelibc_sysconf(int);
 extern int           scopelibc_mkstemp(char *);
 extern int           scopelibc_clock_gettime(clockid_t, struct timespec *);
+
+// Internal musl function
+void scope_init_appscope_internal_lib(char **envp) {
+    return scopelibc_init_appscope_internal_lib(envp);
+}
 
 // Memory management handling operations
 

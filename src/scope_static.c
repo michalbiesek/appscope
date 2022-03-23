@@ -959,6 +959,7 @@ static struct option opts[] = {
 int
 main(int argc, char **argv, char **env)
 {
+    scope_init_appscope_internal_lib(env);
     char *attachArg = 0;
     char path[PATH_MAX] = {0};
 
