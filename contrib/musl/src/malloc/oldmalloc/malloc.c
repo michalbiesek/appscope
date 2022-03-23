@@ -298,49 +298,13 @@ void *malloc(size_t n)
 
 	if (adjust_size(&n) < 0) return 0;
 
-	if (n > MMAP_THRESHOLD) {
-		size_t len = n + OVERHEAD + PAGE_SIZE - 1 & -PAGE_SIZE;
-		char *base = __mmap(0, len, PROT_READ|PROT_WRITE,
-			MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-		if (base == (void *)-1) return 0;
-		c = (void *)(base + SIZE_ALIGN - OVERHEAD);
-		c->csize = len - (SIZE_ALIGN - OVERHEAD);
-		c->psize = SIZE_ALIGN - OVERHEAD;
-		return CHUNK_TO_MEM(c);
-	}
-
-	i = bin_index_up(n);
-	if (i<63 && (mal.binmap & (1ULL<<i))) {
-		lock_bin(i);
-		c = mal.bins[i].head;
-		if (c != BIN_TO_CHUNK(i) && CHUNK_SIZE(c)-n <= DONTCARE) {
-			unbin(c, i);
-			unlock_bin(i);
-			return CHUNK_TO_MEM(c);
-		}
-		unlock_bin(i);
-	}
-	lock(mal.split_merge_lock);
-	for (mask = mal.binmap & -(1ULL<<i); mask; mask -= (mask&-mask)) {
-		j = first_set(mask);
-		lock_bin(j);
-		c = mal.bins[j].head;
-		if (c != BIN_TO_CHUNK(j)) {
-			unbin(c, j);
-			unlock_bin(j);
-			break;
-		}
-		unlock_bin(j);
-	}
-	if (!mask) {
-		c = expand_heap(n);
-		if (!c) {
-			unlock(mal.split_merge_lock);
-			return 0;
-		}
-	}
-	trim(c, n);
-	unlock(mal.split_merge_lock);
+	size_t len = n + OVERHEAD + PAGE_SIZE - 1 & -PAGE_SIZE;
+	char *base = __mmap(0, len, PROT_READ|PROT_WRITE,
+		MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+	if (base == (void *)-1) return 0;
+	c = (void *)(base + SIZE_ALIGN - OVERHEAD);
+	c->csize = len - (SIZE_ALIGN - OVERHEAD);
+	c->psize = SIZE_ALIGN - OVERHEAD;
 	return CHUNK_TO_MEM(c);
 }
 
