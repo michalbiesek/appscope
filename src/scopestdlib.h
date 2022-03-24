@@ -158,6 +158,8 @@ uint16_t    scope_ntohs(uint16_t);
 
 // Misc
 int          scope_atoi(const char *);
+int          scope_isspace(int);
+int          scope_isprint(int);
 void         scope_perror(const char *);
 int          scope_gettimeofday(struct timeval *, struct timezone *);
 int          scope_timer_create(clockid_t, struct sigevent *, timer_t *);
@@ -185,7 +187,9 @@ gid_t        scope_getgid(void);
 void*        scope_dlopen(const char *, int);
 void*        scope_dlsym(void *, const char *);
 int          scope_dlclose(void *);
-  
+long         scope_ptrace(int, pid_t, void *, void *);
+pid_t        scope_waitpid(pid_t, int *, int);
+
 // Other
 size_t scope_total_alloc_size(void);
 

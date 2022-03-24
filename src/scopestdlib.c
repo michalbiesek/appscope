@@ -120,6 +120,8 @@ extern uint16_t    scopelibc_ntohs(uint16_t);
 
 // Misc handling operations
 extern int          scopelibc_atoi(const char *);
+extern int          scopelibc_isspace(int);
+extern int          scopelibc_isprint(int);
 extern void         scopelibc_perror(const char*);
 extern int          scopelibc_gettimeofday(struct timeval *, struct timezone *);
 extern int          scopelibc_timer_create(clockid_t, struct sigevent *, timer_t *);
@@ -136,8 +138,6 @@ extern int          scopelibc_pthread_create(pthread_t *, const pthread_attr_t *
 extern int          scopelibc_pthread_barrier_init(pthread_barrier_t *, const pthread_barrierattr_t *, unsigned);
 extern int          scopelibc_pthread_barrier_destroy(pthread_barrier_t *);
 extern int          scopelibc_pthread_barrier_wait(pthread_barrier_t *);
-extern void*        scopelibc_dlopen(const char *, int);
-extern void*        scopelibc_dlsym(void *, const char *);
 extern int          scopelibc_dlclose(void *);
 extern int          scopelibc_ns_initparse(const unsigned char *, int, ns_msg *);
 extern int          scopelibc_ns_parserr(ns_msg *, ns_sect, int, ns_rr *);
@@ -150,6 +150,8 @@ extern gid_t        scopelibc_getgid(void);
 extern void*        scopelibc_dlopen(const char *, int);
 extern int          scopelibc_dlclose(void *);
 extern void*        scopelibc_dlsym(void *, const char *);
+extern long         scopelibc_ptrace(int, pid_t, void *, void *);
+extern pid_t        scopelibc_waitpid(pid_t, int *, int);
 
 // Internal musl function
 void scope_init_appscope_internal_lib(char **envp) {
@@ -669,6 +671,16 @@ scope_atoi(const char *nptr) {
     return scopelibc_atoi(nptr);
 }
 
+int
+scope_isspace(int c) {
+    return scopelibc_isspace(c);
+}
+
+int
+scope_isprint(int c) {
+    return scopelibc_isprint(c);
+}
+
 void
 scope_perror(const char *s) {
     scopelibc_perror(s);
@@ -804,6 +816,15 @@ scope_dlsym(void *restrict handle, const char *restrict symbol) {
     return scopelibc_dlsym(handle, symbol);
 }
 
+long
+scope_ptrace(int request, pid_t pid, void *addr, void *data) {
+    return scopelibc_ptrace(request, pid, addr, data);
+}
+
+pid_t
+scope_waitpid(pid_t pid, int *status, int options) {
+    return scopelibc_waitpid(pid, status, options);
+}
 
 // Other
 
