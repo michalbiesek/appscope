@@ -1027,7 +1027,8 @@ c_unlinkat(char *stackaddr)
 
     if (!pathname) {
         scopeLogError("ERROR:go_open: null pathname");
-        puts("Scope:ERROR:open:no pathname");
+        scope_puts("Scope:ERROR:open:no pathname");
+        scope_fflush(scope_stdout);
         return;
     }
 
@@ -1052,7 +1053,8 @@ c_open(char *stackaddr)
 
     if (!path) {
         scopeLogError("ERROR:go_open: null pathname");
-        puts("Scope:ERROR:open:no path");
+        scope_puts("Scope:ERROR:open:no path");
+        scope_fflush(scope_stdout);
         return;
     }
 

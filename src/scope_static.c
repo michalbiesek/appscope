@@ -880,7 +880,7 @@ static const char scope_help_protocol[] =
 static int
 showHelp(const char *section)
 {
-    printf(
+    scope_printf(
       "Cribl AppScope Static Loader %s\n"
       "\n"
       "AppScope is a general-purpose observable application telemetry system.\n"
@@ -889,32 +889,33 @@ showHelp(const char *section)
     );
 
     if (!section || !scope_strcasecmp(section, "all")) {
-        puts(scope_help_overview);
-        puts(scope_help_configuration);
-        puts(scope_help_metrics);
-        puts(scope_help_events);
-        puts(scope_help_protocol);
+        scope_puts(scope_help_overview);
+        scope_puts(scope_help_configuration);
+        scope_puts(scope_help_metrics);
+        scope_puts(scope_help_events);
+        scope_puts(scope_help_protocol);
     } else if (!scope_strcasecmp(section, "overview")) {
-        puts(scope_help_overview);
+        scope_puts(scope_help_overview);
     } else if (!scope_strcasecmp(section, "configuration") || !scope_strcasecmp(section, "config")) {
-        puts(scope_help_configuration);
+        scope_puts(scope_help_configuration);
     } else if (!scope_strcasecmp(section, "metrics")) {
-        puts(scope_help_metrics);
+        scope_puts(scope_help_metrics);
     } else if (!scope_strcasecmp(section, "events")) {
-        puts(scope_help_events);
+        scope_puts(scope_help_events);
     } else if (!scope_strcasecmp(section, "protocols")) {
-        puts(scope_help_protocol);
+        scope_puts(scope_help_protocol);
     } else {
         scope_fprintf(scope_stderr, "error: invalid help section\n\n");
         return -1;
     }
+    scope_fflush(scope_stdout);
     return 0;
 }
 
 static void
 showUsage(char *prog)
 {
-    printf(
+    scope_printf(
       "\n"
       "Cribl AppScope Static Loader %s\n" 
       "\n"
@@ -942,6 +943,7 @@ showUsage(char *prog)
       "\n",
       SCOPE_VER, prog, prog
     );
+    scope_fflush(scope_stdout);
 }
 
 // long aliases for short options
