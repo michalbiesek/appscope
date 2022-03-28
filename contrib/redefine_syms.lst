@@ -1,0 +1,17 @@
+malloc scopelibc_malloc
+calloc scopelibc_calloc
+realloc scopelibc_realloc
+free scopelibc_free
+mmap scopelibc_mmap
+munmap scopelibc_munmap
+fread scopelibc_fread
+fwrite scopelibc_fwrite
+fclose scopelibc_fclose
+fflush scopelibc_fflush
+fgets scopelibc_fgets
+fopen scopelibc_fopen
+fputs scopelibc_fputs
+strdup scopelibc_strdup
+strncpy scopelibc_strncpy
+vfprintf scopelibc_vfprintf
+vsnprintf scopelibc_vsnprintf

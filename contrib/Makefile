@@ -36,20 +36,7 @@ musl: build/musl/lib/libc.a
 cJSON/libcjson.a:
 	@echo "$${CI:+::group::}Building cJSON"
 	cd cJSON && $(MAKE)
-	objcopy --redefine-sym fclose=scopelibc_fclose cJSON/libcjson.a
-	objcopy --redefine-sym fflush=scopelibc_fflush cJSON/libcjson.a
-	objcopy --redefine-sym fgets=scopelibc_fgets cJSON/libcjson.a
-	objcopy --redefine-sym fopen=scopelibc_fopen cJSON/libcjson.a
-	objcopy --redefine-sym fputs=scopelibc_fputs cJSON/libcjson.a
-	objcopy --redefine-sym strdup=scopelibc_strdup cJSON/libcjson.a
-	objcopy --redefine-sym malloc=scopelibc_malloc cJSON/libcjson.a
-	objcopy --redefine-sym calloc=scopelibc_calloc cJSON/libcjson.a
-	objcopy --redefine-sym realloc=scopelibc_realloc cJSON/libcjson.a
-	objcopy --redefine-sym free=scopelibc_free cJSON/libcjson.a
-	objcopy --redefine-sym mmap=scopelibc_mmap cJSON/libcjson.a
-	objcopy --redefine-sym munmap=scopelibc_munmap cJSON/libcjson.a
-	objcopy --redefine-sym strncpy=scopelibc_strncpy cJSON/libcjson.a
-	objcopy --redefine-sym vfprintf=scopelibc_vfprintf cJSON/libcjson.a
+	objcopy --redefine-syms redefine_syms.lst cJSON/libcjson.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 build/cmocka/src/libcmocka.so:
@@ -72,25 +59,8 @@ build/funchook/libfunchook.a:
 		exit 1; \
 	fi
 	cd build/funchook && $(MAKE) capstone_src funchook-static
-	objcopy --redefine-sym fclose=scopelibc_fclose build/funchook/libfunchook.a
-	objcopy --redefine-sym fflush=scopelibc_fflush build/funchook/libfunchook.a
-	objcopy --redefine-sym fgets=scopelibc_fgets build/funchook/libfunchook.a
-	objcopy --redefine-sym fopen=scopelibc_fopen build/funchook/libfunchook.a
-	objcopy --redefine-sym fputs=scopelibc_fputs build/funchook/libfunchook.a
-	objcopy --redefine-sym strdup=scopelibc_strdup build/funchook/libfunchook.a
-	objcopy --redefine-sym malloc=scopelibc_malloc build/funchook/libfunchook.a
-	objcopy --redefine-sym calloc=scopelibc_calloc build/funchook/libfunchook.a
-	objcopy --redefine-sym realloc=scopelibc_realloc build/funchook/libfunchook.a
-	objcopy --redefine-sym free=scopelibc_free build/funchook/libfunchook.a
-	objcopy --redefine-sym mmap=scopelibc_mmap build/funchook/libfunchook.a
-	objcopy --redefine-sym munmap=scopelibc_munmap build/funchook/libfunchook.a
-	objcopy --redefine-sym strncpy=scopelibc_strncpy build/funchook/libfunchook.a
-	objcopy --redefine-sym vfprintf=scopelibc_vfprintf build/funchook/libfunchook.a
-	objcopy --redefine-sym malloc=scopelibc_malloc build/funchook/capstone_src-prefix/src/capstone_src-build/libcapstone.a
-	objcopy --redefine-sym calloc=scopelibc_calloc build/funchook/capstone_src-prefix/src/capstone_src-build/libcapstone.a
-	objcopy --redefine-sym realloc=scopelibc_realloc build/funchook/capstone_src-prefix/src/capstone_src-build/libcapstone.a
-	objcopy --redefine-sym free=scopelibc_free build/funchook/capstone_src-prefix/src/capstone_src-build/libcapstone.a
-	objcopy --redefine-sym vsnprintf=scopelibc_vsnprintf build/funchook/capstone_src-prefix/src/capstone_src-build/libcapstone.a
+	objcopy --redefine-syms redefine_syms.lst build/funchook/libfunchook.a
+	objcopy --redefine-syms redefine_syms.lst build/funchook/capstone_src-prefix/src/capstone_src-build/libcapstone.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 # Can't be cached because we have to `autoreconf` the source folder.
@@ -99,22 +69,7 @@ build/libyaml/src/.libs/libyaml.a:
 	@$(RM) -r build/libyaml
 	@mkdir build/libyaml
 	cd build/libyaml && autoreconf -fvi ../../libyaml && ../../libyaml/configure LIBS=-ldl && $(MAKE)
-	objcopy --redefine-sym fread=scopelibc_fread build/libyaml/src/.libs/libyaml.a
-	objcopy --redefine-sym fwrite=scopelibc_fwrite build/libyaml/src/.libs/libyaml.a
-	objcopy --redefine-sym fclose=scopelibc_fclose build/libyaml/src/.libs/libyaml.a
-	objcopy --redefine-sym fflush=scopelibc_fflush build/libyaml/src/.libs/libyaml.a
-	objcopy --redefine-sym fgets=scopelibc_fgets build/libyaml/src/.libs/libyaml.a
-	objcopy --redefine-sym fopen=scopelibc_fopen build/libyaml/src/.libs/libyaml.a
-	objcopy --redefine-sym fputs=scopelibc_fputs build/libyaml/src/.libs/libyaml.a
-	objcopy --redefine-sym strdup=scopelibc_strdup build/libyaml/src/.libs/libyaml.a
-	objcopy --redefine-sym malloc=scopelibc_malloc build/libyaml/src/.libs/libyaml.a
-	objcopy --redefine-sym calloc=scopelibc_calloc build/libyaml/src/.libs/libyaml.a
-	objcopy --redefine-sym realloc=scopelibc_realloc build/libyaml/src/.libs/libyaml.a
-	objcopy --redefine-sym free=scopelibc_free build/libyaml/src/.libs/libyaml.a
-	objcopy --redefine-sym mmap=scopelibc_mmap build/libyaml/src/.libs/libyaml.a
-	objcopy --redefine-sym munmap=scopelibc_munmap build/libyaml/src/.libs/libyaml.a
-	objcopy --redefine-sym strncpy=scopelibc_strncpy build/libyaml/src/.libs/libyaml.a
-	objcopy --redefine-sym vfprintf=scopelibc_vfprintf build/libyaml/src/.libs/libyaml.a
+	objcopy --redefine-syms redefine_syms.lst build/libyaml/src/.libs/libyaml.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 build/openssl/libssl.a build/openssl/libcrypto.a:
@@ -125,6 +80,7 @@ build/openssl/libssl.a build/openssl/libcrypto.a:
 	# Yuck.  Avoids naming conflict between our wrap.c and libssl.a
 	objcopy --redefine-sym SSL_read=SCOPE_SSL_read build/openssl/libssl.a
 	objcopy --redefine-sym SSL_write=SCOPE_SSL_write build/openssl/libssl.a
+	objcopy --redefine-syms redefine_syms.lst build/openssl/libssl.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 build/pcre2/libpcre2-posix.a build/pcre2/libpcre2-8.a:
@@ -132,8 +88,7 @@ build/pcre2/libpcre2-posix.a build/pcre2/libpcre2-8.a:
 	@$(RM) -r build/pcre2
 	@mkdir build/pcre2
 	cd build/pcre2 && cmake ../../pcre2 && $(MAKE)
-	objcopy --redefine-sym malloc=scopelibc_malloc build/pcre2/libpcre2-8.a
-	objcopy --redefine-sym free=scopelibc_free build/pcre2/libpcre2-8.a
+	objcopy --redefine-syms redefine_syms.lst build/pcre2/libpcre2-8.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 build/ls-hpack/libls-hpack.a:
@@ -141,6 +96,7 @@ build/ls-hpack/libls-hpack.a:
 	@$(RM) -r build/ls-hpack
 	@mkdir build/ls-hpack
 	cd build/ls-hpack && cmake ../../ls-hpack -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=Release -DLSHPACK_XXH=ON && $(MAKE)
+	objcopy --redefine-syms redefine_syms.lst build/ls-hpack/libls-hpack.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 build/musl/lib/libc.a:
