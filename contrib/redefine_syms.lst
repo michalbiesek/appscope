@@ -15,3 +15,5 @@ strdup scopelibc_strdup
 strncpy scopelibc_strncpy
 vfprintf scopelibc_vfprintf
 vsnprintf scopelibc_vsnprintf
+qsort scopelibc_qsort
+qsort_r scopelibc_qsort_r
