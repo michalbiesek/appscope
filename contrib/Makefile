@@ -68,7 +68,7 @@ build/libyaml/src/.libs/libyaml.a:
 	@echo "$${CI:+::group::}Building libyaml"
 	@$(RM) -r build/libyaml
 	@mkdir build/libyaml
-	cd build/libyaml && autoreconf -fvi ../../libyaml && ../../libyaml/configure LIBS=-ldl && $(MAKE)
+	cd build/libyaml && autoreconf -fvi ../../libyaml && ../../libyaml/configure CFLAGS=-fPIC LIBS=-ldl && $(MAKE)
 	objcopy --redefine-syms redefine_syms.lst build/libyaml/src/.libs/libyaml.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
