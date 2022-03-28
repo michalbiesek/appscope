@@ -80,6 +80,7 @@ build/openssl/libssl.a build/openssl/libcrypto.a:
 	# Yuck.  Avoids naming conflict between our wrap.c and libssl.a
 	objcopy --redefine-sym SSL_read=SCOPE_SSL_read build/openssl/libssl.a
 	objcopy --redefine-sym SSL_write=SCOPE_SSL_write build/openssl/libssl.a
+	objcopy --redefine-syms redefine_syms.lst build/openssl/libcrypto.a
 	objcopy --redefine-syms redefine_syms.lst build/openssl/libssl.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
