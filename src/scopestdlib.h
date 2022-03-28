@@ -118,6 +118,8 @@ char*              scope_strchr(const char *, int);
 char*              scope_strrchr(const char *, int);
 char*              scope_strstr(const char *, const char *);
 int                scope_vsnprintf(char *, size_t, const char *, va_list);
+int                scope_vfprintf(FILE *, const char *, va_list);
+int                scope_vprintf(const char *, va_list);
 int                scope_strcmp(const char *, const char *);
 int                scope_strncmp(const char *, const char *, size_t);
 int                scope_strcasecmp(const char *, const char *);

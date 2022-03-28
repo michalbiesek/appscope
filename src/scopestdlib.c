@@ -81,6 +81,8 @@ extern char*               scopelibc_strchr(const char *, int);
 extern char*               scopelibc_strrchr(const char *, int);
 extern char*               scopelibc_strstr(const char *, const char *);
 extern int                 scopelibc_vsnprintf(char *, size_t, const char *, va_list);
+extern int                 scopelibc_vfprintf(FILE *stream, const char *format, va_list ap);
+extern int                 scopelibc_vprintf(const char *, va_list);
 extern int                 scopelibc_strcmp(const char *, const char *);
 extern int                 scopelibc_strncmp(const char *, const char *, size_t);
 extern int                 scopelibc_strcasecmp(const char *, const char *);
@@ -515,6 +517,16 @@ scope_vsnprintf(char *str, size_t size, const char *format, va_list ap) {
 }
 
 int
+scope_vfprintf(FILE *stream, const char *format, va_list ap) {
+    return scopelibc_vfprintf(stream, format, ap);
+}
+
+int
+scope_vprintf(const char *format, va_list ap) {
+    return scopelibc_vprintf(format, ap);
+}
+
+int
 scope_strcmp(const char *s1, const char *s2) {
     return scopelibc_strcmp(s1, s2);
 }
@@ -837,6 +849,18 @@ scope_getenv(const char *name) {
 int
 scope_setenv(const char *name, const char *value, int overwrite) {
     return scopelibc_setenv(name, value, overwrite);
+}
+
+int
+scope___vfprintf_chk(FILE *fp, int flag, const char *format, va_list ap)
+{
+    return scope_vfprintf(fp, format, ap);
+}
+
+int
+scope___vsnprintf_chk(char *s, size_t maxlen, int flag, size_t slen, const char *format, va_list args)
+{
+    return scope_vsnprintf(s, slen, format, args);
 }
 
 // Other

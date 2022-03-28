@@ -17,3 +17,6 @@ vfprintf scopelibc_vfprintf
 vsnprintf scopelibc_vsnprintf
 qsort scopelibc_qsort
 qsort_r scopelibc_qsort_r
+fputc scopelibc_fputc
+__vfprintf_chk scope___vfprintf_chk
+__vsnprintf_chk scope___vsnprintf_chk
