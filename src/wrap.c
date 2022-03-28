@@ -1544,12 +1544,6 @@ init(void)
 {
     scope_init_appscope_internal_lib(environ);
 
-    cJSON_Hooks cjson_hooks = {
-            scope_malloc,
-            scope_free
-        };
-    cJSON_InitHooks(&cjson_hooks);
-
     // Bootstrapping...  we need to know if we're in musl so we can
     // call the right initFn function...
     {
