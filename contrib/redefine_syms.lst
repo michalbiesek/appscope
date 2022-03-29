@@ -10,6 +10,7 @@ fclose scopelibc_fclose
 fflush scopelibc_fflush
 fgets scopelibc_fgets
 fopen scopelibc_fopen
+fopen64 scopelibc_fopen64
 fputs scopelibc_fputs
 strdup scopelibc_strdup
 strncpy scopelibc_strncpy
