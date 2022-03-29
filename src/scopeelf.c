@@ -111,7 +111,7 @@ getElf(char *path)
         goto out;
     }
 
-    if (fstat(fd, &sbuf) == -1) {
+    if (scope_fstat(fd, &sbuf) == -1) {
         scopeLogError("fd:%d getElf: fstat failed", fd);
         goto out;
     }
