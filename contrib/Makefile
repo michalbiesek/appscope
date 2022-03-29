@@ -104,7 +104,7 @@ build/musl/lib/libc.a:
 	@echo "$${CI:+::group::}Building musl"
 	@$(RM) -r build/musl
 	@mkdir build/musl
-	cd build/musl && ../../musl/configure ---disable-shared --enable-debug --enable-optimize=no --with-malloc=oldmalloc && $(MAKE)
+	cd build/musl && ../../musl/configure ---disable-shared --enable-debug --enable-optimize=no && $(MAKE)
 	objcopy --prefix-symbols=scopelibc_ build/musl/lib/libc.a
 # TODO verify if the code below be done via mfloat-abi=soft not sure if aarch64 support soft though
 # https://developer.arm.com/documentation/dui0774/b/compiler-command-line-options/-mfloat-abi
