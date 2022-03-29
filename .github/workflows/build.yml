@@ -172,6 +172,9 @@ jobs:
             echo "::group::free"
             free
             echo "::endgroup::"
+            echo "::group::gcc"
+            gcc --version
+            echo "::endgroup::"
             echo "::group::home"
             ls -la $HOME
             echo "::endgroup::"
