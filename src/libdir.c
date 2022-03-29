@@ -201,7 +201,7 @@ libdirExtract(const char *path, unsigned char *start, unsigned char *end, note_t
             return 0;
         }
 
-        void* buf = scope_mmap(NULL, ROUND_UP(s.st_size, sysconf(_SC_PAGESIZE)),
+        void* buf = scope_mmap(NULL, ROUND_UP(s.st_size, scope_sysconf(_SC_PAGESIZE)),
                 PROT_READ, MAP_PRIVATE, fd, (off_t)NULL);
         if (buf == MAP_FAILED) {
             close(fd);

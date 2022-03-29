@@ -129,7 +129,7 @@ static Elf64_Addr
 map_segment(char *buf, Elf64_Phdr *phead)
 {
     int prot;
-    int pgsz = sysconf(_SC_PAGESIZE);
+    int pgsz = scope_sysconf(_SC_PAGESIZE);
     void *addr;
     char *laddr;
     unsigned long lsize;
@@ -176,7 +176,7 @@ static Elf64_Addr
 load_elf(char *buf)
 {
     int i;
-    int pgsz = sysconf(_SC_PAGESIZE);
+    int pgsz = scope_sysconf(_SC_PAGESIZE);
     Elf64_Ehdr *elf = (Elf64_Ehdr *)buf;
     Elf64_Phdr *phead = (Elf64_Phdr *)&buf[elf->e_phoff];
     Elf64_Half pnum = elf->e_phnum;

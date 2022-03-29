@@ -143,7 +143,7 @@ set_library(const char *libpath)
         return -1;
     }
 
-    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
+    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, scope_sysconf(_SC_PAGESIZE)),
                PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, (off_t)NULL);
     if (buf == MAP_FAILED) {
         scope_perror("set_loader:scope_mmap");
@@ -253,7 +253,7 @@ set_loader(char *exe)
         return -1;
     }
 
-    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
+    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, scope_sysconf(_SC_PAGESIZE)),
                PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, (off_t)NULL);
     if (buf == MAP_FAILED) {
         scope_perror("set_loader:scope_mmap");
@@ -352,7 +352,7 @@ get_loader(char *exe)
         return NULL;
     }
 
-    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
+    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, scope_sysconf(_SC_PAGESIZE)),
                PROT_READ, MAP_PRIVATE, fd, (off_t)NULL);
     if (buf == MAP_FAILED) {
         scope_perror("get_loader:scope_mmap");
