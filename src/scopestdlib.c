@@ -24,6 +24,7 @@ extern int    scopelibc_munmap(void *, size_t);
 extern FILE*  scopelibc_open_memstream(char **, size_t *);
 extern void*  scopelibc_memset(void *, int, size_t);
 extern void*  scopelibc_memmove(void *, const void *, size_t);
+extern int    scopelibc_memcmp(const void *, const void *, size_t);
 extern size_t scopelibc_malloc_usable_size(void *);
 
 // File handling operations
@@ -62,6 +63,8 @@ extern int            scopelibc_rmdir(const char *);
 extern char*          scopelibc_get_current_dir_name(void);
 extern char*          scopelibc_getcwd(char *, size_t);
 extern int            scopelibc_lstat(const char *, struct stat *);
+extern int            scopelibc_rename(const char *, const char *);
+extern int            scopelibc_remove(const char *);
 
 // String handling operations
 extern char*               scopelibc_realpath(const char *, char *);
@@ -158,6 +161,9 @@ extern char*        scopelibc_getenv(const char *);
 extern int          scopelibc_setenv(const char *, const char *, int);
 extern struct lconv *scopelibc_localeconv(void);
 extern int          scopelibc_sscanf(const char *, const char *, ...);
+extern int          scopelibc_shm_unlink(const char *);
+extern long         scopelibc_sysconf(int);
+extern int          scopelibc_mkstemp(char *);
 
 // Internal musl function
 void scope_init_appscope_internal_lib(char **envp) {
@@ -225,6 +231,11 @@ scope_memset(void *s, int c, size_t n) {
 void*
 scope_memmove(void *dest, const void *src, size_t n) {
     return scopelibc_memmove(dest, src, n);
+}
+
+int
+scope_memcmp(const void *s1, const void *s2, size_t n) {
+    return scopelibc_memcmp(s1, s2, n);
 }
 
 
@@ -401,6 +412,16 @@ scope_getcwd(char *buf, size_t size) {
 int
 scope_lstat(const char *restrict path, struct stat *restrict buf) {
     return scopelibc_lstat(path, buf);
+}
+
+int
+scope_rename(const char *oldpath, const char *newpath) {
+    return scopelibc_rename(oldpath, newpath);
+}
+
+int
+scope_remove(const char *pathname) {
+    return scopelibc_remove(pathname);
 }
 
 char*
@@ -856,6 +877,22 @@ struct lconv *
 scope_localeconv(void) {
     return scopelibc_localeconv();
 }
+
+int
+scope_shm_unlink(const char *name) {
+    return scopelibc_shm_unlink(name);
+}
+
+long
+scope_sysconf(int name) {
+    return scopelibc_sysconf(name);
+}
+
+int
+scope_mkstemp(char *template) {
+    return scopelibc_mkstemp(template);
+}
+
 
 int
 scope___vfprintf_chk(FILE *fp, int flag, const char *format, va_list ap)

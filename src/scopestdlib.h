@@ -61,7 +61,8 @@ void* scope_mmap(void *, size_t, int, int, int, off_t);
 int   scope_munmap(void *, size_t);
 FILE* scope_open_memstream(char **, size_t *);
 void* scope_memset(void *, int, size_t);
-void* scope_memmove(void *dest, const void *src, size_t n);
+void* scope_memmove(void *, const void *, size_t);
+int   scope_memcmp(const void *, const void *, size_t);
 
 // File handling operations
 FILE*          scope_fopen(const char *, const char *);
@@ -99,6 +100,8 @@ int            scope_rmdir(const char *);
 char*          scope_get_current_dir_name(void);
 char*          scope_getcwd(char *, size_t);
 int            scope_lstat(const char *, struct stat *);
+int            scope_rename(const char *, const char *);
+int            scope_remove(const char *);
 
 // String handling operations
 char*              scope_realpath(const char *, char *);
@@ -194,6 +197,9 @@ pid_t        scope_waitpid(pid_t, int *, int);
 char*        scope_getenv(const char *);
 int          scope_setenv(const char *, const char *, int);
 struct lconv *scope_localeconv(void);
+int          scope_shm_unlink(const char *);
+long         scope_sysconf(int);
+int          scope_mkstemp(char *);
 
 // Other
 size_t scope_total_alloc_size(void);

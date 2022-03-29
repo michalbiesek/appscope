@@ -188,39 +188,39 @@ libdirExtract(const char *path, unsigned char *start, unsigned char *end, note_t
         }
 
         // open & mmap the file to get its note
-        int fd = open(path, O_RDONLY);
+        int fd = scope_open(path, O_RDONLY);
         if (fd == -1) {
             scope_perror("open() failed");
             return 0;
         }
 
         struct stat s;
-        if (fstat(fd, &s) == -1) {
-            close(fd);
+        if (scope_fstat(fd, &s) == -1) {
+            scope_close(fd);
             scope_perror("fstat failed");
             return 0;
         }
 
-        void* buf = scope_mmap(NULL, ROUND_UP(s.st_size, sysconf(_SC_PAGESIZE)),
+        void* buf = scope_mmap(NULL, ROUND_UP(s.st_size, scope_sysconf(_SC_PAGESIZE)),
                 PROT_READ, MAP_PRIVATE, fd, (off_t)NULL);
         if (buf == MAP_FAILED) {
-            close(fd);
+            scope_close(fd);
             scope_perror("scope_mmap() failed");
             return 0;
         }
 
-        close(fd);
+        scope_close(fd);
 
         // compare the notes
         int cmp = -1;
         note_t* pathNote = libdirGetNote(buf);
         if (pathNote) {
             if (note->nhdr.n_descsz == pathNote->nhdr.n_descsz) {
-                cmp = memcmp(note->build_id, pathNote->build_id, note->nhdr.n_descsz);
+                cmp = scope_memcmp(note->build_id, pathNote->build_id, note->nhdr.n_descsz);
             }
         }
 
-        munmap(buf, s.st_size);
+        scope_munmap(buf, s.st_size);
 
         if (cmp == 0) {
             // notes match, don't re-extract
@@ -238,15 +238,15 @@ libdirExtract(const char *path, unsigned char *start, unsigned char *end, note_t
         return -1;
     }
 
-    if ((fd = mkstemp(temp)) < 1) {
+    if ((fd = scope_mkstemp(temp)) < 1) {
         scope_unlink(temp);
         scope_perror("mkstemp() failed");
         return -1;
     }
 
     size_t len = end - start;
-    if (write(fd, start, len) != len) {
-        close(fd);
+    if (scope_write(fd, start, len) != len) {
+        scope_close(fd);
         scope_unlink(temp);
         scope_perror("write() failed");
         return -1;
@@ -254,14 +254,14 @@ libdirExtract(const char *path, unsigned char *start, unsigned char *end, note_t
 
     // 0755
     if (scope_fchmod(fd, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)) {
-        close(fd);
+        scope_close(fd);
         scope_unlink(temp);
         scope_perror("fchmod() failed");
         return -1;
     }
-    close(fd);
+    scope_close(fd);
 
-    if (rename(temp, path)) {
+    if (scope_rename(temp, path)) {
         scope_unlink(temp);
         scope_perror("rename() failed");
         return -1;
@@ -273,7 +273,7 @@ libdirExtract(const char *path, unsigned char *start, unsigned char *end, note_t
 static int
 libdirRemove(const char* name, const struct stat *s, int type, struct FTW *ftw)
 {
-    if (remove(name)) {
+    if (scope_remove(name)) {
         scope_perror("remove() failed");
         return -1;
     }
