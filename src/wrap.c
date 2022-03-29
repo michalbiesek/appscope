@@ -1550,7 +1550,7 @@ __attribute__((constructor)) void
 init(void)
 {
     scope_init_appscope_internal_lib(environ);
-    scope_my_debug();
+    // scope_my_debug();
     // Bootstrapping...  we need to know if we're in musl so we can
     // call the right initFn function...
     {
