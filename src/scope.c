@@ -135,7 +135,7 @@ main(int argc, char **argv, char **env)
         switch (opt) {
             case 'u':
             case 'h':
-                showUsage(basename(argv[0]));
+                showUsage(scope_basename(argv[0]));
                 return EXIT_SUCCESS;
             case 'a':
                 attachArg = optarg;
@@ -145,14 +145,14 @@ main(int argc, char **argv, char **env)
                 switch (optopt) {
                     default:
                         scope_fprintf(scope_stderr, "error: missing value for -%c option\n", optopt);
-                        showUsage(basename(argv[0]));
+                        showUsage(scope_basename(argv[0]));
                         return EXIT_FAILURE;
                 }
                 break;
             case '?':
             default:
                 scope_fprintf(scope_stderr, "error: invalid option: -%c\n", optopt);
-                showUsage(basename(argv[0]));
+                showUsage(scope_basename(argv[0]));
                 return EXIT_FAILURE;
         }
     }
@@ -160,7 +160,7 @@ main(int argc, char **argv, char **env)
     // either --attach or an executable is required
     if (!attachArg && optind >= argc) {
         scope_fprintf(scope_stderr, "error: missing --attach or EXECUTABLE argument\n");
-        showUsage(basename(argv[0]));
+        showUsage(scope_basename(argv[0]));
         return EXIT_FAILURE;
     }
 
@@ -175,7 +175,7 @@ main(int argc, char **argv, char **env)
         scope_fprintf(scope_stderr, "error: SCOPE_LIB_PATH must be set to point to libscope.so\n");
         return EXIT_FAILURE;
     }
-    if (access(scopeLibPath, R_OK|X_OK)) {
+    if (scope_access(scopeLibPath, R_OK|X_OK)) {
         scope_fprintf(scope_stderr, "error: library %s is missing, not readable, or not executable\n", scopeLibPath);
         return EXIT_FAILURE;
     }
@@ -220,13 +220,13 @@ main(int argc, char **argv, char **env)
         scope_free(exe_path);
         freeElf(ebuf->buf, ebuf->len);
 
-        printf("Attaching to process %d\n", pid);
+        scope_printf("Attaching to process %d\n", pid);
         int ret = injectScope(pid, scopeLibPath);
 
         // remove the config that `ldscope`
         char path[PATH_MAX];
         scope_snprintf(path, sizeof(path), "/scope_attach_%d.env", pid);
-        shm_unlink(path);
+        scope_shm_unlink(path);
 
         // done
         return ret;
@@ -300,7 +300,7 @@ main(int argc, char **argv, char **env)
         execve(argv[0], argv, environ);
     }
 
-    program_invocation_short_name = basename(argv[1]);
+    program_invocation_short_name = scope_basename(argv[1]);
 
     if (!is_go(ebuf->buf)) {
         // We're getting here with upx-encoded binaries

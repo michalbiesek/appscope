@@ -980,12 +980,12 @@ main(int argc, char **argv, char **env)
         }
         switch (opt) {
             case 'u':
-                showUsage(basename(argv[0]));
+                showUsage(scope_basename(argv[0]));
                 return EXIT_SUCCESS;
             case 'h':
                 // handle `-h SECTION`
                 if (showHelp(optarg)) {
-                    showUsage(basename(argv[0]));
+                    showUsage(scope_basename(argv[0]));
                     return EXIT_FAILURE;
                 }
                 return EXIT_SUCCESS;
@@ -1008,14 +1008,14 @@ main(int argc, char **argv, char **env)
                         return EXIT_SUCCESS;
                     default: 
                         scope_fprintf(scope_stderr, "error: missing required value for -%c option\n", optopt);
-                        showUsage(basename(argv[0]));
+                        showUsage(scope_basename(argv[0]));
                         return EXIT_FAILURE;
                 }
                 break;
             case '?':
             default:
                 scope_fprintf(scope_stderr, "error: invalid option: -%c\n", optopt);
-                showUsage(basename(argv[0]));
+                showUsage(scope_basename(argv[0]));
                 return EXIT_FAILURE;
         }
     }
@@ -1023,7 +1023,7 @@ main(int argc, char **argv, char **env)
     // either --attach or a command are required
     if (!attachArg && optind >= argc) {
         scope_fprintf(scope_stderr, "error: missing --attach option or EXECUTABLE argument\n");
-        showUsage(basename(argv[0]));
+        showUsage(scope_basename(argv[0]));
         return EXIT_FAILURE;
     }
 
