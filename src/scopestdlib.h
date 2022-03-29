@@ -193,6 +193,7 @@ long         scope_ptrace(int, pid_t, void *, void *);
 pid_t        scope_waitpid(pid_t, int *, int);
 char*        scope_getenv(const char *);
 int          scope_setenv(const char *, const char *, int);
+long         scope_sysconf(int);
 
 
 // Other

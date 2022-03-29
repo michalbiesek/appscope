@@ -156,7 +156,7 @@ extern long         scopelibc_ptrace(int, pid_t, void *, void *);
 extern pid_t        scopelibc_waitpid(pid_t, int *, int);
 extern char*        scopelibc_getenv(const char *);
 extern int          scopelibc_setenv(const char *, const char *, int);
-
+extern long         scopelibc_sysconf(int);
 
 // Internal musl function
 void scope_init_appscope_internal_lib(char **envp) {
@@ -849,6 +849,11 @@ scope_getenv(const char *name) {
 int
 scope_setenv(const char *name, const char *value, int overwrite) {
     return scopelibc_setenv(name, value, overwrite);
+}
+
+long
+scope_sysconf(int name) {
+    return scopelibc_sysconf(name);
 }
 
 int
