@@ -210,10 +210,10 @@ mtcFormatStatsDString(mtc_fmt_t* fmt, event_t* e, regex_t* fieldFilter)
     int n = -1;
     switch ( e->value.type ) {
         case FMT_INT:
-            n = sprintf(valuebuf, ":%lli|", e->value.integer);
+            n = scope_sprintf(valuebuf, ":%lli|", e->value.integer);
             break;
         case FMT_FLT:
-            n = sprintf(valuebuf, ":%.2f|", e->value.floating);
+            n = scope_sprintf(valuebuf, ":%.2f|", e->value.floating);
             break;
         default:
             DBG(NULL);

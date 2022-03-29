@@ -193,7 +193,7 @@ long         scope_ptrace(int, pid_t, void *, void *);
 pid_t        scope_waitpid(pid_t, int *, int);
 char*        scope_getenv(const char *);
 int          scope_setenv(const char *, const char *, int);
-
+struct lconv *scope_localeconv(void);
 
 // Other
 size_t scope_total_alloc_size(void);

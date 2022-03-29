@@ -22,3 +22,5 @@ fputc scopelibc_fputc
 sprintf scopelibc_sprintf
 __vfprintf_chk scope___vfprintf_chk
 __vsnprintf_chk scope___vsnprintf_chk
+localeconv scopelibc_localeconv
+sscanf scopelibc_sscanf

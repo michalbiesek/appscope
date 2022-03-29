@@ -1453,7 +1453,7 @@ doErrorMetric(metric_t type, control_type_t source,
     metric_counters* ctrs = (ctr) ? (metric_counters*) ctr : &g_ctrs;
 
     const char err_name[] = "EFAULT";
-    if (errno == EFAULT) {
+    if (scope_errno == EFAULT) {
         name = err_name;
     }
 
