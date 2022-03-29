@@ -1539,11 +1539,18 @@ initEnv(int *attachedFlag)
     scope_fclose(fd);
 }
 
+void scope_my_debug(void) {
+    volatile int debug_debug = 1;
+    while (debug_debug){
+        scope_sleep(1);
+    }
+}
+
 __attribute__((constructor)) void
 init(void)
 {
     scope_init_appscope_internal_lib(environ);
-
+    scope_my_debug();
     // Bootstrapping...  we need to know if we're in musl so we can
     // call the right initFn function...
     {
