@@ -400,7 +400,7 @@ tryflag CFLAGS_MEMOPS -fno-tree-loop-distribute-patterns
 #
 # Enable debugging if requessted.
 #
-test "$debug" = yes && CFLAGS_AUTO=-g
+test "$debug" = yes && CFLAGS_AUTO=-g3
 
 #
 # Preprocess asm files to add extra debugging information if debug is

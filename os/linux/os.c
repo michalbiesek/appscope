@@ -753,5 +753,7 @@ osGetGroupName(unsigned gid)
     int ret = scope_getgrgid_r(gid, &grp, buf, sizeof(buf), &grp_res);
     if (ret)
         return NULL;
-    return scope_strdup(grp.gr_name);
+    if (grp.gr_name)
+        return scope_strdup(grp.gr_name);
+    return NULL;
 }
