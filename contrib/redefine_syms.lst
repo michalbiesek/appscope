@@ -20,6 +20,7 @@ qsort scopelibc_qsort
 qsort_r scopelibc_qsort_r
 fputc scopelibc_fputc
 sprintf scopelibc_sprintf
+clock_gettime scopelibc_clock_gettime
 __vfprintf_chk scope___vfprintf_chk
 __vsnprintf_chk scope___vsnprintf_chk
 localeconv scopelibc_localeconv

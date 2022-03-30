@@ -164,6 +164,7 @@ extern struct lconv *scopelibc_localeconv(void);
 extern int          scopelibc_shm_unlink(const char *);
 extern long         scopelibc_sysconf(int);
 extern int          scopelibc_mkstemp(char *);
+extern int          scopelibc_clock_gettime(clockid_t, struct timespec *);
 
 // Internal musl function
 void scope_init_appscope_internal_lib(char **envp) {
@@ -896,6 +897,11 @@ scope_sysconf(int name) {
 int
 scope_mkstemp(char *template) {
     return scopelibc_mkstemp(template);
+}
+
+int
+scope_clock_gettime(clockid_t clk_id, struct timespec *tp) {
+    return scopelibc_clock_gettime(clk_id, tp);
 }
 
 

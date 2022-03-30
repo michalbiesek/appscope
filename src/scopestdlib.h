@@ -201,6 +201,7 @@ struct lconv *scope_localeconv(void);
 int          scope_shm_unlink(const char *);
 long         scope_sysconf(int);
 int          scope_mkstemp(char *);
+int          scope_clock_gettime(clockid_t, struct timespec *);
 
 // Other
 size_t scope_total_alloc_size(void);
