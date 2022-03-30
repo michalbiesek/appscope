@@ -855,7 +855,6 @@ setProcId(proc_id_t *proc)
         scopeLogError("ERROR: gethostname");
     }
     osGetProcname(proc->procname, sizeof(proc->procname));
-
     // free old value of cmd, if an old value exists
     if (proc->cmd) scope_free(proc->cmd);
     proc->cmd = NULL;
@@ -869,13 +868,13 @@ setProcId(proc_id_t *proc)
     } else {
         scope_snprintf(proc->id, sizeof(proc->id), "badid");
     }
-
     proc->uid = scope_getuid();
     if (proc->username) scope_free(proc->username);
     proc->username = osGetUserName(proc->uid);
     proc->gid = scope_getgid();
     if (proc->groupname) scope_free(proc->groupname);
     proc->groupname = osGetGroupName(proc->gid);
+    return;
     if (osGetCgroup(proc->pid, proc->cgroup, MAX_CGROUP) == FALSE) {
         proc->cgroup[0] = '\0';
     }
@@ -1543,7 +1542,6 @@ __attribute__((constructor)) void
 init(void)
 {
     scope_init_appscope_internal_lib(environ);
-
     // Bootstrapping...  we need to know if we're in musl so we can
     // call the right initFn function...
     {
@@ -1587,6 +1585,7 @@ init(void)
 #endif
 
     setProcId(&g_proc);
+    return;
     setPidEnv(g_proc.pid);
 
     // initEnv() will set this TRUE if it detects `scope_attach_PID.env` in
@@ -1595,7 +1594,7 @@ init(void)
     int attachedFlag = 0;
     initEnv(&attachedFlag);
     // logging inside constructor start from this line
-    g_constructor_debug_enabled = checkEnv("SCOPE_ALLOW_CONSTRUCT_DBG", "true");
+    g_constructor_debug_enabled = 1;
 
     initState();
 

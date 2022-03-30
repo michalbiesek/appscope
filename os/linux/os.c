@@ -750,7 +750,6 @@ osGetGroupName(unsigned gid)
     struct group grp;
     struct group *grp_res = NULL;
     char buf[4096];
-
     int ret = scope_getgrgid_r(gid, &grp, buf, sizeof(buf), &grp_res);
     if (ret)
         return NULL;
