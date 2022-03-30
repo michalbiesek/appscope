@@ -6,6 +6,7 @@
 #include <dirent.h>
 #include <grp.h>
 #include <link.h>
+#include <locale.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
 #include <sys/select.h>
