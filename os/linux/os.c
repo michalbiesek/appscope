@@ -538,20 +538,22 @@ osThreadInit(void(*handler)(int), unsigned interval)
     struct sigaction sact;
     struct sigevent sevent = {0};
     struct itimerspec tspec;
-    scope_sigemptyset(&sact.sa_mask);
+    sigemptyset(&sact.sa_mask);
     sact.sa_handler = handler;
     sact.sa_flags = SA_RESTART;
 
-    if (scope_sigaction(SIGUSR2, &sact, NULL) == -1) {
-        DBG("errno %d", scope_errno);
+    if (!g_fn.sigaction) return FALSE;
+
+    if (g_fn.sigaction(SIGUSR2, &sact, NULL) == -1) {
+        DBG("errno %d", errno);
         return FALSE;
     }
 
     sevent.sigev_notify = SIGEV_SIGNAL;
     sevent.sigev_signo = SIGUSR2;
 
-    if (scope_timer_create(CLOCK_MONOTONIC, &sevent, &g_timerid) == -1) {
-        DBG("errno %d", scope_errno);
+    if (timer_create(CLOCK_MONOTONIC, &sevent, &g_timerid) == -1) {
+        DBG("errno %d", errno);
         return FALSE;
     }
 
@@ -559,8 +561,8 @@ osThreadInit(void(*handler)(int), unsigned interval)
     tspec.it_interval.tv_nsec = 0;
     tspec.it_value.tv_sec = interval;
     tspec.it_value.tv_nsec = 0;
-    if (scope_timer_settime(g_timerid, 0, &tspec, NULL) == -1) {
-        DBG("errno %d", scope_errno);
+    if (timer_settime(g_timerid, 0, &tspec, NULL) == -1) {
+        DBG("errno %d", errno);
         return FALSE;
     }
     return TRUE;
