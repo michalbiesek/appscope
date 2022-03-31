@@ -104,7 +104,8 @@ void _init_appscope_internal_lib(char **envp) {
 	for (i=0; auxv[i]; i+=2) if (auxv[i]<AUX_CNT) aux[auxv[i]] = auxv[i+1];
 	__hwcap = aux[AT_HWCAP];
 	if (aux[AT_SYSINFO]) __sysinfo = aux[AT_SYSINFO];
-	libc.page_size = aux[AT_PAGESZ];
+	// libc.page_size = aux[AT_PAGESZ];
+	libc.page_size = 4096;
 }
 
 weak_alias(_init_appscope_internal_lib, init_appscope_internal_lib);
