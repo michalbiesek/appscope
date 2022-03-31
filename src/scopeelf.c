@@ -111,13 +111,13 @@ getElf(char *path)
         goto out;
     }
 
-    if (fstat(fd, &sbuf) == -1) {
+    if (scope_fstat(fd, &sbuf) == -1) {
         scopeLogError("fd:%d getElf: fstat failed", fd);
         goto out;
     }
 
 
-    char * mmap_rv = scope_mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
+    char * mmap_rv = scope_mmap(NULL, ROUND_UP(sbuf.st_size, scope_sysconf(_SC_PAGESIZE)),
                           PROT_READ, MAP_PRIVATE, fd, (off_t)NULL);
     if (mmap_rv == MAP_FAILED) {
         scopeLogError("fd:%d getElf: scope_mmap failed", fd);
