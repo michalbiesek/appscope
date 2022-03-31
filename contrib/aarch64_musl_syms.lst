@@ -4,7 +4,7 @@ scopelibc___fixtfsi __fixtfsi
 scopelibc___fixunstfsi __fixunstfsi
 scopelibc___floatsitf __floatsitf
 scopelibc___floatunsitf __floatunsitf
-scopelibc___multf3 scopelibc___multf3
+scopelibc___multf3 __multf3
 scopelibc___netf2 __netf2
 scopelibc___subtf3 __subtf3
 scopelibc___trunctfsf2 __trunctfsf2
