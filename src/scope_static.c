@@ -1065,42 +1065,42 @@ main(int argc, char **argv, char **env)
     if (attachArg) {
         // must be root
         if (scope_getuid()) {
-            printf("error: --attach requires root\n");
+            scope_printf("error: --attach requires root\n");
             return EXIT_FAILURE;
         }
 
         // target process must exist
         int pid = scope_atoi(attachArg);
         if (pid < 1) {
-            printf("error: invalid --attach PID: %s\n", attachArg);
+            scope_printf("error: invalid --attach PID: %s\n", attachArg);
             return EXIT_FAILURE;
         }
         scope_snprintf(path, sizeof(path), "/proc/%d", pid);
-        if (access(path, F_OK)) {
-            printf("error: --attach PID not a current process: %d\n", pid);
+        if (scope_access(path, F_OK)) {
+            scope_printf("error: --attach PID not a current process: %d\n", pid);
             return EXIT_FAILURE;
         }
 
         // create .env file for the library to load
         scope_snprintf(path, sizeof(path), "/scope_attach_%d.env", pid);
-        int fd = shm_open(path, O_RDWR|O_CREAT, S_IRUSR|S_IRGRP|S_IROTH);
+        int fd = scope_shm_open(path, O_RDWR|O_CREAT, S_IRUSR|S_IRGRP|S_IROTH);
         if (fd == -1) {
             scope_perror("shm_open() failed");
             return EXIT_FAILURE;
         }
 
         // add the env vars we want in the library
-        dprintf(fd, "SCOPE_LIB_PATH=%s\n", libdirGetLibrary());
+        scope_dprintf(fd, "SCOPE_LIB_PATH=%s\n", libdirGetLibrary());
 
         int i;
         for (i = 0; environ[i]; i++) {
             if (scope_strlen(environ[i]) > 6 && scope_strncmp(environ[i], "SCOPE_", 6) == 0) {
-                dprintf(fd, "%s\n", environ[i]);
+                scope_dprintf(fd, "%s\n", environ[i]);
             }
         }
 
         // done
-        close(fd);
+        scope_close(fd);
     }
 
     // build exec args
@@ -1133,7 +1133,7 @@ main(int argc, char **argv, char **env)
     // exec the dynamic ldscope
     struct utsname ubuf;
 
-    if (uname(&ubuf) != 0) {
+    if (scope_uname(&ubuf) != 0) {
         scope_perror("uname");
         return EXIT_FAILURE;
     }

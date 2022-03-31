@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/utsname.h>
 #include <netdb.h>
 #include <poll.h>
 #include <pthread.h>
@@ -199,11 +200,13 @@ pid_t        scope_waitpid(pid_t, int *, int);
 char*        scope_getenv(const char *);
 int          scope_setenv(const char *, const char *, int);
 struct lconv *scope_localeconv(void);
+int          scope_shm_open(const char *, int, mode_t);
 int          scope_shm_unlink(const char *);
 long         scope_sysconf(int);
 int          scope_mkstemp(char *);
 int          scope_clock_gettime(clockid_t, struct timespec *);
 int          scope_getpagesize(void);
+int          scope_uname(struct utsname *);
 
 // Other
 size_t scope_total_alloc_size(void);

@@ -162,11 +162,13 @@ extern pid_t        scopelibc_waitpid(pid_t, int *, int);
 extern char*        scopelibc_getenv(const char *);
 extern int          scopelibc_setenv(const char *, const char *, int);
 extern struct lconv *scopelibc_localeconv(void);
+extern int          scopelibc_shm_open(const char *, int, mode_t);
 extern int          scopelibc_shm_unlink(const char *);
 extern long         scopelibc_sysconf(int);
 extern int          scopelibc_mkstemp(char *);
 extern int          scopelibc_clock_gettime(clockid_t, struct timespec *);
 extern int          scopelibc_getpagesize(void);
+extern int          scopelibc_uname(struct utsname *);
 
 // Internal musl function
 void scope_init_appscope_internal_lib(char **envp) {
@@ -892,6 +894,11 @@ scope_localeconv(void) {
 }
 
 int
+scope_shm_open(const char *name, int oflag, mode_t mode) {
+    return scopelibc_shm_open(name, oflag, mode);
+}
+
+int
 scope_shm_unlink(const char *name) {
     return scopelibc_shm_unlink(name);
 }
@@ -914,6 +921,11 @@ scope_clock_gettime(clockid_t clk_id, struct timespec *tp) {
 int
 scope_getpagesize(void) {
     return scopelibc_getpagesize();
+}
+
+int
+scope_uname(struct utsname *buf) {
+    return scopelibc_uname(buf);
 }
 
 
