@@ -440,7 +440,7 @@ getGoVersionAddr(const char* buf)
 
         if (!scope_strcmp(sec_name, ".go.buildinfo") &&
             (sections[i].sh_size >= 0x18) &&
-            (!memcmp(&sec_data[0], magic, sizeof(magic))) &&
+            (!scope_memcmp(&sec_data[0], magic, sizeof(magic))) &&
             (sec_data[0xe] == 0x08) &&  // 64 bit executables only
             (sec_data[0xf] == 0x00)) {  // little-endian
 
