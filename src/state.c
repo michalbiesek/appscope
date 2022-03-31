@@ -368,7 +368,7 @@ static int
 postStatErrState(metric_t stat_err, metric_t type, const char *funcop, const char *pathname)
 {
     // something passed in a param that is not a viable address; ltp does this
-    if ((stat_err == EVT_ERR) && (errno == EFAULT)) return FALSE;
+    if ((stat_err == EVT_ERR) && (scope_errno == EFAULT)) return FALSE;
 
     int *summarize = NULL;
     switch (type) {

@@ -23,6 +23,7 @@
 #define SWITCH_ENV "SCOPE_SWITCH"
 #define SWITCH_USE_NO_THREAD "no_thread"
 #define SWITCH_USE_THREAD "thread"
+#define EXIT_STACK_SIZE (32 * 1024)
 
 #ifdef ENABLE_CAS_IN_SYSEXEC
 #include "atomic.h"
@@ -672,7 +673,8 @@ go_switch_thread(char *stackptr, void *cfunc, void *gfunc)
     unsigned long *go_v;
     char *go_g = NULL;
 
-    if (g_go_static) {
+    //if (g_go_static) {
+    if (0) {
         // Get the Go routine's struct g
         __asm__ volatile (
             "mov %%fs:-8, %0"
@@ -1384,6 +1386,27 @@ extern void handleExit(void);
 static void
 c_exit(char *stackaddr)
 {
+    /*
+     * Need to extend the system stack size when calling handleExit().
+     * We see that the stack is exceeded now that we are using an internal libc.
+     */
+    int arc;
+    char *exit_stack, *tstack, *gstack;
+    if ((exit_stack = scope_malloc(EXIT_STACK_SIZE)) == NULL) {
+        return;
+    }
+
+    tstack = exit_stack + EXIT_STACK_SIZE;
+
+    // save the original stack, switch to the tstack
+    __asm__ volatile (
+        "mov %%rsp, %2 \n"
+        "mov %1, %%rsp \n"
+        : "=r"(arc)                  // output
+        : "m"(tstack), "m"(gstack)   // input
+        :                            // clobbered register
+        );
+
     // don't use stackaddr; patch_first_instruction() does not provide
     // frame_size, so stackaddr isn't usable
     funcprint("c_exit");
@@ -1400,6 +1423,16 @@ c_exit(char *stackaddr)
     handleExit();
     // flush the data
     sigSafeNanosleep(&ts);
+
+    // Switch stack back to the original stack
+    __asm__ volatile (
+        "mov %1, %%rsp \n"
+        : "=r"(arc)                       // output
+        : "r"(gstack)                     // inputs
+        :                                 // clobbered register
+        );
+
+    scope_free(exit_stack);
 }
 
 EXPORTON void *
