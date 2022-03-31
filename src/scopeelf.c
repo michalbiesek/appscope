@@ -187,14 +187,14 @@ doGotcha(struct link_map *lm, got_list_t *hook, Elf64_Rela *rel, Elf64_Sym *sym,
         if (!scope_strcmp(sym[ELF64_R_SYM(rel[i].r_info)].st_name + str, hook->symbol)) {
             uint64_t *gfn = hook->gfn;
             uint64_t *gaddr = (uint64_t *)(rel[i].r_offset + lm->l_addr);
-            int page_size = getpagesize();
+            int page_size = scope_getpagesize();
             size_t saddr = ROUND_DOWN((size_t)gaddr, page_size);
             int prot = osGetPageProt((uint64_t)gaddr);
 
             if (prot != -1) {
                 if ((prot & PROT_WRITE) == 0) {
                     // mprotect if write perms are not set
-                    if (mprotect((void *)saddr, (size_t)16, PROT_WRITE | prot) == -1) {
+                    if (scope_mprotect((void *)saddr, (size_t)16, PROT_WRITE | prot) == -1) {
                         scopeLog(CFG_LOG_DEBUG, "doGotcha: mprotect failed");
                         return -1;
                     }
@@ -224,7 +224,7 @@ doGotcha(struct link_map *lm, got_list_t *hook, Elf64_Rela *rel, Elf64_Sym *sym,
 
             if ((prot & PROT_WRITE) == 0) {
                 // if we didn't mod above leave prot settings as is
-                if (mprotect((void *)saddr, (size_t)16, prot) == -1) {
+                if (scope_mprotect((void *)saddr, (size_t)16, prot) == -1) {
                     scopeLog(CFG_LOG_DEBUG, "doGotcha: mprotect failed");
                     return -1;
                 }

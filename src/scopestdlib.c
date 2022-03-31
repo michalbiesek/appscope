@@ -25,6 +25,7 @@ extern FILE*  scopelibc_open_memstream(char **, size_t *);
 extern void*  scopelibc_memset(void *, int, size_t);
 extern void*  scopelibc_memmove(void *, const void *, size_t);
 extern int    scopelibc_memcmp(const void *, const void *, size_t);
+extern int    scopelibc_mprotect(void *, size_t, int);
 extern size_t scopelibc_malloc_usable_size(void *);
 
 // File handling operations
@@ -165,6 +166,7 @@ extern int          scopelibc_shm_unlink(const char *);
 extern long         scopelibc_sysconf(int);
 extern int          scopelibc_mkstemp(char *);
 extern int          scopelibc_clock_gettime(clockid_t, struct timespec *);
+extern int          scopelibc_getpagesize(void);
 
 // Internal musl function
 void scope_init_appscope_internal_lib(char **envp) {
@@ -237,6 +239,11 @@ scope_memmove(void *dest, const void *src, size_t n) {
 int
 scope_memcmp(const void *s1, const void *s2, size_t n) {
     return scopelibc_memcmp(s1, s2, n);
+}
+
+int
+scope_mprotect(void *addr, size_t len, int prot) {
+    return scopelibc_mprotect(addr, len, prot);
 }
 
 
@@ -902,6 +909,11 @@ scope_mkstemp(char *template) {
 int
 scope_clock_gettime(clockid_t clk_id, struct timespec *tp) {
     return scopelibc_clock_gettime(clk_id, tp);
+}
+
+int
+scope_getpagesize(void) {
+    return scopelibc_getpagesize();
 }
 
 
