@@ -47,7 +47,20 @@ checkEnv(char *env, char *val)
 int
 fullSetenv(const char *key, const char *val, int overwrite)
 {
-    return scope_setenv(key, val, overwrite);
+    int lrc = 0, arc = 0;
+
+    if (!g_fn.setenv || (g_fn.setenv(key, val, overwrite) == -1)) {
+        DBG("g_fn.setenv=%p, g_fn.app_setenv=%p key=%s, val=%s",
+            g_fn.setenv, g_fn.app_setenv, key, val);
+        lrc = -1;
+    }
+
+    if (g_fn.app_setenv && (g_fn.app_setenv != g_fn.setenv)) {
+        arc = g_fn.app_setenv(key, val, overwrite);
+    }
+
+    if ((lrc == -1) || (arc == -1)) return -1;
+    return 0;
 }
 
 void
