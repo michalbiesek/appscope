@@ -70,7 +70,7 @@ get_dir(const char *path, char *fres, size_t len)
     }
 
     dcopy = scope_strdup(path);
-    fname = basename(dcopy);
+    fname = scope_basename(dcopy);
 
     while ((entry = scope_readdir(dirp)) != NULL) {
         if ((entry->d_type != DT_DIR) &&
@@ -132,22 +132,22 @@ set_library(const char *libpath)
     if (libpath == NULL)
         return -1;
 
-    if ((fd = open(libpath, O_RDONLY)) == -1) {
+    if ((fd = scope_open(libpath, O_RDONLY)) == -1) {
         scope_perror("set_library:open");
         return -1;
     }
 
-    if (fstat(fd, &sbuf) == -1) {
+    if (scope_fstat(fd, &sbuf) == -1) {
         scope_perror("set_library:fstat");
-        close(fd);
+        scope_close(fd);
         return -1;
     }
 
-    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
+    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, scope_sysconf(_SC_PAGESIZE)),
                PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, (off_t)NULL);
     if (buf == MAP_FAILED) {
         scope_perror("set_loader:scope_mmap");
-        close(fd);
+        scope_close(fd);
         return -1;
     }
 
@@ -160,7 +160,7 @@ set_library(const char *libpath)
         || elf->e_ident[EI_MAG3] != ELFMAG3
         || elf->e_ident[EI_VERSION] != EV_CURRENT) {
         scope_fprintf(scope_stderr, "ERROR:%s: is not valid ELF file", libpath);
-        close(fd);
+        scope_close(fd);
         scope_munmap(buf, sbuf.st_size);
         return -1;
     }
@@ -179,7 +179,7 @@ set_library(const char *libpath)
 
     if (strtab == NULL) {
         scope_fprintf(scope_stderr, "ERROR:%s: did not locate the .dynstr from %s", __FUNCTION__, libpath);
-        close(fd);
+        scope_close(fd);
         scope_munmap(buf, sbuf.st_size);
         return -1;
     }
@@ -208,24 +208,24 @@ set_library(const char *libpath)
     }
 
     if (found) {
-        if (close(fd) == -1) {
+        if (scope_close(fd) == -1) {
             scope_munmap(buf, sbuf.st_size);
             return -1;
         }
 
-        if ((fd = open(libpath, O_RDWR)) == -1) {
+        if ((fd = scope_open(libpath, O_RDWR)) == -1) {
             scope_perror("set_library:open write");
             scope_munmap(buf, sbuf.st_size);
             return -1;
         }
 
-        int rc = write(fd, buf, sbuf.st_size);
+        int rc = scope_write(fd, buf, sbuf.st_size);
         if (rc < sbuf.st_size) {
             scope_perror("set_library:write");
         }
     }
 
-    close(fd);
+    scope_close(fd);
     scope_munmap(buf, sbuf.st_size);
     return (found - 1);
 }
@@ -242,22 +242,22 @@ set_loader(char *exe)
 
     if (!exe) return -1;
 
-    if ((fd = open(exe, O_RDONLY)) == -1) {
+    if ((fd = scope_open(exe, O_RDONLY)) == -1) {
         scope_perror("set_loader:open");
         return -1;
     }
 
-    if (fstat(fd, &sbuf) == -1) {
+    if (scope_fstat(fd, &sbuf) == -1) {
         scope_perror("set_loader:fstat");
-        close(fd);
+        scope_close(fd);
         return -1;
     }
 
-    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
+    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, scope_sysconf(_SC_PAGESIZE)),
                PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, (off_t)NULL);
     if (buf == MAP_FAILED) {
         scope_perror("set_loader:scope_mmap");
-        close(fd);
+        scope_close(fd);
         return -1;
     }
 
@@ -274,7 +274,7 @@ set_loader(char *exe)
             size_t dir_len;
 
             if (scope_strstr(exld, "ld-musl") != NULL) {
-                close(fd);
+                scope_close(fd);
                 scope_munmap(buf, sbuf.st_size);
                 return 0;
             }
@@ -297,7 +297,7 @@ set_loader(char *exe)
             scope_closedir(dirp);
             dir_len = scope_strlen(dir);
             if (name && (scope_strlen(exld) >= dir_len)) {
-                if (g_debug) printf("%s:%d exe ld.so: %s to %s\n", __FUNCTION__, __LINE__, exld, dir);
+                if (g_debug) scope_printf("%s:%d exe ld.so: %s to %s\n", __FUNCTION__, __LINE__, exld, dir);
                 scope_strncpy(exld, dir, dir_len + 1);
                 found = 1;
                 break;
@@ -306,18 +306,18 @@ set_loader(char *exe)
     }
 
     if (found) {
-        if (close(fd) == -1) {
+        if (scope_close(fd) == -1) {
             scope_munmap(buf, sbuf.st_size);
             return -1;
         }
 
-        if ((fd = open(exe, O_RDWR)) == -1) {
+        if ((fd = scope_open(exe, O_RDWR)) == -1) {
             scope_perror("set_loader:open write");
             scope_munmap(buf, sbuf.st_size);
             return -1;
         }
 
-        int rc = write(fd, buf, sbuf.st_size);
+        int rc = scope_write(fd, buf, sbuf.st_size);
         if (rc < sbuf.st_size) {
             scope_perror("set_loader:write");
         }
@@ -325,7 +325,7 @@ set_loader(char *exe)
         scope_fprintf(scope_stderr, "WARNING: can't locate or set the loader string in %s\n", exe);
     }
 
-    close(fd);
+    scope_close(fd);
     scope_munmap(buf, sbuf.st_size);
     return (found - 1);
 }
@@ -341,26 +341,26 @@ get_loader(char *exe)
 
     if (!exe) return NULL;
 
-    if ((fd = open(exe, O_RDONLY)) == -1) {
+    if ((fd = scope_open(exe, O_RDONLY)) == -1) {
         scope_perror("get_loader:open");
         return NULL;
     }
 
-    if (fstat(fd, &sbuf) == -1) {
+    if (scope_fstat(fd, &sbuf) == -1) {
         scope_perror("get_loader:fstat");
-        close(fd);
+        scope_close(fd);
         return NULL;
     }
 
-    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, sysconf(_SC_PAGESIZE)),
+    buf = scope_mmap(NULL, ROUND_UP(sbuf.st_size, scope_sysconf(_SC_PAGESIZE)),
                PROT_READ, MAP_PRIVATE, fd, (off_t)NULL);
     if (buf == MAP_FAILED) {
         scope_perror("get_loader:scope_mmap");
-        close(fd);
+        scope_close(fd);
         return NULL;
     }
 
-    close(fd);
+    scope_close(fd);
 
     elf = (Elf64_Ehdr *)buf;
     phead  = (Elf64_Phdr *)&buf[elf->e_phoff];
@@ -368,7 +368,7 @@ get_loader(char *exe)
     for (i = 0; i < elf->e_phnum; i++) {
         if ((phead[i].p_type == PT_INTERP)) {
             char * exld = (char *)&buf[phead[i].p_offset];
-            if (g_debug) printf("%s:%d exe ld.so: %s\n", __FUNCTION__, __LINE__, exld);
+            if (g_debug) scope_printf("%s:%d exe ld.so: %s\n", __FUNCTION__, __LINE__, exld);
 
             ldso = scope_strdup(exld);
 
