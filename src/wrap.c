@@ -1538,6 +1538,56 @@ initEnv(int *attachedFlag)
     scope_fclose(fd);
 }
 
+void
+debug_constructor_function(void) {
+    scope_init_appscope_internal_lib(environ);
+    // Bootstrapping...  we need to know if we're in musl so we can
+    // call the right initFn function...
+    {
+        char *full_path = NULL;
+        elf_buf_t *ebuf = NULL;
+
+        // Needed for getElf()
+        g_fn.open = dlsym(RTLD_NEXT, "open");
+        if (!g_fn.open) g_fn.open = dlsym(RTLD_DEFAULT, "open");
+        g_fn.close = dlsym(RTLD_NEXT, "close");
+        if (!g_fn.close) g_fn.close = dlsym(RTLD_DEFAULT, "close");
+
+        g_ismusl =
+            ((osGetExePath(scope_getpid(), &full_path) != -1) &&
+            !scope_strstr(full_path, "ldscope") &&
+            ((ebuf = getElf(full_path))) &&
+            !is_static(ebuf->buf) &&
+            !is_go(ebuf->buf) &&
+            is_musl(ebuf->buf));
+
+        if (full_path) scope_free(full_path);
+        if (ebuf) freeElf(ebuf->buf, ebuf->len);
+    }
+
+    // Use dlsym to get addresses for everything in g_fn
+    if (g_ismusl) {
+        initFn_musl();
+    } else {
+        initFn();
+    }
+
+// TODO: will want to see if this is needed for bash built on ARM...
+#ifndef __aarch64__
+    // bash can be compiled to use glibc's memory subsystem or it's own
+    // internal memory subsystem.  It's own is not threadsafe.  If we
+    // find that bash is using it's own memory, replace it with glibc's
+    // so our own thread can run safely in parallel.
+    if (func_found_in_executable("malloc", "bash")) {
+        run_bash_mem_fix();
+    }
+#endif
+
+    setProcId(&g_proc);
+    return;
+    setPidEnv(g_proc.pid);
+}
+
 __attribute__((constructor)) void
 init(void)
 {
