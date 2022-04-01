@@ -107,7 +107,7 @@ appendHeader(http_state_t *httpstate, char* buf, size_t len)
     }
 
     // Append the data
-    memcpy(&httpstate->hdr[httpstate->hdrlen], buf, len);
+    scope_memcpy(&httpstate->hdr[httpstate->hdrlen], buf, len);
     httpstate->hdrlen += len;
 }
 
@@ -259,12 +259,12 @@ reportHttp1(http_state_t *httpstate)
     if ((net = getNetEntry(proto->fd))) {
         proto->sock_type = net->type;
         if (net->addrSetLocal) {
-            memcpy(&proto->localConn, &net->localConn, sizeof(struct sockaddr_storage));
+            scope_memcpy(&proto->localConn, &net->localConn, sizeof(struct sockaddr_storage));
         } else {
             proto->localConn.ss_family = -1;
         }
         if (net->addrSetRemote) {
-            memcpy(&proto->remoteConn, &net->remoteConn, sizeof(struct sockaddr_storage));
+            scope_memcpy(&proto->remoteConn, &net->remoteConn, sizeof(struct sockaddr_storage));
         } else {
             proto->remoteConn.ss_family = -1;
         }
@@ -318,10 +318,10 @@ reportHttp2(http_state_t *state, net_info *net, http_buf_t *stash,
         return FALSE;
     }
     if (stash->len) {
-        memcpy(post->hdr, stash->buf, stash->len);
-        memcpy(post->hdr + stash->len, buf, frameLen - stash->len);
+        scope_memcpy(post->hdr, stash->buf, stash->len);
+        scope_memcpy(post->hdr + stash->len, buf, frameLen - stash->len);
     } else {
-        memcpy(post->hdr, buf, frameLen);
+        scope_memcpy(post->hdr, buf, frameLen);
     }
 
     protocol_info *proto = scope_calloc(1, sizeof(struct protocol_info_t));
@@ -347,12 +347,12 @@ reportHttp2(http_state_t *state, net_info *net, http_buf_t *stash,
     if (net) {
         proto->sock_type = net->type;
         if (net->addrSetLocal) {
-            memcpy(&proto->localConn, &net->localConn, sizeof(struct sockaddr_storage));
+            scope_memcpy(&proto->localConn, &net->localConn, sizeof(struct sockaddr_storage));
         } else {
             proto->localConn.ss_family = -1;
         }
         if (net->addrSetRemote) {
-            memcpy(&proto->remoteConn, &net->remoteConn, sizeof(struct sockaddr_storage));
+            scope_memcpy(&proto->remoteConn, &net->remoteConn, sizeof(struct sockaddr_storage));
         } else {
             proto->remoteConn.ss_family = -1;
         }
@@ -526,7 +526,7 @@ http2StashFrame(http_buf_t *stash, const uint8_t *buf, size_t len)
     }
 
     // append what we're given to the stash
-    memcpy(stash->buf + stash->len, buf, len);
+    scope_memcpy(stash->buf + stash->len, buf, len);
     stash->len += len;
 }
 

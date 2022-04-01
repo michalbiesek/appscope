@@ -819,7 +819,7 @@ createInternalLogEvent(int fd, const char *path, const void *buf, size_t count, 
         return NULL;
     }
 
-    memcpy(data, buf, count);
+    scope_memcpy(data, buf, count);
 
     struct timeval tv;
     scope_gettimeofday(&tv, NULL);

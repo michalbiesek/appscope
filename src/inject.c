@@ -113,7 +113,7 @@ ptraceRead(int pid, uint64_t addr, void *data, int len)
     long *ptr = (long *) data;
 
     while (numRead < len) {
-        word = ptrace(PTRACE_PEEKTEXT, pid, addr + numRead, NULL);
+        word = scope_ptrace(PTRACE_PEEKTEXT, pid, (void*)(addr + numRead), NULL);
         if(word == -1) {
             scope_perror("ptrace(PTRACE_PEEKTEXT) failed");
             return EXIT_FAILURE;
@@ -132,8 +132,8 @@ ptraceWrite(int pid, uint64_t addr, void *data, int len)
     int i = 0;
 
     for(i=0; i < len; i += sizeof(word), word=0) {
-        memcpy(&word, data + i, sizeof(word));
-        if (ptrace(PTRACE_POKETEXT, pid, addr + i, word) == -1) {
+        scope_memcpy(&word, data + i, sizeof(word));
+        if (scope_ptrace(PTRACE_POKETEXT, pid, (void*)(addr + i), (void*)word) == -1) {
             scope_perror("ptrace(PTRACE_POKETEXT) failed");
             return EXIT_FAILURE;
         }
@@ -146,12 +146,12 @@ static int
 ptraceAttach(pid_t target) {
     int waitpidstatus;
 
-    if(ptrace(PTRACE_ATTACH, target, NULL, NULL) == -1) {
+    if(scope_ptrace(PTRACE_ATTACH, target, NULL, NULL) == -1) {
         scope_perror("ptrace(PTRACE_ATTACH) failed");
         return EXIT_FAILURE;
     }
 
-    if(waitpid(target, &waitpidstatus, WUNTRACED) != target) {
+    if(scope_waitpid(target, &waitpidstatus, WUNTRACED) != target) {
         scope_perror("waitpid failed");
         return EXIT_FAILURE;
     }
@@ -192,7 +192,7 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     int ret = EXIT_FAILURE;
 
     if (libpathLen > SCOPE_PATH_SIZE) {
-        fprintf(scope_stderr, "library path %s is longer than %d, library could not be injected\n", path, SCOPE_PATH_SIZE);
+        scope_fprintf(scope_stderr, "library path %s is longer than %d, library could not be injected\n", path, SCOPE_PATH_SIZE);
         goto exit;
     }
     scope_strncpy(libpath, path, libpathLen);
@@ -203,11 +203,11 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
 
     // save registers
     my_iovec.iov_base = &oldregs;
-    if (ptrace(PTRACE_GETREGSET, pid, (void*)NT_PRSTATUS, &my_iovec) == -1) {
-        fprintf(scope_stderr, "error: ptrace get register(), library could not be injected\n");
+    if (scope_ptrace(PTRACE_GETREGSET, pid, (void*)NT_PRSTATUS, &my_iovec) == -1) {
+        scope_fprintf(scope_stderr, "error: ptrace get register(), library could not be injected\n");
         goto detach;
     }
-    memcpy(&regs, &oldregs, sizeof(struct user_regs_struct));
+    scope_memcpy(&regs, &oldregs, sizeof(struct user_regs_struct));
 
     // find free space in text section
     if (freeSpaceAddr(pid, &freeAddr, &freeAddrSize)) {
@@ -248,25 +248,25 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     }
 
     my_iovec.iov_base = &regs;
-    if (ptrace(PTRACE_SETREGSET, pid, (void *)NT_PRSTATUS, &my_iovec) == -1) {
+    if (scope_ptrace(PTRACE_SETREGSET, pid, (void *)NT_PRSTATUS, &my_iovec) == -1) {
         scope_fprintf(scope_stderr, "error: ptrace set register(), library could not be injected\n");
         goto restore_app;
     }
 
     // continue execution and wait until the target process is stopped
-    if (ptrace(PTRACE_CONT, pid, NULL, NULL) == -1) {
+    if (scope_ptrace(PTRACE_CONT, pid, NULL, NULL) == -1) {
         scope_fprintf(scope_stderr, "error: ptrace continue(), library could not be injected\n");
         goto restore_app;
     }
-    waitpid(pid, &status, WUNTRACED);
+    scope_waitpid(pid, &status, WUNTRACED);
 
     // if process has been stopped by SIGSTOP send SIGCONT signal along with PTRACE_CONT call
     if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGSTOP) {
-        if (ptrace(PTRACE_CONT, pid, SIGCONT, NULL) == -1) {
+        if (scope_ptrace(PTRACE_CONT, pid, (void*)SIGCONT, NULL) == -1) {
             scope_fprintf(scope_stderr, "error: ptrace continue(), library could not be injected\n");
             goto restore_app;
         }
-        waitpid(pid, &status, WUNTRACED);
+        scope_waitpid(pid, &status, WUNTRACED);
     }
 
     // make sure the target process was stoppend by SIGTRAP triggered by DBG_TRAP
@@ -274,7 +274,7 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
 
         my_iovec.iov_base = &regs;
         // check if the library has been successfully injected
-        if (ptrace(PTRACE_GETREGSET, pid, (void*)NT_PRSTATUS, &my_iovec) == -1) {
+        if (scope_ptrace(PTRACE_GETREGSET, pid, (void*)NT_PRSTATUS, &my_iovec) == -1) {
             scope_fprintf(scope_stderr, "error: ptrace get register(), library could not be injected\n");
             goto restore_app;
         }
@@ -292,11 +292,11 @@ restore_app:
     //restore the app's state
     ptraceWrite(pid, freeAddr, oldcode, INJECTED_CODE_SIZE_LEN);
     my_iovec.iov_base = &oldregs;
-    if (ptrace(PTRACE_SETREGSET, pid, (void *)NT_PRSTATUS, &my_iovec) == -1) {
+    if (scope_ptrace(PTRACE_SETREGSET, pid, (void *)NT_PRSTATUS, &my_iovec) == -1) {
         scope_fprintf(scope_stderr, "error: ptrace set register(), error during restore the application state\n");
     }
 detach:
-    ptrace(PTRACE_DETACH, pid, NULL, NULL);
+    scope_ptrace(PTRACE_DETACH, pid, NULL, NULL);
 
 exit:
     scope_free(oldcode);

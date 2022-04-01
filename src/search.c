@@ -76,7 +76,7 @@ searchExec(search_t *handle, char *haystack, int hlen)
     while (j <= hlen - handle->nlen) {
         c = haystack[j + handle->nlen - 1];
         if (handle->str[handle->nlen - 1] == c &&
-            memcmp(handle->str, haystack + j, handle->nlen - 1) == 0) {
+            scope_memcmp(handle->str, haystack + j, handle->nlen - 1) == 0) {
             return j;
         }
 
