@@ -113,7 +113,7 @@ ptraceRead(int pid, uint64_t addr, void *data, int len)
     long *ptr = (long *) data;
 
     while (numRead < len) {
-        word = scope_ptrace(PTRACE_PEEKTEXT, pid, addr + numRead, NULL);
+        word = scope_ptrace(PTRACE_PEEKTEXT, pid, (void*)(addr + numRead), NULL);
         if(word == -1) {
             scope_perror("ptrace(PTRACE_PEEKTEXT) failed");
             return EXIT_FAILURE;
@@ -133,7 +133,7 @@ ptraceWrite(int pid, uint64_t addr, void *data, int len)
 
     for(i=0; i < len; i += sizeof(word), word=0) {
         scope_memcpy(&word, data + i, sizeof(word));
-        if (scope_ptrace(PTRACE_POKETEXT, pid, addr + i, word) == -1) {
+        if (scope_ptrace(PTRACE_POKETEXT, pid, (void*)(addr + i), (void*)word) == -1) {
             scope_perror("ptrace(PTRACE_POKETEXT) failed");
             return EXIT_FAILURE;
         }
@@ -262,7 +262,7 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
 
     // if process has been stopped by SIGSTOP send SIGCONT signal along with PTRACE_CONT call
     if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGSTOP) {
-        if (scope_ptrace(PTRACE_CONT, pid, SIGCONT, NULL) == -1) {
+        if (scope_ptrace(PTRACE_CONT, pid, (void*)SIGCONT, NULL) == -1) {
             scope_fprintf(scope_stderr, "error: ptrace continue(), library could not be injected\n");
             goto restore_app;
         }
