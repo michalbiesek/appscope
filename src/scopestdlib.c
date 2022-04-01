@@ -170,6 +170,7 @@ extern int          scopelibc_mkstemp(char *);
 extern int          scopelibc_clock_gettime(clockid_t, struct timespec *);
 extern int          scopelibc_getpagesize(void);
 extern int          scopelibc_uname(struct utsname *);
+extern int          scopelibc_arch_prctl(int code, unsigned long addr);
 
 // Internal musl function
 void scope_init_appscope_internal_lib(char **envp) {
@@ -932,6 +933,11 @@ scope_getpagesize(void) {
 int
 scope_uname(struct utsname *buf) {
     return scopelibc_uname(buf);
+}
+
+int
+scope_arch_prctl(int code, unsigned long addr) {
+    return scopelibc_arch_prctl(code, addr);
 }
 
 

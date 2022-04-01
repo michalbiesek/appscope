@@ -208,6 +208,7 @@ int          scope_mkstemp(char *);
 int          scope_clock_gettime(clockid_t, struct timespec *);
 int          scope_getpagesize(void);
 int          scope_uname(struct utsname *);
+int          scope_arch_prctl(int, unsigned long);
 
 // Other
 size_t scope_total_alloc_size(void);

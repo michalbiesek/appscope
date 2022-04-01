@@ -50,14 +50,14 @@ sysprint(const char* fmt, ...)
     if (fmt) {
         va_list args;
         va_start(args, fmt);
-        int rv = vsnprintf(str, PRINT_BUF_SIZE, fmt, args);
+        int rv = scope_vsnprintf(str, PRINT_BUF_SIZE, fmt, args);
         va_end(args);
         if (rv == -1) return;
     }
 
     // Output the string
 #if SYSPRINT_CONSOLE > 0
-    printf("%s", str);
+    scope_printf("%s", str);
 #endif
     scopeLog(CFG_LOG_DEBUG, "%s", str);
 }
@@ -73,7 +73,7 @@ get_file_size(const char *path)
         return -1;
     }
 
-    if (fstat(fd, &sbuf) == -1) {
+    if (scope_fstat(fd, &sbuf) == -1) {
         scopeLogError("ERROR: get_file_size:fstat");
         return -1;
     }
@@ -176,7 +176,7 @@ static Elf64_Addr
 load_elf(char *buf)
 {
     int i;
-    int pgsz = sysconf(_SC_PAGESIZE);
+    int pgsz = scope_sysconf(_SC_PAGESIZE);
     Elf64_Ehdr *elf = (Elf64_Ehdr *)buf;
     Elf64_Phdr *phead = (Elf64_Phdr *)&buf[elf->e_phoff];
     Elf64_Half pnum = elf->e_phnum;
@@ -191,7 +191,7 @@ load_elf(char *buf)
         return (Elf64_Addr)NULL;
     }
 
-    memmove(pheadaddr, phead, (size_t)(pnum * phsize));
+    scope_memmove(pheadaddr, phead, (size_t)(pnum * phsize));
 
     for (i = 0; i < pnum; i++) {
         if (phead[i].p_type == PT_LOAD) {
@@ -352,7 +352,7 @@ set_go(char *buf, int argc, const char **argv, const char **env, Elf64_Addr phad
     copy_strings(buf, (uint64_t)sp, argc, argv, env, phaddr);
     start = ehdr->e_entry;
 
-    if (arch_prctl(ARCH_GET_FS, (unsigned long)&scope_fs) == -1) {
+    if (scope_arch_prctl(ARCH_GET_FS, (unsigned long)&scope_fs) == -1) {
         scopeLogError("set_go:arch_prctl");
         return -1;
     }
