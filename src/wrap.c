@@ -421,7 +421,7 @@ fileModTime(const char *path)
 
     if ((fd = scope_open(path, O_RDONLY)) == -1) return 0;
     
-    if (fstat(fd, &statbuf) < 0) {
+    if (scope_fstat(fd, &statbuf) < 0) {
         scope_close(fd);
         return 0;
     }
