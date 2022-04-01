@@ -192,7 +192,7 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     int ret = EXIT_FAILURE;
 
     if (libpathLen > SCOPE_PATH_SIZE) {
-        fprintf(scope_stderr, "library path %s is longer than %d, library could not be injected\n", path, SCOPE_PATH_SIZE);
+        scope_fprintf(scope_stderr, "library path %s is longer than %d, library could not be injected\n", path, SCOPE_PATH_SIZE);
         goto exit;
     }
     scope_strncpy(libpath, path, libpathLen);
@@ -204,7 +204,7 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     // save registers
     my_iovec.iov_base = &oldregs;
     if (ptrace(PTRACE_GETREGSET, pid, (void*)NT_PRSTATUS, &my_iovec) == -1) {
-        fprint(scope_stderr, "error: ptrace get register(), library could not be injected\n");
+        scope_fprintf(scope_stderr, "error: ptrace get register(), library could not be injected\n");
         goto detach;
     }
     scope_memcpy(&regs, &oldregs, sizeof(struct user_regs_struct));
