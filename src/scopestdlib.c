@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/syscall.h>
 
 //TODO make this atomic
 static uint64_t alloc_size;
@@ -170,7 +171,6 @@ extern int          scopelibc_mkstemp(char *);
 extern int          scopelibc_clock_gettime(clockid_t, struct timespec *);
 extern int          scopelibc_getpagesize(void);
 extern int          scopelibc_uname(struct utsname *);
-extern int          scopelibc_arch_prctl(int code, unsigned long addr);
 
 // Internal musl function
 void scope_init_appscope_internal_lib(char **envp) {
@@ -937,7 +937,7 @@ scope_uname(struct utsname *buf) {
 
 int
 scope_arch_prctl(int code, unsigned long addr) {
-    return scopelibc_arch_prctl(code, addr);
+    return scopelibc_syscall(SYS_arch_prctl, code, addr);
 }
 
 
