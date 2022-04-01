@@ -406,7 +406,7 @@ javaReadClass(const unsigned char* classData)
     java_class_t *classInfo = scope_malloc(sizeof(java_class_t));
     if (!classInfo) return NULL;
 
-    if (memcmp(classData, magic, sizeof(magic)) != 0) {
+    if (scope_memcmp(classData, magic, sizeof(magic)) != 0) {
         scope_free(classInfo);
         return NULL;
     }
