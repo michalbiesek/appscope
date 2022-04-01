@@ -139,7 +139,7 @@ libdirGetNote(void* buf)
             if (note->nhdr.n_type == NT_GNU_BUILD_ID &&
                 note->nhdr.n_descsz != 0 &&
                 note->nhdr.n_namesz == 4 &&
-                memcmp(note->name, "GNU", 4) == 0) {
+                scope_memcmp(note->name, "GNU", 4) == 0) {
                 return note;
             }
 

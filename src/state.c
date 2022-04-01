@@ -115,7 +115,7 @@ get_port(int fd, int type, control_type_t which) {
         port = (in_port_t)0;
         break;
     }
-    return ntohs(port);
+    return scope_ntohs(port);
 }
 
 int
@@ -140,7 +140,7 @@ get_port_net(net_info *net, int type, control_type_t which) {
         port = (in_port_t)0;
         break;
     }
-    return ntohs(port);
+    return scope_ntohs(port);
 }
 
 bool
@@ -321,13 +321,13 @@ dumpAddrs(int sd)
     in_port_t port;
     char ip[INET6_ADDRSTRLEN];
 
-    inet_ntop(AF_INET,
+    scope_inet_ntop(AF_INET,
               &((struct sockaddr_in *)&g_netinfo[sd].localConn)->sin_addr,
               ip, sizeof(ip));
     port = get_port(sd, g_netinfo[sd].localConn.ss_family, LOCAL);
     scopeLog(CFG_LOG_DEBUG, "fd:%d %s:%d LOCAL: %s:%d", sd, __FUNCTION__, __LINE__, ip, port);
 
-    inet_ntop(AF_INET,
+    scope_inet_ntop(AF_INET,
               &((struct sockaddr_in *)&g_netinfo[sd].remoteConn)->sin_addr,
               ip, sizeof(ip));
     port = get_port(sd, g_netinfo[sd].remoteConn.ss_family, REMOTE);
@@ -1524,7 +1524,7 @@ doBlockConnection(int fd, const struct sockaddr *addr_arg)
         return 0;
     }
 
-    if (g_cfg.blockconn == ntohs(port)) {
+    if (g_cfg.blockconn == scope_ntohs(port)) {
         scopeLogInfo("fd:%d doBlockConnection: blocked connection", fd);
         return 1;
     }
@@ -1829,12 +1829,12 @@ parseDNSAnswer(char *buf, size_t len, cJSON *json, cJSON *addrs, int first)
 
             // type A is IPv4, AAA is IPv6
             if (ns_rr_type(rr) == ns_t_a) {
-                if (!inet_ntop(AF_INET, (struct sockaddr_in *)rr.rdata,
+                if (!scope_inet_ntop(AF_INET, (struct sockaddr_in *)rr.rdata,
                                ipaddr, sizeof(ipaddr))) {
                     continue;
                 }
             } else if (ns_rr_type(rr) == ns_t_aaaa) {
-                if (!inet_ntop(AF_INET6, (struct sockaddr_in6 *)rr.rdata,
+                if (!scope_inet_ntop(AF_INET6, (struct sockaddr_in6 *)rr.rdata,
                                ipaddr, sizeof(ipaddr))) {
                     continue;
                 }

@@ -272,19 +272,19 @@ getConn(struct sockaddr_storage *conn, char *addr, size_t alen, char *port, size
     if (!conn || !addr || !port) return FALSE;
 
     if (conn->ss_family == AF_INET) {
-        if (inet_ntop(AF_INET, &((struct sockaddr_in *)conn)->sin_addr,
+        if (scope_inet_ntop(AF_INET, &((struct sockaddr_in *)conn)->sin_addr,
                       addr, alen) == NULL) {
                 return FALSE;
         }
 
-        scope_snprintf(port, plen, "%d", ntohs(((struct sockaddr_in *)conn)->sin_port));
+        scope_snprintf(port, plen, "%d", scope_ntohs(((struct sockaddr_in *)conn)->sin_port));
     } else if (conn->ss_family == AF_INET6) {
-        if (inet_ntop(AF_INET6, &((struct sockaddr_in6 *)conn)->sin6_addr,
+        if (scope_inet_ntop(AF_INET6, &((struct sockaddr_in6 *)conn)->sin6_addr,
                       addr, alen) == NULL) {
                 return  FALSE;
         }
 
-        scope_snprintf(port, plen, "%d", ntohs(((struct sockaddr_in6 *)conn)->sin6_port));
+        scope_snprintf(port, plen, "%d", scope_ntohs(((struct sockaddr_in6 *)conn)->sin6_port));
     } else {
         return FALSE;
     }
@@ -327,7 +327,7 @@ getNetInternals(net_info *net, int type,
         }
 
         if (getConn(rconn, raddr, alen, rport, plen) == TRUE) {
-            in_port_t pport = ntohs(((struct sockaddr_in *)rconn)->sin_port);
+            in_port_t pport = scope_ntohs(((struct sockaddr_in *)rconn)->sin_port);
             H_ATTRIB(fields[*ix], "net_peer_ip", raddr, 1);
             NEXT_FLD(*ix, maxfld);
             H_VALUE(fields[*ix], "net_peer_port", pport, 1);
@@ -335,7 +335,7 @@ getNetInternals(net_info *net, int type,
         }
 
         if (getConn(lconn, laddr, alen, lport, plen) == TRUE) {
-            in_port_t hport = ntohs(((struct sockaddr_in *)lconn)->sin_port);
+            in_port_t hport = scope_ntohs(((struct sockaddr_in *)lconn)->sin_port);
             H_ATTRIB(fields[*ix], "net_host_ip", laddr, 1);
             NEXT_FLD(*ix, maxfld);
             H_VALUE(fields[*ix], "net_host_port", hport, 1);
@@ -1269,17 +1269,17 @@ doHttp2Frame(protocol_info *proto)
                 }
 
                 char addr[INET6_ADDRSTRLEN];
-                if (inet_ntop(proto->remoteConn.ss_family,
+                if (scope_inet_ntop(proto->remoteConn.ss_family,
                             &((struct sockaddr_in*)&proto->remoteConn)->sin_addr, addr, sizeof(addr))) {
                     addHttp2StrField(stream->jsonData, "net_peer_ip", addr);
                 }
-                if (inet_ntop(proto->localConn.ss_family,
+                if (scope_inet_ntop(proto->localConn.ss_family,
                             &((struct sockaddr_in*)&proto->localConn)->sin_addr, addr, sizeof(addr))) {
                     addHttp2StrField(stream->jsonData, "net_host_ip", addr);
                 }
 
-                addHttp2NumField(stream->jsonData, "net_peer_port", ntohs(((struct sockaddr_in*)&proto->remoteConn)->sin_port));
-                addHttp2NumField(stream->jsonData, "net_host_port", ntohs(((struct sockaddr_in*)&proto->localConn)->sin_port));
+                addHttp2NumField(stream->jsonData, "net_peer_port", scope_ntohs(((struct sockaddr_in*)&proto->remoteConn)->sin_port));
+                addHttp2NumField(stream->jsonData, "net_host_port", scope_ntohs(((struct sockaddr_in*)&proto->localConn)->sin_port));
             }
 
             // If it's a request message...
@@ -3013,13 +3013,13 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
             memmove(&rxMetric, &rxUnixMetric, sizeof(event_t));
         } else {
             if (net->localConn.ss_family == AF_INET) {
-                if (inet_ntop(AF_INET,
+                if (scope_inet_ntop(AF_INET,
                               &((struct sockaddr_in *)&net->localConn)->sin_addr,
                               lip, sizeof(lip)) == NULL) {
                     scope_strncpy(lip, " ", sizeof(lip));
                 }
             } else if (net->localConn.ss_family == AF_INET6) {
-                if (inet_ntop(AF_INET6,
+                if (scope_inet_ntop(AF_INET6,
                               &((struct sockaddr_in6 *)&net->localConn)->sin6_addr,
                               lip, sizeof(lip)) == NULL) {
                     scope_strncpy(lip, " ", sizeof(lip));
@@ -3030,13 +3030,13 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
             }
 
             if (net->remoteConn.ss_family == AF_INET) {
-                if (inet_ntop(AF_INET,
+                if (scope_inet_ntop(AF_INET,
                               &((struct sockaddr_in *)&net->remoteConn)->sin_addr,
                               rip, sizeof(rip)) == NULL) {
                     scope_strncpy(rip, " ", sizeof(rip));
                 }
             } else if (net->remoteConn.ss_family == AF_INET6) {
-                if (inet_ntop(AF_INET6,
+                if (scope_inet_ntop(AF_INET6,
                               &((struct sockaddr_in6 *)&net->remoteConn)->sin6_addr,
                               rip, sizeof(rip)) == NULL) {
                     scope_strncpy(rip, " ", sizeof(rip));
@@ -3143,13 +3143,13 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
             memmove(&txMetric, &txUnixMetric, sizeof(event_t));
         } else {
             if (net->localConn.ss_family == AF_INET) {
-                if (inet_ntop(AF_INET,
+                if (scope_inet_ntop(AF_INET,
                               &((struct sockaddr_in *)&net->localConn)->sin_addr,
                               lip, sizeof(lip)) == NULL) {
                     scope_strncpy(lip, " ", sizeof(lip));
                 }
             } else if (net->localConn.ss_family == AF_INET6) {
-                if (inet_ntop(AF_INET6,
+                if (scope_inet_ntop(AF_INET6,
                               &((struct sockaddr_in6 *)&net->localConn)->sin6_addr,
                               lip, sizeof(lip)) == NULL) {
                     scope_strncpy(lip, " ", sizeof(lip));
@@ -3160,13 +3160,13 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
             }
 
             if (net->remoteConn.ss_family == AF_INET) {
-                if (inet_ntop(AF_INET,
+                if (scope_inet_ntop(AF_INET,
                               &((struct sockaddr_in *)&net->remoteConn)->sin_addr,
                               rip, sizeof(rip)) == NULL) {
                     scope_strncpy(rip, " ", sizeof(rip));
                 }
             } else if (net->remoteConn.ss_family == AF_INET6) {
-                if (inet_ntop(AF_INET6,
+                if (scope_inet_ntop(AF_INET6,
                               &((struct sockaddr_in6 *)&net->remoteConn)->sin6_addr,
                               rip, sizeof(rip)) == NULL) {
                     scope_strncpy(rip, " ", sizeof(rip));
