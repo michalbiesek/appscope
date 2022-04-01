@@ -102,7 +102,7 @@ c_str(gostring_t *go_str)
 
     char *path;
     if ((path = scope_calloc(1, go_str->len+1)) == NULL) return NULL;
-    memmove(path, go_str->str, go_str->len);
+    scope_memmove(path, go_str->str, go_str->len);
     path[go_str->len] = '\0';
 
     return path;

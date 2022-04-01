@@ -3436,8 +3436,8 @@ SSL_ImportFD(PRFileDesc *model, PRFileDesc *currFd)
             ((nssentry->ssl_methods = scope_calloc(1, sizeof(PRIOMethods))) != NULL) &&
             ((nssentry->ssl_int_methods = scope_calloc(1, sizeof(PRIOMethods))) != NULL)) {
 
-            memmove(nssentry->ssl_methods, result->methods, sizeof(PRIOMethods));
-            memmove(nssentry->ssl_int_methods, result->methods, sizeof(PRIOMethods));
+            scope_memmove(nssentry->ssl_methods, result->methods, sizeof(PRIOMethods));
+            scope_memmove(nssentry->ssl_int_methods, result->methods, sizeof(PRIOMethods));
             nssentry->id = (uint64_t)nssentry->ssl_int_methods;
             //scopeLogInfo("fd:%d SSL_ImportFD", (uint64_t)nssentry->id);
 
