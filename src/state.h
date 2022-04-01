@@ -15,6 +15,7 @@
 #endif
 #endif // __APPLE__
 
+extern uint64_t g_go_static;
 
 /**
  * Options for `do*()` indicating how to interpret the `buf` and `len` values.
