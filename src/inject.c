@@ -132,7 +132,7 @@ ptraceWrite(int pid, uint64_t addr, void *data, int len)
     int i = 0;
 
     for(i=0; i < len; i += sizeof(word), word=0) {
-        memcpy(&word, data + i, sizeof(word));
+        scope_memcpy(&word, data + i, sizeof(word));
         if (ptrace(PTRACE_POKETEXT, pid, addr + i, word) == -1) {
             scope_perror("ptrace(PTRACE_POKETEXT) failed");
             return EXIT_FAILURE;
@@ -204,10 +204,10 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
     // save registers
     my_iovec.iov_base = &oldregs;
     if (ptrace(PTRACE_GETREGSET, pid, (void*)NT_PRSTATUS, &my_iovec) == -1) {
-        fprintf(scope_stderr, "error: ptrace get register(), library could not be injected\n");
+        fprint(scope_stderr, "error: ptrace get register(), library could not be injected\n");
         goto detach;
     }
-    memcpy(&regs, &oldregs, sizeof(struct user_regs_struct));
+    scope_memcpy(&regs, &oldregs, sizeof(struct user_regs_struct));
 
     // find free space in text section
     if (freeSpaceAddr(pid, &freeAddr, &freeAddrSize)) {

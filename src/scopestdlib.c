@@ -26,6 +26,7 @@ extern void*  scopelibc_memset(void *, int, size_t);
 extern void*  scopelibc_memmove(void *, const void *, size_t);
 extern int    scopelibc_memcmp(const void *, const void *, size_t);
 extern int    scopelibc_mprotect(void *, size_t, int);
+extern void*  scopelibc_memcpy(void *, const void *, size_t);
 extern size_t scopelibc_malloc_usable_size(void *);
 
 // File handling operations
@@ -246,6 +247,11 @@ scope_memcmp(const void *s1, const void *s2, size_t n) {
 int
 scope_mprotect(void *addr, size_t len, int prot) {
     return scopelibc_mprotect(addr, len, prot);
+}
+
+void*
+scope_memcpy(void *restrict dest, const void *restrict src, size_t n) {
+    return scopelibc_memcpy(dest, src, n);
 }
 
 

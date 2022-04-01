@@ -284,7 +284,7 @@ patchClone()
             0xb8, 0x00, 0x00, 0x00, 0x00,      // mov $0x0,%eax
             0xc3                               // retq
         };
-        memcpy(clone, ass, sizeof(ass));
+        scope_memcpy(clone, ass, sizeof(ass));
 
         scopeLog(CFG_LOG_DEBUG, "patchClone: CLONE PATCHED\n");
 

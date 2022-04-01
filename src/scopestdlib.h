@@ -66,6 +66,7 @@ void* scope_memset(void *, int, size_t);
 void* scope_memmove(void *, const void *, size_t);
 int   scope_memcmp(const void *, const void *, size_t);
 int   scope_mprotect(void *, size_t, int);
+void* scope_memcpy(void *, const void *, size_t);
 
 // File handling operations
 FILE*          scope_fopen(const char *, const char *);

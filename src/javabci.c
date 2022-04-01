@@ -46,7 +46,7 @@ javaGetUtf8String(java_class_t *info, int tagIndex)
     unsigned char *cp = info->constant_pool[tagIndex - 1];
     uint16_t len = be16toh(*((uint16_t *)(cp + 1)));
     char *buf = scope_malloc(len + 1);
-    memcpy(buf, cp + 3, len);
+    scope_memcpy(buf, cp + 3, len);
     buf[len] = 0;
     return buf;
 }
@@ -88,7 +88,7 @@ addUtf8Tag(java_class_t *info, const char *str)
     unsigned char *utf8Tag = scope_malloc(bufsize);
     *((uint8_t *)utf8Tag)        = CONSTANT_Utf8;
     *((uint16_t *)(utf8Tag + 1)) = htobe16(len);
-    memcpy(utf8Tag + 3, str, len);
+    scope_memcpy(utf8Tag + 3, str, len);
     info->length += bufsize;
     return addTag(info, utf8Tag);
 }
@@ -231,7 +231,7 @@ javaCopyMethod(java_class_t *info, unsigned char *method, const char *newName)
 {
     uint32_t len = javaGetMethodLength(method);
     unsigned char *dest = scope_malloc(len);
-    memcpy(dest, method, len);
+    scope_memcpy(dest, method, len);
     uint16_t nameIndex = addUtf8Tag(info, newName);
     *((uint16_t *)(dest + 2)) = htobe16(nameIndex);
     info->methods_count++;
@@ -248,7 +248,7 @@ javaConvertMethodToNative(java_class_t *info, int methodIndex)
     unsigned char *addr        = scope_malloc(bufsize);
     info->methods[methodIndex] = addr;
 
-    memcpy(addr, methodAddr, bufsize);
+    scope_memcpy(addr, methodAddr, bufsize);
 
     uint16_t accessFlags      = be16toh(*((uint16_t *)methodAddr));
     uint16_t attributesCount  = 0;
@@ -309,7 +309,7 @@ javaAddMethod(java_class_t *info, const char* name, const char* descriptor,
         *((uint16_t *)addr) = htobe16(maxStack);       addr += 2;
         *((uint16_t *)addr) = htobe16(maxLocals);      addr += 2;
         *((uint32_t *)addr) = htobe32(codeLen);        addr += 4;
-        memcpy(addr, code, codeLen);                   addr += codeLen;
+        scope_memcpy(addr, code, codeLen);                   addr += codeLen;
         *((uint16_t *)addr) = htobe16(exceptionLen);   addr += 2;
         *((uint16_t *)addr) = htobe16(codeAttrCount);    
     }
@@ -342,14 +342,14 @@ javaInjectCode(java_class_t *classInfo, unsigned char *method, uint8_t *code, si
     unsigned char *codeAttr = getCodeAttributeAddress(classInfo, method);
     uint32_t codeLen = be32toh(*((uint32_t *)(codeAttr + 10)));
     memset(codeAttr + 14, 0, codeLen - 1);
-    memcpy(codeAttr + 14, code, len);
+    scope_memcpy(codeAttr + 14, code, len);
 } 
 
 void 
 javaWriteClass(unsigned char *dest, java_class_t *info) 
 {
     unsigned char *addr = dest;
-    memcpy(addr, magic, sizeof(magic));                         addr += sizeof(magic);
+    scope_memcpy(addr, magic, sizeof(magic));                         addr += sizeof(magic);
     *((uint16_t *)addr) = htobe16(info->minor_version);         addr += 2;
     *((uint16_t *)addr) = htobe16(info->major_version);         addr += 2;
     *((uint16_t *)addr) = htobe16(info->constant_pool_count);   addr += 2;
@@ -358,7 +358,7 @@ javaWriteClass(unsigned char *dest, java_class_t *info)
         unsigned char *cp = info->constant_pool[i];
         unsigned char tag = *((unsigned char *)cp);
         uint16_t size = javaGetTagLength(cp);
-        memcpy(addr, cp, size);
+        scope_memcpy(addr, cp, size);
         addr += size;
         if (tag == CONSTANT_Double || tag == CONSTANT_Long) {
             //this is what JVM spec says here: https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.5
@@ -372,13 +372,13 @@ javaWriteClass(unsigned char *dest, java_class_t *info)
     *((uint16_t *)addr) = htobe16(info->this_class);            addr += 2;
     *((uint16_t *)addr) = htobe16(info->super_class);           addr += 2;
     *((uint16_t *)addr) = htobe16(info->interfaces_count);      addr += 2;
-    memcpy(addr, info->interfaces, info->interfaces_count * 2); addr += info->interfaces_count * 2;
+    scope_memcpy(addr, info->interfaces, info->interfaces_count * 2); addr += info->interfaces_count * 2;
     //write fields
     *((uint16_t *)addr) = htobe16(info->fields_count); addr += 2;
     for (i=0;i<info->fields_count;i++) {
         unsigned char *field = info->fields[i];
         uint32_t size = getAttributesLength(field + 6) + 6;
-        memcpy(addr, info->fields[i], size);
+        scope_memcpy(addr, info->fields[i], size);
         addr += size;
     }
     *((uint16_t *)addr) = htobe16(info->methods_count); addr += 2;
@@ -386,7 +386,7 @@ javaWriteClass(unsigned char *dest, java_class_t *info)
     for (i=0;i<info->methods_count;i++) {
         unsigned char *method = info->methods[i];
         uint32_t size = javaGetMethodLength(method);
-        memcpy(addr, info->methods[i], size);
+        scope_memcpy(addr, info->methods[i], size);
         addr += size;
     }
     //write attributes
@@ -395,7 +395,7 @@ javaWriteClass(unsigned char *dest, java_class_t *info)
         unsigned char *attr = info->attributes[i];
         uint32_t attribute_length = be32toh(*((uint32_t *)(attr + 2)));
         size_t size = attribute_length + 6;
-        memcpy(addr, info->attributes[i], size);
+        scope_memcpy(addr, info->attributes[i], size);
         addr += size;
     }
 }
