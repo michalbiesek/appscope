@@ -265,11 +265,11 @@ patchClone()
 {
     void *clone = dlsym(RTLD_DEFAULT, "__clone");
     if (clone) {
-        size_t pageSize = getpagesize();
+        size_t pageSize = scope_getpagesize();
         void *addr = (void *)((ptrdiff_t) clone & ~(pageSize - 1));
 
         // set write perms on the page
-        if (mprotect(addr, pageSize, PROT_WRITE | PROT_READ | PROT_EXEC)) {
+        if (scope_mprotect(addr, pageSize, PROT_WRITE | PROT_READ | PROT_EXEC)) {
             scopeLogError("ERROR: patchCLone: mprotect failed\n");
             return;
         }
@@ -283,7 +283,7 @@ patchClone()
         scopeLog(CFG_LOG_DEBUG, "patchClone: CLONE PATCHED\n");
 
         // restore perms to the page
-        if (mprotect(addr, pageSize, PROT_READ | PROT_EXEC)) {
+        if (scope_mprotect(addr, pageSize, PROT_READ | PROT_EXEC)) {
             scopeLogError("ERROR: patchCLone: mprotect restore failed\n");
             return;
         }
