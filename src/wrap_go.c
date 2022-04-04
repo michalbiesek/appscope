@@ -362,23 +362,23 @@ adjustGoStructOffsetsForVersion(int go_ver)
     int fd;
     if ((debug_file = getenv("SCOPE_GO_STRUCT_PATH")) &&
         ((fd = scope_open(debug_file, O_CREAT|O_WRONLY|O_CLOEXEC, 0666)) != -1)) {
-        dprintf(fd, "runtime.g|m=%d|\n", g_go.g_to_m);
-        dprintf(fd, "runtime.m|tls=%d|\n", g_go.m_to_tls);
-        dprintf(fd, "net/http.connReader|conn=%d|Server\n", g_go.connReader_to_conn);
-        dprintf(fd, "net/http.persistConn|conn=%d|Client\n", g_go.persistConn_to_conn);
-        dprintf(fd, "net/http.persistConn|br=%d|Client\n", g_go.persistConn_to_bufrd);
-        dprintf(fd, "runtime.iface|data=%d|\n", g_go.iface_data);
+        scope_dprintf(fd, "runtime.g|m=%d|\n", g_go.g_to_m);
+        scope_dprintf(fd, "runtime.m|tls=%d|\n", g_go.m_to_tls);
+        scope_dprintf(fd, "net/http.connReader|conn=%d|Server\n", g_go.connReader_to_conn);
+        scope_dprintf(fd, "net/http.persistConn|conn=%d|Client\n", g_go.persistConn_to_conn);
+        scope_dprintf(fd, "net/http.persistConn|br=%d|Client\n", g_go.persistConn_to_bufrd);
+        scope_dprintf(fd, "runtime.iface|data=%d|\n", g_go.iface_data);
         // go 1.8 has a direct netfd_to_sysfd field, others are less direct
         if (g_go.netfd_to_sysfd == UNDEF_OFFSET) {
-            dprintf(fd, "net.netFD|pfd=%d|\n", g_go.netfd_to_pd);
-            dprintf(fd, "internal/poll.FD|Sysfd=%d|\n", g_go.pd_to_fd);
+            scope_dprintf(fd, "net.netFD|pfd=%d|\n", g_go.netfd_to_pd);
+            scope_dprintf(fd, "internal/poll.FD|Sysfd=%d|\n", g_go.pd_to_fd);
         } else {
-            dprintf(fd, "net.netFD|sysfd=%d|\n", g_go.netfd_to_sysfd);
+            scope_dprintf(fd, "net.netFD|sysfd=%d|\n", g_go.netfd_to_sysfd);
         }
-        dprintf(fd, "bufio.Reader|buf=%d|\n", g_go.bufrd_to_buf);
-        dprintf(fd, "net/http.conn|rwc=%d|Server\n", g_go.conn_to_rwc);
-        dprintf(fd, "net/http.conn|tlsState=%d|Server\n", g_go.conn_to_tlsState);
-        dprintf(fd, "net/http.persistConn|tlsState=%d|Client\n", g_go.persistConn_to_tlsState);
+        scope_dprintf(fd, "bufio.Reader|buf=%d|\n", g_go.bufrd_to_buf);
+        scope_dprintf(fd, "net/http.conn|rwc=%d|Server\n", g_go.conn_to_rwc);
+        scope_dprintf(fd, "net/http.conn|tlsState=%d|Server\n", g_go.conn_to_tlsState);
+        scope_dprintf(fd, "net/http.persistConn|tlsState=%d|Client\n", g_go.persistConn_to_tlsState);
         scope_close(fd);
     }
 
