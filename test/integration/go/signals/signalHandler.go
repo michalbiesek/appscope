@@ -35,7 +35,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%s handling following signals: %d, %d, %d\n", exec_name, syscall.SIGCHLD, syscall.SIGINT, syscall.SIGUSR1)
+	fmt.Printf("%s handling following signals: %d, %d, %d\n", exec_name, syscall.SIGCHLD, syscall.SIGINT, syscall.SIGUSR2)
 	fmt.Printf("Current PID: %d\n", current_pid)
 
 	tmpfile, err := ioutil.TempFile("", "test_file")
@@ -45,7 +45,7 @@ func main() {
 	defer os.Remove(tmpfile.Name())
 
 	fmt.Println("Awaiting for SIGINT signal")
-	signal.Notify(sig_channel, syscall.SIGCHLD, syscall.SIGINT, syscall.SIGUSR1)
+	signal.Notify(sig_channel, syscall.SIGCHLD, syscall.SIGINT, syscall.SIGUSR2)
 	go func() {
 		for {
 			s := <-sig_channel
