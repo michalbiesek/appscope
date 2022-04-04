@@ -48,9 +48,9 @@ endtest(){
 starttest Top
 
 top -b -d 1 > /dev/null &
-sleep 1
+sleep 3
 ldscope --attach `pidof top`
-sleep 1
+sleep 3
 evaltest
 
 grep '"proc":"top"' $EVT_FILE | grep fs.open > /dev/null
@@ -69,9 +69,10 @@ endtest
 starttest Python3
 
 python3 -m http.server 2> /dev/null &
-sleep 1
+sleep 3
 ldscope --attach `pidof python3`
 curl http://localhost:8000
+sleep 3
 evaltest
 
 grep -q '"proc":"python3"' $EVT_FILE > /dev/null
@@ -92,10 +93,10 @@ endtest
 starttest java_http
 cd /opt/java_http
 java SimpleHttpServer 2> /dev/null &
-sleep 1
+sleep 3
 ldscope --attach `pidof java`
 curl http://localhost:8000/status
-sleep 1
+sleep 3
 evaltest
 
 grep -q '"proc":"java"' $EVT_FILE > /dev/null
