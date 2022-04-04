@@ -26,3 +26,4 @@ __vsnprintf_chk scope___vsnprintf_chk
 localeconv scopelibc_localeconv
 sscanf scopelibc_sscanf
 __isoc99_sscanf scope__iso99_sscanf
+ferror scopelibc_ferror
