@@ -524,7 +524,7 @@ osTimerStop(void)
 {
 
     if (g_timerid) {
-        scope_timer_delete(g_timerid);
+        timer_delete(g_timerid);
         g_timerid = 0;
         return TRUE;
     }
