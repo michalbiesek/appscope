@@ -937,7 +937,12 @@ scope_uname(struct utsname *buf) {
 
 int
 scope_arch_prctl(int code, unsigned long addr) {
+#if defined(__x86_64)
     return scopelibc_arch_prctl(code, addr);
+#else
+    //arch_prctl is supported only on Linux/x86-64 for 64-bit
+    return -1;
+#endif
 }
 
 

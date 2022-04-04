@@ -69,7 +69,6 @@ static void threadNow(int);
 static void uv__read_hook(void *);
 
 #ifdef __linux__
-extern int arch_prctl(int, unsigned long);
 extern unsigned long scope_fs;
 
 extern void initGoHook(elf_buf_t*);
@@ -1330,7 +1329,7 @@ initHook(int attachedFlag)
 #ifdef __GO__
         initGoHook(ebuf);
         threadNow(0);
-        if (arch_prctl(ARCH_GET_FS, (unsigned long)&scope_fs) == -1) {
+        if (scope_arch_prctl(ARCH_GET_FS, (unsigned long)&scope_fs) == -1) {
             scopeLogError("initHook:arch_prctl");
         }
 
