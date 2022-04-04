@@ -76,8 +76,6 @@ tap_t g_go_tap[] = {
     {"TAP_TABLE_END", NULL, NULL, 0}
 };
 
-uint64_t g_go_static = 0LL;
-
 void (*go_runtime_cgocall)(void);
 
 #if NEEDEVNULL > 0
@@ -438,11 +436,11 @@ initGoHook(elf_buf_t *ebuf)
 
     // default to a dynamic app?
     if (checkEnv("SCOPE_EXEC_TYPE", "static")) {
-        g_go_static = 1LL;
+        setGoAppStateStatic(TRUE);
         patchClone();
         sysprint("This is a static app\n");
     } else {
-        g_go_static = 0LL;
+        setGoAppStateStatic(FALSE);
         sysprint("This is a dynamic app\n");
     }
 
@@ -457,7 +455,7 @@ initGoHook(elf_buf_t *ebuf)
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)ebuf->buf;
     // if it's a position independent executable, get the base address from /proc/self/maps
     uint64_t base = 0LL;
-    if (ehdr->e_type == ET_DYN && !g_go_static) {
+    if (ehdr->e_type == ET_DYN && (getgoAppStateStatic() == FALSE)) {
         if (getBaseAddress(&base) != 0) {
             sysprint("ERROR: can't get the base address\n");
             return; // don't install our hooks

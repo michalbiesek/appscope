@@ -15,8 +15,6 @@
 #endif
 #endif // __APPLE__
 
-extern uint64_t g_go_static;
-
 /**
  * Options for `do*()` indicating how to interpret the `buf` and `len` values.
  */
@@ -78,5 +76,7 @@ bool delProtocol(request_t *);
 void setRemoteClose(int, int);
 void setFSContentType(int, fs_content_type_t);
 fs_content_type_t getFSContentType(int);
+void setGoAppStateStatic(int);
+int getgoAppStateStatic(void);
 
 #endif // __STATE_H__
