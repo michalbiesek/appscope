@@ -225,7 +225,7 @@ osGetProcname(char *pname, int len)
     } else {
         char *ppath = NULL;
 
-        if (osGetExePath(getpid(), &ppath) != -1) {
+        if (osGetExePath(scope_getpid(), &ppath) != -1) {
             scope_strncpy(pname, scope_basename(ppath), len);
             if (ppath) scope_free(ppath);
         } else {
@@ -256,7 +256,7 @@ osGetProcMemory(pid_t pid)
         return -1;
     }
 
-    if ((start = strstr(buf, "VmSize")) == NULL) {
+    if ((start = scope_strstr(buf, "VmSize")) == NULL) {
         DBG(NULL);
         scope_close(fd);
         return -1;        

@@ -171,6 +171,7 @@ extern int          scopelibc_clock_gettime(clockid_t, struct timespec *);
 extern int          scopelibc_getpagesize(void);
 extern int          scopelibc_uname(struct utsname *);
 extern int          scopelibc_arch_prctl(int code, unsigned long addr);
+extern int          scopelibc_getrusage(int , struct rusage *);
 
 // Internal musl function
 void scope_init_appscope_internal_lib(char **envp) {
@@ -943,6 +944,11 @@ scope_arch_prctl(int code, unsigned long addr) {
     //arch_prctl is supported only on Linux/x86-64 for 64-bit
     return -1;
 #endif
+}
+
+int
+scope_getrusage(int who, struct rusage *usage) {
+    return scopelibc_getrusage(who, usage);
 }
 
 

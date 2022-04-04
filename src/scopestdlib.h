@@ -8,6 +8,7 @@
 #include <link.h>
 #include <locale.h>
 #include <sys/mman.h>
+#include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <sys/stat.h>
@@ -209,6 +210,7 @@ int          scope_clock_gettime(clockid_t, struct timespec *);
 int          scope_getpagesize(void);
 int          scope_uname(struct utsname *);
 int          scope_arch_prctl(int, unsigned long);
+int          scope_getrusage(int , struct rusage *);
 
 // Other
 size_t scope_total_alloc_size(void);

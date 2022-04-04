@@ -834,7 +834,7 @@ static long long
 doGetProcCPU() {
     struct rusage ruse;
     
-    if (getrusage(RUSAGE_SELF, &ruse) != 0) {
+    if (scope_getrusage(RUSAGE_SELF, &ruse) != 0) {
         return (long long)-1;
     }
 
