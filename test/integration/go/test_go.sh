@@ -395,6 +395,62 @@ endtest
 
 
 #
+# signalHandlerDynamic
+#
+starttest signalHandlerDynamic
+cd /go/signals
+ldscope ./signalHandlerDynamic &
+ERR+=$?
+
+sleep 4
+
+kill -SIGUSR1 `pidof signalHandlerDynamic`
+
+kill -SIGINT `pidof signalHandlerDynamic`
+
+sleep 4
+
+endtest
+
+#
+# signalHandlerStatic
+#
+starttest signalHandlerStatic
+cd /go/signals
+ldscope ./signalHandlerStatic &
+SCOPE_PID=$!
+ERR+=$?
+
+sleep 4
+
+kill -SIGCHLD ${SCOPE_PID}
+
+kill -SIGINT ${SCOPE_PID}
+
+sleep 4
+
+endtest
+
+#
+# signalHandlerStaticStripped
+#
+starttest signalHandlerStaticStripped
+cd /go/signals
+ldscope ./signalHandlerStaticStripped &
+SCOPE_PID=$!
+ERR+=$?
+
+sleep 4
+
+kill -SIGCHLD ${SCOPE_PID}
+
+kill -SIGINT ${SCOPE_PID}
+
+sleep 4
+
+endtest
+
+#
 # cgoDynamic
 #
 starttest cgoDynamic
