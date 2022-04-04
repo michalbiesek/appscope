@@ -163,7 +163,7 @@ map_segment(char *buf, Elf64_Phdr *phead)
 
     load_sections(buf, (char *)phead->p_vaddr, (size_t)lsize);
 
-    if (((prot & PROT_WRITE) == 0) && (mprotect(laddr, lsize, prot) == -1)) {
+    if (((prot & PROT_WRITE) == 0) && (scope_mprotect(laddr, lsize, prot) == -1)) {
         scopeLogError("ERROR: load_segment:mprotect");
         return -1;
     }
