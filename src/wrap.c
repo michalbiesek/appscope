@@ -1613,6 +1613,8 @@ init(void)
     config_t *cfg = cfgRead(path);
     cfgProcessEnvironment(cfg);
 
+    scopeLogError("Before doConfig");
+
     doConfig(cfg);
     g_staticfg = cfg;
     if (path) scope_free(path);
@@ -1642,6 +1644,7 @@ init(void)
         // enable a timer/signal.
         threadInit();
     }
+    scopeLogError("Before initJavaAgent");
 
     osInitJavaAgent();
 }

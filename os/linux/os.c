@@ -754,18 +754,19 @@ osGetGroupName(unsigned gid)
     char buf[4096];
     char *str_ret = NULL;
     {  
-       scopeLogError("osGetGroupName TEST before scope_getgrgid");
-       struct group *test_grp  = scope_getgrgid(gid);
-       scopeLogError("osGetGroupName TEST after scope_getgrgid ptr %p errno_val %d", test_grp, scope_errno);
-       scopeLogError("osGetGroupName TEST after scope_getgrgid name %s", test_grp->gr_name);
+    //    scopeLogError("osGetGroupName TEST before scope_getgrgid");
+    //    struct group *test_grp  = scope_getgrgid(gid);
+    //    scopeLogError("osGetGroupName TEST after scope_getgrgid ptr %p errno_val %d", test_grp, scope_errno);
+    //    scopeLogError("osGetGroupName TEST after scope_getgrgid name %s", test_grp->gr_name);
     }
 
-    scopeLogError("osGetGroupName before scope_getgrgid_r");
-    int ret = scope_getgrgid_r(gid, &grp, buf, sizeof(buf), &grp_res);
-    scopeLogError("osGetGroupName after scope_getgrgid_r ret %d gr_name %s", ret, grp.gr_name);
-    if (ret)
-        return NULL;
-    str_ret = scope_strdup(grp.gr_name);
+    // scopeLogError("osGetGroupName before scope_getgrgid_r");
+    // int ret = scope_getgrgid_r(gid, &grp, buf, sizeof(buf), &grp_res);
+    // scopeLogError("osGetGroupName after scope_getgrgid_r ret %d gr_name %s", ret, grp.gr_name);
+    // if (ret)
+    //     return NULL;
+    // str_ret = scope_strdup(grp.gr_name);
+    str_ret = scope_strdup("test_user");
     scopeLogError("osGetGroupName after scope_strdup str_ret %s", str_ret);
     return str_ret;
 }
