@@ -12,7 +12,6 @@
 static uint64_t alloc_size;
 
 // Internal standard library references
-extern void   scopelibc_init_appscope_internal_lib(char**);
 
 // Memory management handling operations
 extern void*  scopelibc_malloc(size_t);
@@ -172,11 +171,6 @@ extern int          scopelibc_getpagesize(void);
 extern int          scopelibc_uname(struct utsname *);
 extern int          scopelibc_arch_prctl(int code, unsigned long addr);
 extern int          scopelibc_getrusage(int , struct rusage *);
-
-// Internal musl function
-void scope_init_appscope_internal_lib(char **envp) {
-    return scopelibc_init_appscope_internal_lib(envp);
-}
 
 // Memory management handling operations
 

@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "scopestdlib.h"
 #include "httpagg.h"
 #include "test.h"
 
@@ -183,9 +182,8 @@ httpAggResetForNullDoesNotCrash(void **state)
 }
 
 int
-main(int argc, char **argv, char **env)
+main(int argc, char *argv[])
 {
-    scope_init_appscope_internal_lib(env);
     printf("running %s\n", argv[0]);
 
     const struct CMUnitTest tests[] = {
