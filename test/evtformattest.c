@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include "dbg.h"
 #include "evtformat.h"
-
+#include "scopestdlib.h"
 #include "test.h"
 
 static void
