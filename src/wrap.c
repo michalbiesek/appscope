@@ -869,15 +869,21 @@ setProcId(proc_id_t *proc)
         scope_snprintf(proc->id, sizeof(proc->id), "badid");
     }
 
+    scopeLogError("setProcId before scope_getuid");
     proc->uid = scope_getuid();
     if (proc->username) scope_free(proc->username);
+    scopeLogError("setProcId before osGetUserName");
     proc->username = osGetUserName(proc->uid);
+    scopeLogError("setProcId before scope_getgid");
     proc->gid = scope_getgid();
     if (proc->groupname) scope_free(proc->groupname);
+    scopeLogError("setProcId before osGetGroupName");
     proc->groupname = osGetGroupName(proc->gid);
+    scopeLogError("setProcId before osGetCgroup");
     if (osGetCgroup(proc->pid, proc->cgroup, MAX_CGROUP) == FALSE) {
         proc->cgroup[0] = '\0';
     }
+    scopeLogError("setProcId return");
 }
 
 static void
@@ -1541,7 +1547,7 @@ initEnv(int *attachedFlag)
 __attribute__((constructor)) void
 init(void)
 {
-
+    scopeLogError("init start");
     // Bootstrapping...  we need to know if we're in musl so we can
     // call the right initFn function...
     {
@@ -1583,6 +1589,7 @@ init(void)
         run_bash_mem_fix();
     }
 #endif
+    scopeLogError("Before ProcID");
 
     setProcId(&g_proc);
     setPidEnv(g_proc.pid);
@@ -1591,9 +1598,10 @@ init(void)
     // `/dev/shm` with our PID indicating we were injected into a running
     // process.
     int attachedFlag = 0;
+    scopeLogError("Before initEnv");
     initEnv(&attachedFlag);
     // logging inside constructor start from this line
-    g_constructor_debug_enabled = checkEnv("SCOPE_ALLOW_CONSTRUCT_DBG", "true");
+    g_constructor_debug_enabled = 1;
 
     initState();
 
@@ -5063,7 +5071,6 @@ scopeLog(cfg_log_level_t level, const char *format, ...)
     struct timeval tv;
 
     if (!g_log) {
-        if (!g_constructor_debug_enabled) return;
         local_buf = scope_log_var_buf + scope_snprintf(scope_log_var_buf, LOG_BUF_SIZE, "Constructor: (pid:%d): ", scope_getpid());
         size_t local_buf_len = sizeof(scope_log_var_buf) + (scope_log_var_buf - local_buf) - 1;
 
