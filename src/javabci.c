@@ -341,7 +341,7 @@ javaInjectCode(java_class_t *classInfo, unsigned char *method, uint8_t *code, si
 {
     unsigned char *codeAttr = getCodeAttributeAddress(classInfo, method);
     uint32_t codeLen = be32toh(*((uint32_t *)(codeAttr + 10)));
-    memset(codeAttr + 14, 0, codeLen - 1);
+    scope_memset(codeAttr + 14, 0, codeLen - 1);
     scope_memcpy(codeAttr + 14, code, len);
 } 
 
