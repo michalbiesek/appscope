@@ -45,6 +45,7 @@ int __getgrent_a(FILE *f, struct group *gr, char **line, size_t *size, char ***m
 	free(*mem);
 	*mem = calloc(sizeof(char *), *nmem+1);
 	if (!*mem) {
+		fputs("__getgrent_a calloc gr failed", stderr);
 		rv = errno;
 		free(*line);
 		*line = 0;

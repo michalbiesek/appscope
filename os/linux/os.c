@@ -756,7 +756,7 @@ osGetGroupName(unsigned gid)
     {  
        scopeLogError("osGetGroupName TEST before scope_getgrgid");
        struct group *test_grp  = scope_getgrgid(gid);
-       scopeLogError("osGetGroupName TEST after scope_getgrgid ptr %p", test_grp);
+       scopeLogError("osGetGroupName TEST after scope_getgrgid ptr %p errno_val %d", test_grp, scope_errno);
        scopeLogError("osGetGroupName TEST after scope_getgrgid name %s", test_grp->gr_name);
     }
 

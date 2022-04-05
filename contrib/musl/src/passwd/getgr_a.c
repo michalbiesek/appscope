@@ -28,6 +28,7 @@ int __getgr_a(const char *name, gid_t gid, struct group *gr, char **buf, size_t 
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cs);
 	f = fopen("/etc/group", "rbe");
 	if (!f) {
+		fputs("fopen etcgroup failed", stderr);
 		rv = errno;
 		goto done;
 	}
