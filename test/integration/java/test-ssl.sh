@@ -210,11 +210,11 @@ ERR+=$?
 grep -q http.resp $EVT_FILE > /dev/null
 ERR+=$?
 
-grep -q fs.open $EVT_FILE > /dev/null
-ERR+=$?
+# grep -q fs.open $EVT_FILE > /dev/null
+# ERR+=$?
 
-grep -q fs.close $EVT_FILE > /dev/null
-ERR+=$?
+# grep -q fs.close $EVT_FILE > /dev/null
+# ERR+=$?
 
 grep -q net.open $EVT_FILE > /dev/null
 ERR+=$?
