@@ -52,9 +52,6 @@ extern FILE scopelibc___stderr_FILE;
 #define scope_stdout   (&scopelibc___stdout_FILE)
 #define scope_stderr   (&scopelibc___stderr_FILE)
 
-// Internal musl metadata init
-void scope_init_appscope_internal_lib(char**);
-
 // Memory management handling operations
 void* scope_malloc(size_t);
 void* scope_calloc(size_t, size_t);

@@ -123,7 +123,6 @@ static struct option options[] = {
 int
 main(int argc, char **argv, char **env)
 {
-    scope_init_appscope_internal_lib(env);
     // process command line
     char *attachArg = 0;
     for (;;) {

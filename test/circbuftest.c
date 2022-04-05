@@ -1,6 +1,5 @@
 #define _GNU_SOURCE
 #include <stdio.h>
-#include "scopestdlib.h"
 #include "dbg.h"
 #include "circbuf.h"
 #include "test.h"
@@ -80,9 +79,8 @@ circbufPutGetTest(void **state)
 }
 
 int
-main(int argc, char **argv, char **env)
+main(int argc, char* argv[])
 {
-    scope_init_appscope_internal_lib(env);
     printf("running %s\n", argv[0]);
 
     const struct CMUnitTest tests[] = {
