@@ -36,6 +36,7 @@ int __getgr_a(const char *name, gid_t gid, struct group *gr, char **buf, size_t 
 	while (!(rv = __getgrent_a(f, gr, buf, size, mem, nmem, res)) && *res) {
 		if (name && !strcmp(name, (*res)->gr_name)
 		|| !name && (*res)->gr_gid == gid) {
+			fputs("__getgrent_a break", stderr);
 			break;
 		}
 	}
@@ -65,7 +66,7 @@ int __getgr_a(const char *name, gid_t gid, struct group *gr, char **buf, size_t 
 		f = __nscd_query(req, key, groupbuf, sizeof groupbuf, &swap);
 		if (!f) { rv = errno; goto done; }
 
-		if (!groupbuf[GRFOUND]) { rv = 0; goto cleanup_f; }
+		if (!groupbuf[GRFOUND]) { rv = 0; fputs("groupbuf failed", stderr);; goto cleanup_f; }
 
 		if (!groupbuf[GRNAMELEN] || !groupbuf[GRPASSWDLEN]) {
 			rv = EIO;
@@ -81,6 +82,7 @@ int __getgr_a(const char *name, gid_t gid, struct group *gr, char **buf, size_t 
 		for (i = 0; i < groupbuf[GRMEMCNT]; i++) {
 			uint32_t name_len;
 			if (fread(&name_len, sizeof name_len, 1, f) < 1) {
+				fputs("fread failed", stderr);
 				rv = ferror(f) ? errno : EIO;
 				goto cleanup_f;
 			}
@@ -99,6 +101,7 @@ int __getgr_a(const char *name, gid_t gid, struct group *gr, char **buf, size_t 
 		if (len > *size || !*buf) {
 			char *tmp = realloc(*buf, len);
 			if (!tmp) {
+				fputs("1st realloc failed", stderr);
 				rv = errno;
 				goto cleanup_f;
 			}
@@ -118,6 +121,7 @@ int __getgr_a(const char *name, gid_t gid, struct group *gr, char **buf, size_t 
 			}
 			char **tmp = realloc(*mem, (groupbuf[GRMEMCNT]+1)*sizeof(char*));
 			if (!tmp) {
+				fputs("2nd realloc failed", stderr);
 				rv = errno;
 				goto cleanup_f;
 			}
