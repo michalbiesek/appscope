@@ -66,6 +66,7 @@ ENVVARS=$ENVVARS"LD_PRELOAD=./lib/linux/$(uname -m)/libscope.so ""SCOPE_CRIBL_EN
 run_test test/${OS}/hellotest
 ENVARS=$SAVEVARS
 cat /tmp/scope.log
+rm /tmp/scope.log
 # run_test test/${OS}/strsettest
 # run_test test/${OS}/cfgutilstest
 # run_test test/${OS}/cfgtest

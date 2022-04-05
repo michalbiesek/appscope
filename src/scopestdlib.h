@@ -185,6 +185,7 @@ int           scope_pthread_barrier_destroy(pthread_barrier_t *);
 int           scope_pthread_barrier_wait(pthread_barrier_t *);;
 int           scope_ns_initparse(const unsigned char *, int, ns_msg *);
 int           scope_ns_parserr(ns_msg *, ns_sect, int, ns_rr *);
+struct group* scope_getgrgid(gid_t);
 int           scope_getgrgid_r(gid_t, struct group *, char *, size_t, struct group **);
 int           scope_getpwuid_r(uid_t, struct passwd *, char *, size_t, struct passwd **);
 pid_t         scope_getpid(void);

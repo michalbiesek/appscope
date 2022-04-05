@@ -869,12 +869,12 @@ setProcId(proc_id_t *proc)
         scope_snprintf(proc->id, sizeof(proc->id), "badid");
     }
 
-    scopeLogError("setProcId before scope_getuid");
+    // scopeLogError("setProcId before scope_getuid");
     proc->uid = scope_getuid();
     if (proc->username) scope_free(proc->username);
-    scopeLogError("setProcId before osGetUserName");
+    // scopeLogError("setProcId before osGetUserName");
     proc->username = osGetUserName(proc->uid);
-    scopeLogError("setProcId before scope_getgid");
+    // scopeLogError("setProcId before scope_getgid");
     proc->gid = scope_getgid();
     if (proc->groupname) scope_free(proc->groupname);
     scopeLogError("setProcId before osGetGroupName");

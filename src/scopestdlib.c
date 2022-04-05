@@ -148,6 +148,7 @@ extern int           scopelibc_pthread_barrier_wait(pthread_barrier_t *);
 extern int           scopelibc_dlclose(void *);
 extern int           scopelibc_ns_initparse(const unsigned char *, int, ns_msg *);
 extern int           scopelibc_ns_parserr(ns_msg *, ns_sect, int, ns_rr *);
+extern struct group* scopelibc_getgrgid(gid_t);
 extern int           scopelibc_getgrgid_r(gid_t, struct group *, char *, size_t, struct group **);
 extern int           scopelibc_getpwuid_r(uid_t, struct passwd *, char *, size_t, struct passwd **);
 extern pid_t         scopelibc_getpid(void);
@@ -823,6 +824,11 @@ scope_ns_initparse(const u_char *msg, int msglen, ns_msg *handle) {
 int
 scope_ns_parserr(ns_msg *handle, ns_sect section, int rrnum, ns_rr *rr) {
     return scopelibc_ns_parserr(handle, section, rrnum, rr);
+}
+
+struct group*
+scope_getgrgid(gid_t gid) {
+    return scopelibc_getgrgid(gid);
 }
 
 int

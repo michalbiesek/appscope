@@ -753,6 +753,13 @@ osGetGroupName(unsigned gid)
     struct group *grp_res = NULL;
     char buf[4096];
     char *str_ret = NULL;
+    {  
+       scopeLogError("osGetGroupName TEST before scope_getgrgid");
+       struct group *test_grp  = scope_getgrgid(gid);
+       scopeLogError("osGetGroupName TEST after scope_getgrgid ptr %p", test_grp);
+       scopeLogError("osGetGroupName TEST after scope_getgrgid name %s", test_grp->gr_name);
+    }
+
     scopeLogError("osGetGroupName before scope_getgrgid_r");
     int ret = scope_getgrgid_r(gid, &grp, buf, sizeof(buf), &grp_res);
     scopeLogError("osGetGroupName after scope_getgrgid_r ret %d gr_name %s", ret, grp.gr_name);

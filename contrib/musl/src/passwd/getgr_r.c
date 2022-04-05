@@ -12,9 +12,9 @@ static int getgr_r(const char *name, gid_t gid, struct group *gr, char *buf, siz
 	int rv = 0;
 	size_t i;
 	int cs;
-
+	fputs("getgr_r before first cancelstate\n", stderr);
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cs);
-
+	fputs("getgr_r after first cancelstate\n", stderr);
 	rv = __getgr_a(name, gid, gr, &line, &len, &mem, &nmem, res);
 	if (*res && size < len + (nmem+1)*sizeof(char *) + 32) {
 		*res = 0;
@@ -33,8 +33,11 @@ static int getgr_r(const char *name, gid_t gid, struct group *gr, char *buf, siz
 	}
  	free(mem);
  	free(line);
+	fputs("getgr_r before second cancelstate\n", stderr);
 	pthread_setcancelstate(cs, 0);
+	fputs("getgr_r after second cancelstate\n", stderr);
 	if (rv) errno = rv;
+	fputs("getgr_r returned\n", stderr);
 	return rv;
 }
 
@@ -45,5 +48,6 @@ int getgrnam_r(const char *name, struct group *gr, char *buf, size_t size, struc
 
 int getgrgid_r(gid_t gid, struct group *gr, char *buf, size_t size, struct group **res)
 {
+	fputs("getgrgid_r called\n", stderr);
 	return getgr_r(0, gid, gr, buf, size, res);
 }
