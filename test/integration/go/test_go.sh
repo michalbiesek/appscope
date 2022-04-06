@@ -123,6 +123,8 @@ sleep 0.5
 curl http://localhost:${PORT}/hello
 ERR+=$?
 
+sleep 1
+
 # This stops plainServerDynamic
 pkill -f plainServerDynamic
 
@@ -157,6 +159,8 @@ ldscope ./plainServerStatic ${PORT} &
 sleep 0.5
 curl http://localhost:${PORT}/hello
 ERR+=$?
+
+sleep 1
 
 # This stops plainServerStatic
 pkill -f plainServerStatic
@@ -193,6 +197,8 @@ sleep 0.5
 curl -k --key server.key --cert server.crt https://localhost:${PORT}/hello
 ERR+=$?
 
+sleep 1
+
 # This stops tlsServerDynamic
 pkill -f tlsServerDynamic
 
@@ -228,6 +234,8 @@ SCOPE_GO_STRUCT_PATH=$STRUCT_PATH ldscope ./tlsServerStatic ${PORT} &
 sleep 0.5
 curl -k --key server.key --cert server.crt https://localhost:${PORT}/hello
 ERR+=$?
+
+sleep 1
 
 # This stops tlsServerStatic
 pkill -f tlsServerStatic
@@ -507,6 +515,7 @@ influx_start_server() {
 }
 
 influx_eval() {
+    sleep 1
     pkill -f $2
 
     pexist="influxd"
