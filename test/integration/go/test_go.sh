@@ -395,6 +395,101 @@ endtest
 
 
 #
+# signalHandlerDynamic
+#
+starttest signalHandlerDynamic
+cd /go/signals
+ldscope ./signalHandlerDynamic &
+ERR+=$?
+
+sleep 5
+
+SCOPE_PID=$(pidof signalHandlerDynamic)
+if [[ ! $SCOPE_PID ]]; then
+    ERR+=1
+fi
+
+kill -SIGCHLD $SCOPE_PID
+
+# verify that process still exists
+if ! ps -p $SCOPE_PID > /dev/null; then
+    ERR+=1
+fi
+
+kill -SIGINT $SCOPE_PID
+
+sleep 4
+
+# verify that process don't exists anymore
+if ps -p $SCOPE_PID > /dev/null; then
+    ERR+=1
+fi
+
+endtest
+
+#
+# signalHandlerStatic
+#
+starttest signalHandlerStatic
+cd /go/signals
+ldscope ./signalHandlerStatic &
+SCOPE_PID=$!
+ERR+=$?
+if [[ ! $SCOPE_PID ]]; then
+    ERR+=1
+fi
+sleep 5
+
+kill -SIGCHLD ${SCOPE_PID}
+
+# verify that process still exists
+if ! ps -p ${SCOPE_PID} > /dev/null; then
+    ERR+=1
+fi
+
+kill -SIGINT ${SCOPE_PID}
+
+sleep 5
+
+# verify that process don't exists anymore
+if ps -p ${SCOPE_PID} > /dev/null; then
+    ERR+=1
+fi
+
+endtest
+
+#
+# signalHandlerStaticStripped
+#
+starttest signalHandlerStaticStripped
+cd /go/signals
+ldscope ./signalHandlerStaticStripped &
+SCOPE_PID=$!
+ERR+=$?
+
+sleep 5
+
+kill -SIGCHLD ${SCOPE_PID}
+
+# verify that process still exists
+if ! ps -p ${SCOPE_PID} > /dev/null; then
+    ERR+=1
+fi
+
+kill -SIGINT ${SCOPE_PID}
+
+sleep 5
+
+# verify that process don't exists anymore
+if ps -p ${SCOPE_PID} > /dev/null; then
+    ERR+=1
+fi
+
+sleep 5
+
+endtest
+
+#
 # cgoDynamic
 #
 starttest cgoDynamic
