@@ -135,10 +135,19 @@ evaltest
 
 grep plainServerDynamic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
+if [ $ERR -ne "0" ]; then
+    echo "plainServerDynamic http.req missing"
+fi
 grep plainServerDynamic $EVT_FILE | grep http.resp > /dev/null
 ERR+=$?
+if [ $ERR -ne "0" ]; then
+    echo "plainServerDynamic http.resp missing"
+fi
 grep plainServerDynamic $EVT_FILE | grep http.resp | grep "127.0.0.1" > /dev/null
 ERR+=$?
+if [ $ERR -ne "0" ]; then
+    echo "plainServerDynamic http.resp 127.0.0.1 missing"
+fi
 
 evalPayload
 ERR+=$?
@@ -170,11 +179,19 @@ evaltest
 
 grep plainServerStatic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
+if [ $ERR -ne "0" ]; then
+    echo "plainServerStatic http.req 127.0.0.1 missing"
+fi
 grep plainServerStatic $EVT_FILE | grep http.resp > /dev/null
 ERR+=$?
+if [ $ERR -ne "0" ]; then
+    echo "plainServerStatic http.resp missing"
+fi
 grep plainServerStatic $EVT_FILE | grep http.resp | grep "127.0.0.1" > /dev/null
 ERR+=$?
-
+if [ $ERR -ne "0" ]; then
+    echo "plainServerStatic http.resp 127.0.0.1 missing"
+fi
 evalPayload
 ERR+=$?
 
@@ -205,11 +222,19 @@ evaltest
 
 grep tlsServerDynamic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
+if [ $ERR -ne "0" ]; then
+    echo "tlsServerDynamic http.req missing"
+fi
 grep tlsServerDynamic $EVT_FILE | grep http.resp > /dev/null
 ERR+=$?
+if [ $ERR -ne "0" ]; then
+    echo "tlsServerDynamic http.resp missing"
+fi
 grep tlsServerDynamic $EVT_FILE | grep http.resp | grep "127.0.0.1" > /dev/null
 ERR+=$?
-
+if [ $ERR -ne "0" ]; then
+    echo "tlsServerDynamic http.resp 127.0.0.1 missing"
+fi
 evalPayload
 ERR+=$?
 
@@ -230,7 +255,9 @@ SCOPE_GO_STRUCT_PATH=$STRUCT_PATH ldscope ./tlsServerStatic ${PORT} &
 sleep 0.5
 curl -k --key server.key --cert server.crt https://localhost:${PORT}/hello
 ERR+=$?
-
+if [ $ERR -ne "0" ]; then
+    echo "tlsServerStatic failed"
+fi
 # This stops tlsServerStatic
 pkill -f tlsServerStatic
 
@@ -241,11 +268,19 @@ evaltest
 
 grep tlsServerStatic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
+if [ $ERR -ne "0" ]; then
+    echo "tlsServerStatic http.req missing"
+fi
 grep tlsServerStatic $EVT_FILE | grep http.resp > /dev/null
 ERR+=$?
+if [ $ERR -ne "0" ]; then
+    echo "tlsServerStatic http.resp missing"
+fi
 grep tlsServerStatic $EVT_FILE | grep http.resp | grep "127.0.0.1" > /dev/null
 ERR+=$?
-
+if [ $ERR -ne "0" ]; then
+    echo "tlsServerStatic http.resp 127.0.0.1 missing"
+fi
 evalPayload
 ERR+=$?
 
@@ -267,9 +302,14 @@ evaltest
 
 grep plainClientDynamic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
+if [ $ERR -ne "0" ]; then
+    echo "plainClientDynamic http.req missing"
+fi
 grep plainClientDynamic $EVT_FILE | grep http.resp > /dev/null
 ERR+=$?
-
+if [ $ERR -ne "0" ]; then
+    echo "plainClientDynamic http.resp missing"
+fi
 evalPayload
 ERR+=$?
 
@@ -291,9 +331,14 @@ evaltest
 
 grep plainClientStatic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
+if [ $ERR -ne "0" ]; then
+    echo "plainClientStatic http.req missing"
+fi
 grep plainClientStatic $EVT_FILE | grep http.resp > /dev/null
 ERR+=$?
-
+if [ $ERR -ne "0" ]; then
+    echo "plainClientStatic http.resp missing"
+fi
 evalPayload
 ERR+=$?
 
@@ -315,9 +360,14 @@ evaltest
 
 grep tlsClientDynamic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
+if [ $ERR -ne "0" ]; then
+    echo "tlsClientDynamic http.req missing"
+fi
 grep tlsClientDynamic $EVT_FILE | grep http.resp > /dev/null
 ERR+=$?
-
+if [ $ERR -ne "0" ]; then
+    echo "tlsClientDynamic http.resp missing"
+fi
 evalPayload
 ERR+=$?
 
@@ -339,8 +389,14 @@ evaltest
 
 grep tlsClientStatic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
+if [ $ERR -ne "0" ]; then
+    echo "tlsClientStatic http.req missing"
+fi
 grep tlsClientStatic $EVT_FILE | grep http.resp > /dev/null
 ERR+=$?
+if [ $ERR -ne "0" ]; then
+    echo "tlsClientStatic http.req missing"
+fi
 
 evalPayload
 ERR+=$?
@@ -410,6 +466,7 @@ kill -SIGCHLD $SCOPE_PID
 
 # verify that process still exists
 if ! ps -p $SCOPE_PID > /dev/null; then
+    echo "$SCOPE_PID ps first fail signalHandlerDynamic"
     ERR+=1
 fi
 
@@ -439,6 +496,7 @@ kill -SIGCHLD ${SCOPE_PID}
 
 # verify that process still exists
 if ! ps -p ${SCOPE_PID} > /dev/null; then
+    echo "$SCOPE_PID ps first fail signalHandlerStatic"
     ERR+=1
 fi
 
@@ -468,6 +526,7 @@ kill -SIGCHLD ${SCOPE_PID}
 
 # verify that process still exists
 if ! ps -p ${SCOPE_PID} > /dev/null; then
+    echo "$SCOPE_PID ps first fail signalHandlerStaticStripped"
     ERR+=1
 fi
 
