@@ -6,6 +6,7 @@ FAILED_TEST_LIST=""
 FAILED_TEST_COUNT=0
 
 EVT_FILE="/go/events.log"
+ERR_FILE="stderr.txt"
 touch $EVT_FILE
 
 starttest(){
@@ -40,6 +41,7 @@ endtest(){
     fi
 
     rm $EVT_FILE
+    rm -f $ERR_FILE
 }
 
 export SCOPE_PAYLOAD_ENABLE=true
@@ -393,6 +395,97 @@ ERR+=$?
 
 endtest
 
+
+#
+# signalHandlerDynamic
+#
+starttest signalHandlerDynamic
+cd /go/signals
+ldscope ./signalHandlerDynamic 2>${ERR_FILE}&
+ERR+=$?
+
+sleep 5
+
+SCOPE_PID=$(pidof signalHandlerDynamic)
+if [[ ! $SCOPE_PID ]]; then
+    ERR+=1
+fi
+
+kill -SIGCHLD $SCOPE_PID
+
+# verify that process still exists
+if ! ps -p $SCOPE_PID > /dev/null; then
+    ERR+=1
+fi
+
+while kill -0 ${SCOPE_PID}; do
+  kill -SIGINT ${SCOPE_PID}
+  sleep 1
+done
+
+count=$(grep 'bad g' $ERR_FILE | wc -l)
+if [ $count -ne 0 ] ; then
+    ERR+=1
+fi
+
+#
+# signalHandlerStatic
+#
+starttest signalHandlerStatic
+cd /go/signals
+ldscope ./signalHandlerStatic 2>${ERR_FILE}&
+SCOPE_PID=$!
+ERR+=$?
+
+kill -SIGCHLD ${SCOPE_PID}
+
+# verify that process still exists
+if ! ps -p ${SCOPE_PID} > /dev/null; then
+    ERR+=1
+fi
+
+while kill -0 ${SCOPE_PID}; do
+  kill -SIGINT ${SCOPE_PID}
+  sleep 1
+done
+
+count=$(grep 'bad g' $ERR_FILE | wc -l)
+if [ $count -ne 0 ] ; then
+    ERR+=1
+fi
+
+endtest
+
+#
+# signalHandlerStaticStripped
+#
+starttest signalHandlerStaticStripped
+cd /go/signals
+ldscope ./signalHandlerStatic 2>${ERR_FILE}&
+SCOPE_PID=$!
+ERR+=$?
+if [[ ! $SCOPE_PID ]]; then
+    ERR+=1
+fi
+
+kill -SIGCHLD ${SCOPE_PID}
+
+# verify that process still exists
+if ! ps -p ${SCOPE_PID} > /dev/null; then
+    ERR+=1
+fi
+
+while kill -0 ${SCOPE_PID}; do
+  kill -SIGINT ${SCOPE_PID}
+  sleep 1
+done
+
+count=$(grep 'bad g' $ERR_FILE | wc -l)
+if [ $count -ne 0 ] ; then
+    ERR+=1
+fi
+
+endtest
 
 #
 # cgoDynamic
