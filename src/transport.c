@@ -320,12 +320,21 @@ transportRegisterForExitNotification(void (*fn)(void))
     atexit(fn);
 }
 
+static void tls_debug(void)
+{
+    volatile int test_dbg = 1;
+    while(test_dbg) {
+       scope_sleep(1);
+    }
+}
+
 static int
 establishTlsSession(transport_t *trans)
 {
     if (!trans || trans->net.sock == -1) return FALSE;
     scopeLogInfo("fd:%d establishing tls session", trans->net.sock);
 
+    tls_debug();
     static int init_called = FALSE;
     if (!init_called) {
         OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, NULL);
