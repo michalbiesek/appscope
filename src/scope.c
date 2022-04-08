@@ -50,7 +50,7 @@ setGoHttpEnvVariable(void)
     // If GODEBUG isn't set, try to set it to http2server=0,http2client=0
     if (!cur_val) {
         if (setenv(GO_ENV_VAR, GO_ENV_SERVER_VALUE "=0," GO_ENV_CLIENT_VALUE "=0", 1)) {
-            scope_perror("setGoHttpEnvVariable:setenv");
+            perror("setGoHttpEnvVariable:setenv");
         }
         return;
     }
@@ -64,7 +64,7 @@ setGoHttpEnvVariable(void)
             return;
         }
         if (setenv(GO_ENV_VAR, new_val, 1)) {
-            scope_perror("setGoHttpEnvVariable:setenv");
+            perror("setGoHttpEnvVariable:setenv");
         }
         if (new_val) scope_free(new_val);
     }
@@ -79,7 +79,7 @@ setGoHttpEnvVariable(void)
             return;
         }
         if (setenv(GO_ENV_VAR, new_val, 1)) {
-            scope_perror("setGoHttpEnvVariable:setenv");
+            perror("setGoHttpEnvVariable:setenv");
         }
         if (new_val) scope_free(new_val);
     }
@@ -88,7 +88,7 @@ setGoHttpEnvVariable(void)
 static void
 showUsage(char *prog)
 {
-    printf(
+    scope_printf(
       "\n"
       "Cribl AppScope Dynamic Loader %s\n"
       "\n"
@@ -241,7 +241,7 @@ main(int argc, char **argv, char **env)
 
     if (ebuf && (is_go(ebuf->buf) == TRUE)) {
         if (setenv("SCOPE_APP_TYPE", "go", 1) == -1) {
-            scope_perror("setenv");
+            perror("setenv");
             goto err;
         }
 
@@ -249,7 +249,7 @@ main(int argc, char **argv, char **env)
 
     } else {
         if (setenv("SCOPE_APP_TYPE", "native", 1) == -1) {
-            scope_perror("setenv");
+            perror("setenv");
             goto err;
         }
     }
@@ -259,18 +259,18 @@ main(int argc, char **argv, char **env)
         if (ebuf) freeElf(ebuf->buf, ebuf->len);
 
         if (setenv("LD_PRELOAD", scopeLibPath, 0) == -1) {
-            scope_perror("setenv");
+            perror("setenv");
             goto err;
         }
 
         if (setenv("SCOPE_EXEC_TYPE", "dynamic", 1) == -1) {
-            scope_perror("setenv");
+            perror("setenv");
             goto err;
         }
         
         pid = fork();
         if (pid == -1) {
-            scope_perror("fork");
+            perror("fork");
             goto err;
         } else if (pid > 0) {
             int status;
@@ -283,13 +283,13 @@ main(int argc, char **argv, char **env)
             exit(EXIT_FAILURE);
         } else {
             execve(inferior_command, &argv[optind], environ);
-            scope_perror("execve");
+            perror("execve");
             goto err;
         }
     }
 
     if (setenv("SCOPE_EXEC_TYPE", "static", 1) == -1) {
-        scope_perror("setenv");
+        perror("setenv");
         goto err;
     }
 
