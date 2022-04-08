@@ -209,7 +209,4 @@ int           scope_uname(struct utsname *);
 int           scope_arch_prctl(int, unsigned long);
 int           scope_getrusage(int, struct rusage *);
 
-// Other
-size_t scope_total_alloc_size(void);
-
 #endif // __SCOPE_STDLIB_H__
