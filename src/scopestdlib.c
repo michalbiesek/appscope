@@ -26,7 +26,6 @@ extern void*  scopelibc_memmove(void *, const void *, size_t);
 extern int    scopelibc_memcmp(const void *, const void *, size_t);
 extern int    scopelibc_mprotect(void *, size_t, int);
 extern void*  scopelibc_memcpy(void *, const void *, size_t);
-extern size_t scopelibc_malloc_usable_size(void *);
 
 // File handling operations
 extern FILE*          scopelibc_fopen(const char *, const char *);
@@ -177,47 +176,34 @@ extern int           scopelibc_getrusage(int , struct rusage *);
 void*
 scope_malloc(size_t size) {
     void *ptr = scopelibc_malloc(size);
-    alloc_size += scopelibc_malloc_usable_size(ptr);
     return ptr;
 }
 
 void*
 scope_calloc(size_t nmemb, size_t size) {
     void *ptr = scopelibc_calloc(nmemb, size);
-    alloc_size += scopelibc_malloc_usable_size(ptr);
     return ptr;
 }
 
 void*
 scope_realloc(void *ptr, size_t size) {
-    alloc_size -= scopelibc_malloc_usable_size(ptr);
     void* new_ptr = scopelibc_realloc(ptr, size);
-    alloc_size += scopelibc_malloc_usable_size(new_ptr);
     return new_ptr;
 }
 
 void
 scope_free(void *ptr) {
-    alloc_size -= scopelibc_malloc_usable_size(ptr);
     scopelibc_free(ptr);
 }
 
 void*
 scope_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
-    void* ptr = scopelibc_mmap(addr, length, prot, flags, fd, offset);
-    if (ptr != MAP_FAILED) {
-        alloc_size += length;
-    }
-    return ptr;
+    return scopelibc_mmap(addr, length, prot, flags, fd, offset);
 }
 
 int
 scope_munmap(void *addr, size_t length) {
-    int res = scopelibc_munmap(addr, length);
-    if (!res) {
-        alloc_size -= length;
-    }
-    return res;
+    return scopelibc_munmap(addr, length);
 }
 
 FILE*
@@ -461,11 +447,7 @@ scope_stpncpy(char *restrict dest, const char *restrict src, size_t n) {
 
 char*
 scope_realpath(const char *restrict path, char *restrict resolved_path) {
-    char* new_path = scopelibc_realpath(path, resolved_path);
-    if (!resolved_path) {
-        alloc_size += scopelibc_malloc_usable_size(new_path);
-    }
-    return new_path;
+    return scopelibc_realpath(path, resolved_path);
 }
 
 ssize_t
@@ -475,9 +457,7 @@ scope_readlink(const char *restrict pathname, char *restrict buf, size_t bufsiz)
 
 char*
 scope_strdup(const char *s) {
-    char *ptr = scopelibc_strdup(s);
-    alloc_size += scopelibc_malloc_usable_size(ptr);
-    return ptr;
+    return scopelibc_strdup(s);
 }
 
 int
