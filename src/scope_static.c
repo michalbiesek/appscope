@@ -95,7 +95,7 @@ setEnvVariable(char *env, char *value)
     // If env is not set
     if (!cur_val) {
         if (setenv(env, value, 1)) {
-            scope_perror("setEnvVariable:setenv");
+            perror("setEnvVariable:setenv");
         }
         return;
     }
@@ -107,9 +107,9 @@ setEnvVariable(char *env, char *value)
         return;
     }
 
-    if (g_debug) printf("%s:%d %s to %s\n", __FUNCTION__, __LINE__, env, new_val);
+    if (g_debug) scope_printf("%s:%d %s to %s\n", __FUNCTION__, __LINE__, env, new_val);
     if (setenv(env, new_val, 1)) {
-        scope_perror("setEnvVariable:setenv");
+        perror("setEnvVariable:setenv");
     }
 
     if (new_val) scope_free(new_val);

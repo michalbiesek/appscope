@@ -113,7 +113,7 @@ libdirCreateIfMissing()
     const char *libdir = libdirGet();
 
     if (!libdirDirExists(libdir, R_OK|X_OK)) {
-        if (mkdir(libdir, S_IRWXU|S_IRWXG|S_IRWXO) == -1) {
+        if (scope_mkdir(libdir, S_IRWXU|S_IRWXG|S_IRWXO) == -1) {
             scope_perror("mkdir() failed");
             return -1;
         }

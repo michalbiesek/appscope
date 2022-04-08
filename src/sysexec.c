@@ -129,7 +129,7 @@ static Elf64_Addr
 map_segment(char *buf, Elf64_Phdr *phead)
 {
     int prot;
-    int pgsz = sysconf(_SC_PAGESIZE);
+    int pgsz = scope_sysconf(_SC_PAGESIZE);
     void *addr;
     char *laddr;
     unsigned long lsize;
