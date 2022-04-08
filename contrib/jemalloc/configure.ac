@@ -1820,7 +1820,7 @@ dnl Check if we have dlsym support.
   pthread_atfork((void *)0, (void *)0, (void *)0);
 ], [je_cv_pthread_atfork])
   if test "x${je_cv_pthread_atfork}" = "xyes" ; then
-    AC_DEFINE([JEMALLOC_HAVE_PTHREAD_ATFORK], [ ], [ ])
+    AC_DEFINE([JEMALLOC_HAVE_DUMMY], [ ], [ ])
   fi
   dnl Check if pthread_setname_np is available with the expected API.
   JE_COMPILABLE([pthread_setname_np(3)], [

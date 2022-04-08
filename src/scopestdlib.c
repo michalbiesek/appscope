@@ -14,10 +14,10 @@ static uint64_t alloc_size;
 // Internal standard library references
 
 // Memory management handling operations
-extern void*  scopelibc_malloc(size_t);
-extern void*  scopelibc_calloc(size_t, size_t);
-extern void*  scopelibc_realloc(void *, size_t);
-extern void   scopelibc_free(void *);
+extern void*  jem_malloc(size_t);
+extern void*  jem_calloc(size_t, size_t);
+extern void*  jem_realloc(void *, size_t);
+extern void   jem_free(void *);
 extern void*  scopelibc_mmap(void *, size_t, int, int, int, off_t);
 extern int    scopelibc_munmap(void *, size_t);
 extern FILE*  scopelibc_open_memstream(char **, size_t *);
@@ -175,25 +175,22 @@ extern int           scopelibc_getrusage(int , struct rusage *);
 
 void*
 scope_malloc(size_t size) {
-    void *ptr = scopelibc_malloc(size);
-    return ptr;
+    return jem_malloc(size);
 }
 
 void*
 scope_calloc(size_t nmemb, size_t size) {
-    void *ptr = scopelibc_calloc(nmemb, size);
-    return ptr;
+    return jem_calloc(nmemb, size);
 }
 
 void*
 scope_realloc(void *ptr, size_t size) {
-    void* new_ptr = scopelibc_realloc(ptr, size);
-    return new_ptr;
+    return jem_realloc(ptr, size);
 }
 
 void
 scope_free(void *ptr) {
-    scopelibc_free(ptr);
+    jem_free(ptr);
 }
 
 void*
