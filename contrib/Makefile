@@ -12,7 +12,7 @@
 
 ARCH ?= $(shell uname -m)
 
-all: cJSON cmocka funchook libyaml openssl pcre2 ls-hpack musl
+all: cJSON cmocka funchook libyaml openssl pcre2 ls-hpack musl jemalloc
 clean:
 	-@$(MAKE) -C cJSON clean
 	-@$(RM) -r build/*
@@ -26,7 +26,8 @@ openssl: build/openssl/libssl.a build/openssl/libcrypto.a
 pcre2: build/pcre2/libpcre2-posix.a build/pcre2/libpcre2-8.a
 ls-hpack: build/ls-hpack/libls-hpack.a
 musl: build/musl/lib/libc.a
-.PHONY: cJSON cmocka funchook libyaml openssl pcre2 ls-hpack musl
+jemalloc: jemalloc/lib/libjemalloc.a
+.PHONY: cJSON cmocka funchook libyaml openssl pcre2 ls-hpack musl jemalloc
 
 # Pro Tip: add these to `cmake` commands to be able to debug the resulting libraries
 #
@@ -106,10 +107,16 @@ build/musl/lib/libc.a:
 	@mkdir build/musl
 	cd build/musl && ../../musl/configure --disable-shared --with-malloc=oldmalloc && $(MAKE)
 	objcopy --prefix-symbols=scopelibc_ build/musl/lib/libc.a
+	objcopy --redefine-syms jemalloc_sym.lst build/musl/lib/libc.a
 # TODO verify if the code below be done via mfloat-abi=soft not sure if aarch64 support soft though
 # https://developer.arm.com/documentation/dui0774/b/compiler-command-line-options/-mfloat-abi
 # -mgeneral-regs-only maybe ? https://gcc.gnu.org/onlinedocs/gcc/AArch64-Options.html
 	if [ "aarch64" = "$(ARCH)" ]; then \
 		objcopy --redefine-syms aarch64_musl_syms.lst build/musl/lib/libc.a; \
 	fi
+	@[ -z "$(CI)" ] || echo "::endgroup::"
+
+jemalloc/lib/libjemalloc.a:
+	@echo "$${CI:+::group::}Building jemalloc"
+	cd jemalloc && autoconf && ./configure --enable-autogen --with-malloc-conf="narenas:1,dss:disabled,tcache:false" --disable-shared --disable-initial-exec-tls --disable-doc --with-jemalloc-prefix="jem_" && $(MAKE)
 	@[ -z "$(CI)" ] || echo "::endgroup::"
