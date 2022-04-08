@@ -118,5 +118,5 @@ build/musl/lib/libc.a:
 
 jemalloc/lib/libjemalloc.a:
 	@echo "$${CI:+::group::}Building jemalloc"
-	cd jemalloc && autoconf && ./configure --enable-autogen --with-malloc-conf="narenas:1,dss:disabled,tcache:false" --disable-shared --disable-initial-exec-tls --disable-doc --with-jemalloc-prefix="jem_" && $(MAKE)
+	cd jemalloc && autoconf && ./configure CFLAGS=-fPIC --enable-autogen --with-malloc-conf="narenas:1,dss:disabled,tcache:false" --disable-shared --disable-initial-exec-tls --disable-doc --with-jemalloc-prefix="jem_" && $(MAKE)
 	@[ -z "$(CI)" ] || echo "::endgroup::"

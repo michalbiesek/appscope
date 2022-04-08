@@ -1,7 +1,7 @@
-malloc scopelibc_malloc
-calloc scopelibc_calloc
-realloc scopelibc_realloc
-free scopelibc_free
+malloc jem_malloc
+calloc jem_calloc
+realloc jem_realloc
+free jem_free
 mmap scopelibc_mmap
 munmap scopelibc_munmap
 fread scopelibc_fread
