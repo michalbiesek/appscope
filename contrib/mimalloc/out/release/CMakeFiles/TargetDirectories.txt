@@ -1,0 +1,13 @@
+/home/michalbiesek/Github/mimalloc/out/release/CMakeFiles/install/local.dir
+/home/michalbiesek/Github/mimalloc/out/release/CMakeFiles/install.dir
+/home/michalbiesek/Github/mimalloc/out/release/CMakeFiles/list_install_components.dir
+/home/michalbiesek/Github/mimalloc/out/release/CMakeFiles/rebuild_cache.dir
+/home/michalbiesek/Github/mimalloc/out/release/CMakeFiles/edit_cache.dir
+/home/michalbiesek/Github/mimalloc/out/release/CMakeFiles/test.dir
+/home/michalbiesek/Github/mimalloc/out/release/CMakeFiles/mimalloc-test-stress.dir
+/home/michalbiesek/Github/mimalloc/out/release/CMakeFiles/mimalloc-test-api-fill.dir
+/home/michalbiesek/Github/mimalloc/out/release/CMakeFiles/install/strip.dir
+/home/michalbiesek/Github/mimalloc/out/release/CMakeFiles/mimalloc-obj.dir
+/home/michalbiesek/Github/mimalloc/out/release/CMakeFiles/mimalloc-static.dir
+/home/michalbiesek/Github/mimalloc/out/release/CMakeFiles/mimalloc-test-api.dir
+/home/michalbiesek/Github/mimalloc/out/release/CMakeFiles/mimalloc.dir

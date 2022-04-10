@@ -1,0 +1,1 @@
+/usr/lib/ccache/cc -O3 -DNDEBUG  -rdynamic CMakeFiles/mimalloc-test-api.dir/test/test-api.c.o  -o mimalloc-test-api  -Wl,-rpath,/home/michalbiesek/Github/mimalloc/out/release libmimalloc.so.2.0 -lpthread -lrt 
