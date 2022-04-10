@@ -12,6 +12,10 @@
 // Internal standard library references
 
 // Memory management handling operations
+extern void*  mi_malloc(size_t);
+extern void*  mi_calloc(size_t, size_t);
+extern void*  mi_realloc(void *, size_t);
+extern void   mi_free(void *);
 extern void*  scopelibc_malloc(size_t);
 extern void*  scopelibc_calloc(size_t, size_t);
 extern void*  scopelibc_realloc(void *, size_t);
@@ -173,22 +177,22 @@ extern int           scopelibc_getrusage(int , struct rusage *);
 
 void*
 scope_malloc(size_t size) {
-    return scopelibc_malloc(size);
+    return mi_malloc(size);
 }
 
 void*
 scope_calloc(size_t nmemb, size_t size) {
-    return scopelibc_calloc(nmemb, size);
+    return mi_calloc(nmemb, size);
 }
 
 void*
 scope_realloc(void *ptr, size_t size) {
-    return scopelibc_realloc(ptr, size);
+    return mi_realloc(ptr, size);
 }
 
 void
 scope_free(void *ptr) {
-    scopelibc_free(ptr);
+    mi_free(ptr);
 }
 
 void*
