@@ -44,8 +44,8 @@ terms of the MIT license. A copy of the license can be found in the file
 #endif
 
 #if !defined(_WIN32) && !defined(__wasi__) 
-#define  MI_USE_PTHREADS
-#include <pthread.h>
+// #define  MI_USE_PTHREADS
+// #include <pthread.h>
 #endif
 
 // "options.c"

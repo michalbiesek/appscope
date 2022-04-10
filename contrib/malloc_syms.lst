@@ -1,0 +1,4 @@
+scopelibc_malloc mi_malloc
+scopelibc_calloc mi_calloc
+scopelibc_realloc mi_realloc
+scopelibc_free mi_free
