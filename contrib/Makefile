@@ -12,7 +12,7 @@
 
 ARCH ?= $(shell uname -m)
 
-all: cJSON cmocka funchook libyaml openssl pcre2 ls-hpack musl
+all: cJSON cmocka funchook libyaml openssl pcre2 ls-hpack musl mimalloc
 clean:
 	-@$(MAKE) -C cJSON clean
 	-@$(RM) -r build/*
@@ -26,7 +26,8 @@ openssl: build/openssl/libssl.a build/openssl/libcrypto.a
 pcre2: build/pcre2/libpcre2-posix.a build/pcre2/libpcre2-8.a
 ls-hpack: build/ls-hpack/libls-hpack.a
 musl: build/musl/lib/libc.a
-.PHONY: cJSON cmocka funchook libyaml openssl pcre2 ls-hpack musl
+mimalloc: build/mimalloc/libmimalloc.a
+.PHONY: cJSON cmocka funchook libyaml openssl pcre2 ls-hpack musl mimalloc
 
 # Pro Tip: add these to `cmake` commands to be able to debug the resulting libraries
 #
@@ -112,4 +113,10 @@ build/musl/lib/libc.a:
 	if [ "aarch64" = "$(ARCH)" ]; then \
 		objcopy --redefine-syms aarch64_musl_syms.lst build/musl/lib/libc.a; \
 	fi
+	@[ -z "$(CI)" ] || echo "::endgroup::"
+
+build/mimalloc/libmimalloc.a:
+	@echo "$${CI:+::group::}Building mimalloc"
+	@mkdir build/mimalloc
+	cd build/mimalloc && cmake ../../mimalloc && $(MAKE)
 	@[ -z "$(CI)" ] || echo "::endgroup::"
