@@ -5,21 +5,13 @@
 #include <sys/mman.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <elf.h>
-#include <string.h>
-#include "atomic.h"
-#include "syscall.h"
-#include "libc.h"
-#include "lock.h"
-#include "dynlink.h"
 
-// use macros to appropriately namespace these.
-#define size_classes __malloc_size_classes
-#define ctx __malloc_context
-#define alloc_meta __malloc_alloc_meta
-#define is_allzero __malloc_allzerop
-#define dump_heap __dump_heap
-
+// use macros to appropriately namespace these. for libc,
+// the names would be changed to lie in __ namespace.
+#define size_classes malloc_size_classes
+#define ctx malloc_context
+#define alloc_meta malloc_alloc_meta
+#define is_allzero malloc_allzerop
 #define malloc __libc_malloc_impl
 #define realloc __libc_realloc
 #define free __libc_free
@@ -28,7 +20,7 @@
 #include <assert.h>
 #else
 #undef assert
-#define assert(x) do { if (!(x)) a_crash(); } while(0)
+#define assert(x) do { if (!(x)) __builtin_trap(); } while(0)
 #endif
 
 #undef brk
@@ -39,13 +31,47 @@
 #define brk(p) ((p)-1)
 #endif
 
-#define mmap __mmap
-#define madvise __madvise
-#define mremap __mremap
+#ifndef MADV_FREE
+#undef madvise
+#define madvise(p,l,a) (-1)
+#define MADV_FREE 0
+#endif
 
-#define DISABLE_ALIGNED_ALLOC (__malloc_replaced && !__aligned_alloc_replaced)
+#ifndef MREMAP_MAYMOVE
+#undef mremap
+#define mremap(p,o,n,f) MAP_FAILED
+#endif
 
+#define DISABLE_ALIGNED_ALLOC 0
 extern int getentropy(void *, size_t);
+
+static inline int a_ctz_32(uint32_t x)
+{
+	return __builtin_ctz(x);
+}
+
+static inline int a_clz_32(uint32_t x)
+{
+	return __builtin_clz(x);
+}
+
+static inline int a_cas(volatile int *p, int t, int s)
+{
+	return __sync_val_compare_and_swap(p, t, s);
+}
+
+static inline int a_swap(volatile int *p, int v)
+{
+	int x;
+	do x = *p;
+	while (a_cas(p, x, v)!=x);
+	return x;
+}
+
+static inline void a_or(volatile int *p, int v)
+{
+	__sync_fetch_and_or(p, v);
+}
 
 static inline uint64_t get_random_secret()
 {
@@ -54,46 +80,75 @@ static inline uint64_t get_random_secret()
 	return secret;
 }
 
-#ifndef PAGESIZE
-#define PAGESIZE PAGE_SIZE
+static inline size_t get_page_size()
+{
+	return sysconf(_SC_PAGESIZE);
+}
+
+// no portable "is multithreaded" predicate so assume true
+#define MT 1
+
+#define LOCK_TYPE_MUTEX 1
+#define LOCK_TYPE_RWLOCK 2
+
+#ifndef LOCK_TYPE
+#define LOCK_TYPE LOCK_TYPE_MUTEX
 #endif
 
-#define MT (1)
+#if LOCK_TYPE == LOCK_TYPE_MUTEX
 
 #define RDLOCK_IS_EXCLUSIVE 1
 
 __attribute__((__visibility__("hidden")))
-extern int __malloc_lock[1];
+extern pthread_mutex_t malloc_lock;
 
 #define LOCK_OBJ_DEF \
-int __malloc_lock[1]; \
-void __malloc_atfork(int who) { malloc_atfork(who); }
+pthread_mutex_t malloc_lock = PTHREAD_MUTEX_INITIALIZER
 
 static inline void rdlock()
 {
-	if (MT) LOCK(__malloc_lock);
+	if (MT) pthread_mutex_lock(&malloc_lock);
 }
 static inline void wrlock()
 {
-	if (MT) LOCK(__malloc_lock);
+	if (MT) pthread_mutex_lock(&malloc_lock);
 }
 static inline void unlock()
 {
-	UNLOCK(__malloc_lock);
+	if (MT) pthread_mutex_unlock(&malloc_lock);
 }
 static inline void upgradelock()
 {
 }
-static inline void resetlock()
+
+#elif LOCK_TYPE == LOCK_TYPE_RWLOCK
+
+#define RDLOCK_IS_EXCLUSIVE 0
+
+__attribute__((__visibility__("hidden")))
+extern pthread_rwlock_t malloc_lock;
+
+#define LOCK_OBJ_DEF \
+pthread_rwlock_t malloc_lock = PTHREAD_RWLOCK_INITIALIZER
+
+static inline void rdlock()
 {
-	__malloc_lock[0] = 0;
+	if (MT) pthread_rwlock_rdlock(&malloc_lock);
+}
+static inline void wrlock()
+{
+	if (MT) pthread_rwlock_wrlock(&malloc_lock);
+}
+static inline void unlock()
+{
+	if (MT) pthread_rwlock_unlock(&malloc_lock);
+}
+static inline void upgradelock()
+{
+	unlock();
+	wrlock();
 }
 
-static inline void malloc_atfork(int who)
-{
-	if (who<0) rdlock();
-	else if (who>0) resetlock();
-	else unlock();
-}
+#endif
 
 #endif
