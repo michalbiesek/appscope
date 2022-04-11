@@ -105,7 +105,7 @@ build/musl/lib/libc.a:
 	@$(RM) -r build/musl
 	@mkdir build/musl
 # To enable debug please add --enable-debug --enable-optimize=no below
-	cd build/musl && ../../musl/configure --enable-debug --enable-optimize=no --disable-shared && $(MAKE)
+	cd build/musl && ../../musl/configure --disable-shared && $(MAKE)
 	objcopy --prefix-symbols=scopelibc_ build/musl/lib/libc.a
 # TODO verify if the code below be done via mfloat-abi=soft not sure if aarch64 support soft though
 # https://developer.arm.com/documentation/dui0774/b/compiler-command-line-options/-mfloat-abi
