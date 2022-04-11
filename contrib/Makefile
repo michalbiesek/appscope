@@ -104,6 +104,7 @@ build/musl/lib/libc.a:
 	@echo "$${CI:+::group::}Building musl"
 	@$(RM) -r build/musl
 	@mkdir build/musl
+# To enable debug please add ---enable-debug --enable-optimize=no below
 	cd build/musl && ../../musl/configure --disable-shared --with-malloc=oldmalloc && $(MAKE)
 	objcopy --prefix-symbols=scopelibc_ build/musl/lib/libc.a
 # TODO verify if the code below be done via mfloat-abi=soft not sure if aarch64 support soft though
