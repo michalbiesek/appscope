@@ -29,9 +29,12 @@ static int allzerop(void *p)
 	return 0;
 }
 weak_alias(allzerop, __malloc_allzerop);
+extern void* mi_calloc(size_t, size_t) __attribute__((__weak__));
 
 void *calloc(size_t m, size_t n)
 {
+	if (mi_calloc)
+		return mi_calloc(m, n);
 	if (n && m > (size_t)-1/n) {
 		errno = ENOMEM;
 		return 0;

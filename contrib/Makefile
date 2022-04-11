@@ -107,6 +107,7 @@ build/musl/lib/libc.a:
 	@mkdir build/musl
 	cd build/musl && ../../musl/configure --disable-shared --enable-debug --enable-optimize=no --with-malloc=oldmalloc && $(MAKE)
 	objcopy --prefix-symbols=scopelibc_ build/musl/lib/libc.a
+	objcopy --redefine-syms malloc_syms.lst build/musl/lib/libc.a
 # TODO verify if the code below be done via mfloat-abi=soft not sure if aarch64 support soft though
 # https://developer.arm.com/documentation/dui0774/b/compiler-command-line-options/-mfloat-abi
 # -mgeneral-regs-only maybe ? https://gcc.gnu.org/onlinedocs/gcc/AArch64-Options.html

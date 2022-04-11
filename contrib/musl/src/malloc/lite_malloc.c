@@ -104,14 +104,19 @@ static void *__simple_malloc(size_t n)
 }
 
 weak_alias(__simple_malloc, __libc_malloc_impl);
+extern void* mi_malloc(size_t) __attribute__((__weak__));
 
 void *__libc_malloc(size_t n)
 {
+	if (mi_malloc)
+		return mi_malloc(n);
 	return __libc_malloc_impl(n);
 }
 
 static void *default_malloc(size_t n)
 {
+	if (mi_malloc)
+		return mi_malloc(n);
 	return __libc_malloc_impl(n);
 }
 
