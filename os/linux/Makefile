@@ -109,6 +109,7 @@ coretest: $(C_FILES) $(YAML_AR) $(JSON_AR) $(TEST_LIB)
 	$(CC) $(TEST_CFLAGS) -o test/$(OS)/linklisttest linklisttest.o linklist.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS)
 	$(CC) $(TEST_CFLAGS) -o test/$(OS)/comtest comtest.o com.o ctl.o log.o transport.o evtformat.o circbuf.o mtcformat.o strset.o cfgutils.o cfg.o mtc.o scopestdlib.o dbg.o linklist.o fn.o utils.o os.o test.o report.o search.o httpagg.o state.o httpstate.o metriccapture.o plattime.o $(TEST_AR) $(TEST_LD_FLAGS)
 	$(CC) $(TEST_CFLAGS) -o test/$(OS)/dbgtest dbgtest.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) -o test/$(OS)/maintest maintest.o evtformat.o log.o transport.o mtcformat.o strset.o scopestdlib.o dbg.o cfg.o com.o ctl.o mtc.o circbuf.o cfgutils.o linklist.o fn.o utils.o os.o report.o search.o httpagg.o state.o httpstate.o metriccapture.o plattime.o $(TEST_AR) -ldl -lresolv -lrt -lpthread
 	$(CC) $(TEST_CFLAGS) -o test/$(OS)/glibcvertest glibcvertest.o $(TEST_AR) $(TEST_LD_FLAGS)
 	$(CC) $(TEST_CFLAGS) -o test/$(OS)/selfinterposetest selfinterposetest.o $(TEST_AR) $(TEST_LD_FLAGS)
 	$(CC) $(TEST_CFLAGS) -o test/$(OS)/dnstest dnstest.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS)
