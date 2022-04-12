@@ -164,6 +164,7 @@ int         scope_poll(struct pollfd *, nfds_t, int);
 int         scope_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 int         scope_getaddrinfo(const char *, const char *, const struct addrinfo *, struct addrinfo **);
 void        scope_freeaddrinfo(struct addrinfo *);
+int         scope_getpeername(int, struct sockaddr *, socklen_t *);
 const char* scope_inet_ntop(int, const void *, char *, socklen_t);
 uint16_t    scope_ntohs(uint16_t);
 
