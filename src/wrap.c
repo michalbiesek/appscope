@@ -3519,6 +3519,7 @@ dlopen(const char *filename, int flags)
 EXPORTON void
 _exit(int status)
 {
+    scopeLogError("exit called with status %d", status);
     handleExit();
     if (g_fn._exit) {
         g_fn._exit(status);
@@ -4387,15 +4388,18 @@ EXPORTON pid_t
 fork()
 {
     pid_t rc;
-
+    scopeLogError("fork called");
     WRAP_CHECK(fork, -1);
     scopeLog(CFG_LOG_DEBUG, "fork");
     scope_malloc_before_fork();
     rc = g_fn.fork();
     scope_malloc_after_fork(!rc);
     if (rc == 0) {
+        scopeLogError("fork child");
         // We are the child proc
         doReset();
+    } else {
+        scopeLogError("fork parent");
     }
 
     return rc;
