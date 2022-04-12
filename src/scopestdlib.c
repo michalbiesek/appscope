@@ -12,6 +12,7 @@
 // Internal standard library references
 extern void   scopelibc_malloc_fork_op(int);
 // Memory management handling operations
+extern void*  scopelibc_memalign(size_t, size_t);
 extern void*  scopelibc_malloc(size_t);
 extern void*  scopelibc_calloc(size_t, size_t);
 extern void*  scopelibc_realloc(void *, size_t);
@@ -119,6 +120,7 @@ extern int         scopelibc_poll(struct pollfd *, nfds_t, int);
 extern int         scopelibc_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 extern int         scopelibc_getaddrinfo(const char *, const char *, const struct addrinfo *, struct addrinfo **);
 extern void        scopelibc_freeaddrinfo(struct addrinfo *);
+extern int         scopelibc_getpeername(int, struct sockaddr *, socklen_t *);
 extern const char* scopelibc_inet_ntop(int, const void *, char *, socklen_t);
 extern uint16_t    scopelibc_ntohs(uint16_t);
 
@@ -168,6 +170,7 @@ extern int           scopelibc_getpagesize(void);
 extern int           scopelibc_uname(struct utsname *);
 extern int           scopelibc_arch_prctl(int, unsigned long);
 extern int           scopelibc_getrusage(int , struct rusage *);
+extern int           scopelibc_atexit(void (*)(void));
 
 // Memory management handling operations
 
@@ -179,6 +182,11 @@ scope_malloc_before_fork(void) {
 void
 scope_malloc_after_fork(int who) {
     scopelibc_malloc_fork_op(who);
+}
+
+void*
+scope_memalign(size_t alignment, size_t size) {
+    return scopelibc_memalign(alignment, size);
 }
 
 void*
@@ -693,6 +701,11 @@ scope_freeaddrinfo(struct addrinfo *ai) {
     scopelibc_freeaddrinfo(ai);
 }
 
+int
+scope_getpeername(int fd, struct sockaddr *restrict addr, socklen_t *restrict len) {
+    return scopelibc_getpeername(fd, addr, len);
+}
+
 const char*
 scope_inet_ntop(int af, const void *restrict src, char *restrict dst, socklen_t size) {
     return scopelibc_inet_ntop(af, src, dst, size);
@@ -928,6 +941,11 @@ scope_arch_prctl(int code, unsigned long addr) {
 int
 scope_getrusage(int who, struct rusage *usage) {
     return scopelibc_getrusage(who, usage);
+}
+
+int
+scope_atexit(void (*atexit_func)(void)) {
+    return scopelibc_atexit(atexit_func);
 }
 
 

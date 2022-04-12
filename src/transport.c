@@ -495,7 +495,7 @@ getExistingConnectionAddr(transport_t *trans)
     scope_memset(addr, 0, addrsize);
 
     // lookup the address
-    if (getpeername(trans->net.sock, addr, &addrsize)) {
+    if (scope_getpeername(trans->net.sock, addr, &addrsize)) {
         DBG(NULL);
         goto err;
     }
