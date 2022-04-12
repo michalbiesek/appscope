@@ -16,6 +16,7 @@ COPY ./bash/runbashmem.sh /mybin
 COPY ./bash/runbashnomem.sh /mybin
 
 ENV SCOPE_CRIBL_ENABLE=false
+ENV SCOPE_LOG_DEST=file:///usr/local/scope/scope.log
 
 ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
 COPY scope-profile.sh /etc/profile.d/scope.sh
