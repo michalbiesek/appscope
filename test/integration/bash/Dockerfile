@@ -3,7 +3,7 @@ FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get -o Acquire::Check-Valid-Until=false update && \
-    apt-get install -y vim git gawk build-essential gdb emacs lsof tcpdump wget curl autoconf automake libtool && \
+    apt-get install -y vim git gawk build-essential cgdb gdb emacs lsof psmisc tcpdump wget curl autoconf automake libtool && \
     apt-get clean
 
 RUN git clone https://git.savannah.gnu.org/git/bash.git && \
@@ -16,6 +16,7 @@ COPY ./bash/runbashmem.sh /mybin
 COPY ./bash/runbashnomem.sh /mybin
 
 ENV SCOPE_CRIBL_ENABLE=false
+ENV SCOPE_LOG_DEST=file:///usr/local/scope/scope.log
 
 ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
 COPY scope-profile.sh /etc/profile.d/scope.sh
