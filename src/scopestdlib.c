@@ -12,6 +12,7 @@
 // Internal standard library references
 extern void   scopelibc_malloc_fork_op(int);
 // Memory management handling operations
+extern void*  scopelibc_memalign(size_t, size_t);
 extern void*  scopelibc_malloc(size_t);
 extern void*  scopelibc_calloc(size_t, size_t);
 extern void*  scopelibc_realloc(void *, size_t);
@@ -179,6 +180,11 @@ scope_malloc_before_fork(void) {
 void
 scope_malloc_after_fork(int who) {
     scopelibc_malloc_fork_op(who);
+}
+
+void*
+scope_memalign(size_t alignment, size_t size) {
+    return scopelibc_memalign(alignment, size);
 }
 
 void*

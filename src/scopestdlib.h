@@ -56,6 +56,7 @@ void  scope_malloc_before_fork(void);
 void  scope_malloc_after_fork(int);
 
 // Memory management handling operations
+void* scope_memalign(size_t, size_t);
 void* scope_malloc(size_t);
 void* scope_calloc(size_t, size_t);
 void* scope_realloc(void *, size_t);
