@@ -169,6 +169,7 @@ extern int           scopelibc_getpagesize(void);
 extern int           scopelibc_uname(struct utsname *);
 extern int           scopelibc_arch_prctl(int, unsigned long);
 extern int           scopelibc_getrusage(int , struct rusage *);
+extern int           scopelibc_atexit(void (*)(void));
 
 // Memory management handling operations
 
@@ -934,6 +935,11 @@ scope_arch_prctl(int code, unsigned long addr) {
 int
 scope_getrusage(int who, struct rusage *usage) {
     return scopelibc_getrusage(who, usage);
+}
+
+int
+scope_atexit(void (*atexit_func)(void)) {
+    return scopelibc_atexit(atexit_func);
 }
 
 

@@ -212,5 +212,6 @@ int           scope_getpagesize(void);
 int           scope_uname(struct utsname *);
 int           scope_arch_prctl(int, unsigned long);
 int           scope_getrusage(int, struct rusage *);
+int           scope_atexit(void (*)(void));
 
 #endif // __SCOPE_STDLIB_H__
