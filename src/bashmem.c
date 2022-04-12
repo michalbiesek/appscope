@@ -287,11 +287,11 @@ run_bash_mem_fix(void)
     // uses glibc's memory subsystem instead of bash's.  It's important
     // to make this call before before calls to bashMemFuncsFound() and
     // replaceBashMemFuncs(), since these use the disassembler.
-    cs_opt_mem capstone_mem = {.malloc = scope_malloc,
-                               .calloc = scope_calloc,
-                               .realloc = scope_realloc,
-                               .free = scope_free,
-                               .vsnprintf = scope_vsnprintf};
+    cs_opt_mem capstone_mem = {.malloc = g_mem_fn.malloc,
+                               .calloc = g_mem_fn.calloc,
+                               .realloc = g_mem_fn.realloc,
+                               .free = g_mem_fn.free,
+                               .vsnprintf = g_mem_fn.vsnprintf};
     if ((cs_option(0, CS_OPT_MEM, (size_t)&capstone_mem)) != 0) goto out;
 
     // fill in bash_mem_func by looking up external bash mem funcs
