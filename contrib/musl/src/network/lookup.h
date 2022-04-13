@@ -6,6 +6,7 @@
 #include <features.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include "lock.h"
 
 struct aibuf {
 	struct addrinfo ai;
@@ -13,7 +14,6 @@ struct aibuf {
 		struct sockaddr_in sin;
 		struct sockaddr_in6 sin6;
 	} sa;
-	volatile int lock[1];
 	short slot, ref;
 };
 
@@ -36,6 +36,27 @@ struct resolvconf {
 	unsigned nns, attempts, ndots;
 	unsigned timeout;
 };
+
+__attribute__((__visibility__("hidden")))
+extern int __freeaddrinfo_lock[1];
+
+#define FREEADDR_LOCK_OBJ_DEF \
+int __freeaddrinfo_lock[1];
+
+static inline void freeaddrinfo_lock()
+{
+	LOCK(__freeaddrinfo_lock);
+}
+
+static inline void freeaddrinfo_unlock()
+{
+	UNLOCK(__freeaddrinfo_lock);
+}
+
+static inline void freeaddrinfo_resetlock()
+{
+	__freeaddrinfo_lock[0] = 0;
+}
 
 /* The limit of 48 results is a non-sharp bound on the number of addresses
  * that can fit in one 512-byte DNS packet full of v4 results and a second
