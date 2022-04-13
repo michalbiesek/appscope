@@ -9,6 +9,7 @@ fwrite scopelibc_fwrite
 fclose scopelibc_fclose
 fflush scopelibc_fflush
 fgets scopelibc_fgets
+fdopen scopelibc_fdopen
 fopen scopelibc_fopen
 fopen64 scopelibc_fopen64
 fputs scopelibc_fputs
