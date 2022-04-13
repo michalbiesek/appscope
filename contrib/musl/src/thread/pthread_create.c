@@ -170,14 +170,23 @@ _Noreturn void __pthread_exit(void *result)
 
 void __do_cleanup_push(struct __ptcb *cb)
 {
-	struct pthread *self = __pthread_self();
-	cb->__next = self->cancelbuf;
-	self->cancelbuf = cb;
+// [#1] 0x5555556043cb → __get_tp()
+// [#2] 0x5555556048ef → __do_cleanup_push(cb=0x7fffffffb9a0)
+// [#3] 0x555555604259 → _pthread_cleanup_push(cb=0x7fffffffb9a0, f=0x5555555f8e51 <cleanup>, x=0x3)
+// [#4] 0x5555555f91d6 → __res_msend_rc(nqueries=0x2, queries=0x7fffffffbb40, qlens=0x7fffffffbb28, answers=0x7fffffffbb30, alens=0x7fffffffbb20, asize=0x200, conf=0x7fffffffc1c0)
+// [#5] 0x5555555f6ab7 → name_from_dns(buf=0x7fffffffc5f0, canon=0x7fffffffc4f0 "www.google.com", name=0x7ffff77e9430 "www.google.com", family=0x0, conf=0x7fffffffc1c0)
+// [#6] 0x5555555f6e95 → name_from_dns_search(buf=0x7fffffffc5f0, canon=0x7fffffffc4f0 "www.google.com", name=0x7ffff77e9430 "www.google.com", family=0x0)
+// [#7] 0x5555555f7310 → __lookup_name(buf=0x7fffffffc5f0, canon=0x7fffffffc4f0 "www.google.com", name=0x7ffff77e9430 "www.google.com", family=0x0, flags=0x0)
+// [#8] 0x5555555f51ab → getaddrinfo(host=0x7ffff77e9430 "www.google.com", serv=0x7ffff77e9620 "1234", hint=0x7fffffffcc00, res=0x7fffffffcbe8)
+// [#9] 0x5555555d2ab5 → scope_getaddrinfo(node=0x7ffff77e9430 "www.google.com", service=0x7ffff77e9620 "1234", hints=0x7fffffffcc00, res=0x7fffffffcbe8)
+	// struct pthread *self = __pthread_self();
+	// cb->__next = self->cancelbuf;
+	// self->cancelbuf = cb;
 }
 
 void __do_cleanup_pop(struct __ptcb *cb)
 {
-	__pthread_self()->cancelbuf = cb->__next;
+	// __pthread_self()->cancelbuf = cb->__next;
 }
 
 struct start_args {
