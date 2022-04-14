@@ -99,6 +99,7 @@ int            scope_stat(const char *, struct stat *);
 int            scope_chmod(const char *, mode_t);
 int            scope_fchmod(int, mode_t);
 int            scope_fileno(FILE *);
+int            scope_flock(int, int);
 int            scope_fstat(int, struct stat *);
 int            scope_mkdir(const char *, mode_t);
 int            scope_chdir(const char *);

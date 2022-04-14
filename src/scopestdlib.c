@@ -55,6 +55,7 @@ extern int            scopelibc_stat(const char *, struct stat *);
 extern int            scopelibc_chmod(const char *, mode_t);
 extern int            scopelibc_fchmod(int, mode_t);
 extern int            scopelibc_fileno(FILE *);
+extern int            scopelibc_flock(int, int);
 extern int            scopelibc_fstat(int, struct stat *);
 extern int            scopelibc_mkdir(const char *, mode_t);
 extern int            scopelibc_chdir(const char *);
@@ -388,6 +389,11 @@ scope_fchmod(int fildes, mode_t mode) {
 int
 scope_fileno(FILE *stream) {
     return scopelibc_fileno(stream);
+}
+
+int
+scope_flock(int fd, int operation) {
+    return scopelibc_flock(fd, operation);
 }
 
 int
