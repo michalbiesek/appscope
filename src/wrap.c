@@ -4398,9 +4398,9 @@ fork()
     // P1(parent)          P2(child)
     // T1 (fork)    ->     T1
     // T2 (lock)
-    scope_malloc_before_fork();
+    scope_op_before_fork();
     rc = g_fn.fork();
-    scope_malloc_after_fork(!rc);
+    scope_op_after_fork(!rc);
     if (rc == 0) {
         // We are the child proc
         doReset();

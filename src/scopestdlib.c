@@ -11,6 +11,7 @@
 
 // Internal standard library references
 extern void   scopelibc_malloc_fork_op(int);
+extern void   scopelibc_fork_ofl_lock_op(int);
 // Memory management handling operations
 extern void*  scopelibc_memalign(size_t, size_t);
 extern void*  scopelibc_malloc(size_t);
@@ -173,17 +174,21 @@ extern int           scopelibc_arch_prctl(int, unsigned long);
 extern int           scopelibc_getrusage(int , struct rusage *);
 extern int           scopelibc_atexit(void (*)(void));
 
-// Memory management handling operations
+// Fork handling operations
 
 void
-scope_malloc_before_fork(void) {
+scope_op_before_fork(void) {
+    scopelibc_fork_ofl_lock_op(-1);
     scopelibc_malloc_fork_op(-1);
 }
 
 void
-scope_malloc_after_fork(int who) {
+scope_op_after_fork(int who) {
     scopelibc_malloc_fork_op(who);
+    scopelibc_fork_ofl_lock_op(who);
 }
+
+// Memory management handling operations
 
 void*
 scope_memalign(size_t alignment, size_t size) {
