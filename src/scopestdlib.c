@@ -10,8 +10,9 @@
 
 
 // Internal standard library references
-extern void   scopelibc_malloc_fork_op(int);
-extern void   scopelibc_fork_ofl_lock_op(int);
+extern void  scopelibc_lock_before_fork_op(void);
+extern void  scopelibc_unlock_after_fork_op(int);
+
 // Memory management handling operations
 extern void*  scopelibc_memalign(size_t, size_t);
 extern void*  scopelibc_malloc(size_t);
@@ -178,14 +179,12 @@ extern int           scopelibc_atexit(void (*)(void));
 
 void
 scope_op_before_fork(void) {
-    scopelibc_fork_ofl_lock_op(-1);
-    scopelibc_malloc_fork_op(-1);
+    scopelibc_lock_before_fork_op();
 }
 
 void
 scope_op_after_fork(int who) {
-    scopelibc_malloc_fork_op(who);
-    scopelibc_fork_ofl_lock_op(who);
+    scopelibc_unlock_after_fork_op(who);
 }
 
 // Memory management handling operations

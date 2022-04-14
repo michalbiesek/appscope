@@ -16,8 +16,3 @@ void __ofl_unlock()
 {
 	UNLOCK(ofl_lock);
 }
-
-void fork_ofl_lock_op(int who) {
-	if (who<0) LOCK(ofl_lock);
-	else UNLOCK(ofl_lock);
-}
