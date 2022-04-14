@@ -1046,6 +1046,11 @@ periodic(void *arg)
     perf = checkEnv(PRESERVE_PERF_REPORTING, "true");
 
     while (1) {
+        // we are trying to exit, do nothing
+        if (g_exitdone == TRUE) {
+            while (1) pthread_yield();
+        }
+
         scope_gettimeofday(&tv, NULL);
         if (tv.tv_sec >= summaryTime) {
             // Process dynamic config changes, if any

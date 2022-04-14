@@ -12,6 +12,8 @@ fgets scopelibc_fgets
 fopen scopelibc_fopen
 fopen64 scopelibc_fopen64
 fputs scopelibc_fputs
+fileno scopelibc_fileno
+fdopen scopelibc_fdopen
 strdup scopelibc_strdup
 strncpy scopelibc_strncpy
 vfprintf scopelibc_vfprintf
