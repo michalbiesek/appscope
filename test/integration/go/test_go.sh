@@ -520,6 +520,7 @@ grep tlsClientStatic $EVT_FILE | grep http.resp > /dev/null
 ERR+=$?
 if [ $ERR -ne "0" ]; then
     echo "tlsClientStatic http.req missing"
+fi
 grep tlsClientStatic $EVT_FILE | grep console > /dev/null
 ERR+=$?
 
