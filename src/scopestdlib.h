@@ -52,10 +52,11 @@ extern FILE scopelibc___stderr_FILE;
 #define scope_stdout   (&scopelibc___stdout_FILE)
 #define scope_stderr   (&scopelibc___stderr_FILE)
 
-void  scope_malloc_before_fork(void);
-void  scope_malloc_after_fork(int);
+void  scope_op_before_fork(void);
+void  scope_op_after_fork(int);
 
 // Memory management handling operations
+void* scope_memalign(size_t, size_t);
 void* scope_malloc(size_t);
 void* scope_calloc(size_t, size_t);
 void* scope_realloc(void *, size_t);
@@ -98,6 +99,7 @@ int            scope_stat(const char *, struct stat *);
 int            scope_chmod(const char *, mode_t);
 int            scope_fchmod(int, mode_t);
 int            scope_fileno(FILE *);
+int            scope_flock(int, int);
 int            scope_fstat(int, struct stat *);
 int            scope_mkdir(const char *, mode_t);
 int            scope_chdir(const char *);
@@ -163,6 +165,7 @@ int         scope_poll(struct pollfd *, nfds_t, int);
 int         scope_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 int         scope_getaddrinfo(const char *, const char *, const struct addrinfo *, struct addrinfo **);
 void        scope_freeaddrinfo(struct addrinfo *);
+int         scope_getpeername(int, struct sockaddr *, socklen_t *);
 const char* scope_inet_ntop(int, const void *, char *, socklen_t);
 uint16_t    scope_ntohs(uint16_t);
 
@@ -211,5 +214,6 @@ int           scope_getpagesize(void);
 int           scope_uname(struct utsname *);
 int           scope_arch_prctl(int, unsigned long);
 int           scope_getrusage(int, struct rusage *);
+int           scope_atexit(void (*)(void));
 
 #endif // __SCOPE_STDLIB_H__

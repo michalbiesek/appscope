@@ -133,6 +133,16 @@ sleep 0.5
 
 evaltest
 
+grep plainServerDynamic $EVT_FILE | grep net.app > /dev/null
+ERR+=$?
+grep plainServerDynamic $EVT_FILE | grep net.open > /dev/null
+ERR+=$?
+grep plainServerDynamic $EVT_FILE | grep net.close > /dev/null
+ERR+=$?
+grep plainServerDynamic $EVT_FILE | grep fs.open > /dev/null
+ERR+=$?
+grep plainServerDynamic $EVT_FILE | grep fs.close > /dev/null
+ERR+=$?
 grep plainServerDynamic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
 if [ $ERR -ne "0" ]; then
@@ -147,6 +157,10 @@ grep plainServerDynamic $EVT_FILE | grep http.resp | grep "127.0.0.1" > /dev/nul
 ERR+=$?
 if [ $ERR -ne "0" ]; then
     echo "plainServerDynamic http.resp 127.0.0.1 missing"
+fi
+
+if [ $ERR -ge 1 ]; then
+    cat $EVT_FILE
 fi
 
 evalPayload
@@ -177,6 +191,16 @@ sleep 0.5
 
 evaltest
 
+grep plainServerStatic $EVT_FILE | grep net.app > /dev/null
+ERR+=$?
+grep plainServerStatic $EVT_FILE | grep net.open > /dev/null
+ERR+=$?
+grep plainServerStatic $EVT_FILE | grep net.close > /dev/null
+ERR+=$?
+grep plainServerStatic $EVT_FILE | grep fs.open > /dev/null
+ERR+=$?
+grep plainServerStatic $EVT_FILE | grep fs.close > /dev/null
+ERR+=$?
 grep plainServerStatic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
 if [ $ERR -ne "0" ]; then
@@ -192,6 +216,11 @@ ERR+=$?
 if [ $ERR -ne "0" ]; then
     echo "plainServerStatic http.resp 127.0.0.1 missing"
 fi
+
+if [ $ERR -ge 1 ]; then
+    cat $EVT_FILE
+fi
+
 evalPayload
 ERR+=$?
 
@@ -220,6 +249,16 @@ sleep 0.5
 
 evaltest
 
+grep tlsServerDynamic $EVT_FILE | grep net.app > /dev/null
+ERR+=$?
+grep tlsServerDynamic $EVT_FILE | grep net.open > /dev/null
+ERR+=$?
+grep tlsServerDynamic $EVT_FILE | grep net.close > /dev/null
+ERR+=$?
+grep tlsServerDynamic $EVT_FILE | grep fs.open > /dev/null
+ERR+=$?
+grep tlsServerDynamic $EVT_FILE | grep fs.close > /dev/null
+ERR+=$?
 grep tlsServerDynamic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
 if [ $ERR -ne "0" ]; then
@@ -235,6 +274,11 @@ ERR+=$?
 if [ $ERR -ne "0" ]; then
     echo "tlsServerDynamic http.resp 127.0.0.1 missing"
 fi
+
+if [ $ERR -ge 1 ]; then
+    cat $EVT_FILE
+fi
+
 evalPayload
 ERR+=$?
 
@@ -266,6 +310,16 @@ sleep 0.5
 
 evaltest
 
+grep tlsServerStatic $EVT_FILE | grep net.app > /dev/null
+ERR+=$?
+grep tlsServerStatic $EVT_FILE | grep net.open > /dev/null
+ERR+=$?
+grep tlsServerStatic $EVT_FILE | grep net.close > /dev/null
+ERR+=$?
+grep tlsServerStatic $EVT_FILE | grep fs.open > /dev/null
+ERR+=$?
+grep tlsServerStatic $EVT_FILE | grep fs.close > /dev/null
+ERR+=$?
 grep tlsServerStatic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
 if [ $ERR -ne "0" ]; then
@@ -281,6 +335,11 @@ ERR+=$?
 if [ $ERR -ne "0" ]; then
     echo "tlsServerStatic http.resp 127.0.0.1 missing"
 fi
+
+if [ $ERR -ge 1 ]; then
+    cat $EVT_FILE
+fi
+
 evalPayload
 ERR+=$?
 
@@ -300,6 +359,17 @@ sleep 0.5
 
 evaltest
 
+grep plainClientDynamic $EVT_FILE | grep net.app > /dev/null
+ERR+=$?
+grep plainClientDynamic $EVT_FILE | grep net.open > /dev/null
+ERR+=$?
+# dont wait for this, it's not always guaranteed in the test app's timeframe
+#grep plainClientDynamic $EVT_FILE | grep net.close > /dev/null
+#ERR+=$?
+grep plainClientDynamic $EVT_FILE | grep fs.open > /dev/null
+ERR+=$?
+grep plainClientDynamic $EVT_FILE | grep fs.close > /dev/null
+ERR+=$?
 grep plainClientDynamic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
 if [ $ERR -ne "0" ]; then
@@ -310,6 +380,13 @@ ERR+=$?
 if [ $ERR -ne "0" ]; then
     echo "plainClientDynamic http.resp missing"
 fi
+grep plainClientDynamic $EVT_FILE | grep console > /dev/null
+ERR+=$?
+
+if [ $ERR -ge 1 ]; then
+    cat $EVT_FILE
+fi
+
 evalPayload
 ERR+=$?
 
@@ -329,6 +406,17 @@ sleep 0.5
 
 evaltest
 
+grep plainClientStatic $EVT_FILE | grep net.app > /dev/null
+ERR+=$?
+grep plainClientStatic $EVT_FILE | grep net.open > /dev/null
+ERR+=$?
+# dont wait for this, it's not always guaranteed in the test app's timeframe
+#grep plainClientStatic $EVT_FILE | grep net.close > /dev/null
+#ERR+=$?
+grep plainClientStatic $EVT_FILE | grep fs.open > /dev/null
+ERR+=$?
+grep plainClientStatic $EVT_FILE | grep fs.close > /dev/null
+ERR+=$?
 grep plainClientStatic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
 if [ $ERR -ne "0" ]; then
@@ -339,6 +427,13 @@ ERR+=$?
 if [ $ERR -ne "0" ]; then
     echo "plainClientStatic http.resp missing"
 fi
+grep plainClientStatic $EVT_FILE | grep console > /dev/null
+ERR+=$?
+
+if [ $ERR -ge 1 ]; then
+    cat $EVT_FILE
+fi
+
 evalPayload
 ERR+=$?
 
@@ -358,6 +453,17 @@ sleep 0.5
 
 evaltest
 
+grep tlsClientDynamic $EVT_FILE | grep net.app > /dev/null
+ERR+=$?
+grep tlsClientDynamic $EVT_FILE | grep net.open > /dev/null
+ERR+=$?
+# dont wait for this, it's not always guaranteed in the test app's timeframe
+#grep tlsClientDynamic $EVT_FILE | grep net.close > /dev/null
+#ERR+=$?
+grep tlsClientDynamic $EVT_FILE | grep fs.open > /dev/null
+ERR+=$?
+grep tlsClientDynamic $EVT_FILE | grep fs.close > /dev/null
+ERR+=$?
 grep tlsClientDynamic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
 if [ $ERR -ne "0" ]; then
@@ -368,6 +474,13 @@ ERR+=$?
 if [ $ERR -ne "0" ]; then
     echo "tlsClientDynamic http.resp missing"
 fi
+grep tlsClientDynamic $EVT_FILE | grep console > /dev/null
+ERR+=$?
+
+if [ $ERR -ge 1 ]; then
+    cat $EVT_FILE
+fi
+
 evalPayload
 ERR+=$?
 
@@ -387,6 +500,17 @@ sleep 0.5
 
 evaltest
 
+grep tlsClientStatic $EVT_FILE | grep net.app > /dev/null
+ERR+=$?
+grep tlsClientStatic $EVT_FILE | grep net.open > /dev/null
+ERR+=$?
+# dont wait for this, it's not always guaranteed in the test app's timeframe
+#grep tlsClientStatic $EVT_FILE | grep net.close > /dev/null
+#ERR+=$?
+grep tlsClientStatic $EVT_FILE | grep fs.open > /dev/null
+ERR+=$?
+grep tlsClientStatic $EVT_FILE | grep fs.close > /dev/null
+ERR+=$?
 grep tlsClientStatic $EVT_FILE | grep http.req > /dev/null
 ERR+=$?
 if [ $ERR -ne "0" ]; then
@@ -396,6 +520,12 @@ grep tlsClientStatic $EVT_FILE | grep http.resp > /dev/null
 ERR+=$?
 if [ $ERR -ne "0" ]; then
     echo "tlsClientStatic http.req missing"
+fi
+grep tlsClientStatic $EVT_FILE | grep console > /dev/null
+ERR+=$?
+
+if [ $ERR -ge 1 ]; then
+    cat $EVT_FILE
 fi
 
 evalPayload

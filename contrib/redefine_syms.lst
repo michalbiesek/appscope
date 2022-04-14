@@ -9,6 +9,7 @@ fwrite scopelibc_fwrite
 fclose scopelibc_fclose
 fflush scopelibc_fflush
 fgets scopelibc_fgets
+fdopen scopelibc_fdopen
 fopen scopelibc_fopen
 fopen64 scopelibc_fopen64
 fputs scopelibc_fputs
@@ -29,3 +30,4 @@ localeconv scopelibc_localeconv
 sscanf scopelibc_sscanf
 __isoc99_sscanf scope__iso99_sscanf
 ferror scopelibc_ferror
+fileno scopelibc_fileno
