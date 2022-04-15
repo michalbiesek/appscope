@@ -18,6 +18,7 @@ free scopelibc_free
 fwrite scopelibc_fwrite
 localeconv scopelibc_localeconv
 malloc scopelibc_malloc
+memmove scopelibc_memmove
 mmap scopelibc_mmap
 munmap scopelibc_munmap
 qsort scopelibc_qsort
@@ -25,7 +26,9 @@ qsort_r scopelibc_qsort_r
 realloc scopelibc_realloc
 sprintf scopelibc_sprintf
 sscanf scopelibc_sscanf
+strcpy scopelibc_strcpy
 strdup scopelibc_strdup
+strlen scopelibc_strlen
 strncpy scopelibc_strncpy
 vfprintf scopelibc_vfprintf
 vsnprintf scopelibc_vsnprintf
