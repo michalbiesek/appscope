@@ -1048,7 +1048,7 @@ periodic(void *arg)
     while (1) {
         // we are trying to exit, do nothing
         if (g_exitdone == TRUE) {
-            while (1) pthread_yield();
+            while (1) sched_yield();
         }
 
         scope_gettimeofday(&tv, NULL);
