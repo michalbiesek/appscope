@@ -4405,7 +4405,7 @@ fork()
     // T2 (lock)
     scope_op_before_fork();
     rc = g_fn.fork();
-    scope_op_after_fork(!rc);
+    scope_op_after_fork(rc);
     if (rc == 0) {
         // We are the child proc
         doReset();
