@@ -5,11 +5,34 @@ symbol_file() {
     echo symbols_$(basename $lib_path .a).txt
 }
 
+declare -a stdlib_ignore_syms=('/_GLOBAL_OFFSET_TABLE_/d'
+                          '/^pthread_/d'
+                          '/^dlopen/d'
+                          '/^dladdr/d'
+                          '/^dlclose/d'
+                          '/^dlerror/d'
+                          '/^dlsym/d'
+                          '/^\./d'
+                          '/^sha256_init/d'
+                          '/^sha256_update/d'
+                          '/^sha512_init/d'
+                          '/^sha512_update/d'
+                          '/^md5_update/d'
+                          '/^default_malloc/d'
+                          '/^BF_set_key/d'
+                          '/^BF_encrypt/d'
+                          '/^getenv/d'
+                          '/^signal/d'
+)
+
 extract_sym () {
     local lib_path=$1
     local output_file=$(symbol_file $lib_path)
     nm $lib_path | awk 'NF{print $NF}' | sort | uniq > $output_file
-    sed -i '/_GLOBAL_OFFSET_TABLE_/d' $output_file
+    for ignore_sym in "${stdlib_ignore_syms[@]}"
+    do
+        sed -i "$ignore_sym" $output_file
+    done
 }
 
 declare -a conrib_libs=("./contrib/build/ls-hpack/libls-hpack.a" 
