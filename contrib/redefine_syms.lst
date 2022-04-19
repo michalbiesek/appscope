@@ -71,6 +71,8 @@ shmget scopelibc_shmget
 socket scopelibc_socket
 sprintf scopelibc_sprintf
 sscanf scopelibc_sscanf
+stderr scopelibc_stderr
+stdin scopelibc_stdin
 strcasecmp scopelibc_strcasecmp
 strcat scopelibc_strcat
 strchr scopelibc_strchr
@@ -88,13 +90,14 @@ strstr scopelibc_strstr
 strtod scopelibc_strtod
 strtol scopelibc_strtol
 strtoul scopelibc_strtoul
-sycall scopelibc_syscall
+syscall scopelibc_syscall
 sysconf scopelibc_sysconf
 tcgetattr scopelibc_tcgetattr
 tcsetattr scopelibc_tcsetattr
 time scopelibc_time
 tolower scopelibc_tolower
 toupper scopelibc_toupper
+uname scopelibc_uname
 usleep scopelibc_usleep
 vfprintf scopelibc_vfprintf
 vsnprintf scopelibc_vsnprintf
