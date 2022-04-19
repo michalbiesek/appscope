@@ -1,3 +1,4 @@
+__errno_location scopelibc___errno_location
 __isoc99_sscanf scope__iso99_sscanf
 __vfprintf_chk scope___vfprintf_chk
 __vsnprintf_chk scope___vsnprintf_chk
