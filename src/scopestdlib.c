@@ -1029,6 +1029,16 @@ scope_shmget(key_t key, size_t size, int shmflg) {
     return scopelibc_shmget(key, size, shmflg);
 }
 
+int
+scope__snprintf_chk(char *str, size_t maxlen, int flag, size_t slen, const char * format, ...)
+{
+	int ret;
+	va_list ap;
+	va_start(ap, format);
+	ret = scope_vsnprintf(str, slen, format, ap);
+	va_end(ap);
+	return ret;
+}
 
 int
 scope___vfprintf_chk(FILE *fp, int flag, const char *format, va_list ap)
@@ -1042,7 +1052,8 @@ scope___vsnprintf_chk(char *s, size_t maxlen, int flag, size_t slen, const char 
     return scope_vsnprintf(s, slen, format, args);
 }
 
-int scope__iso99_sscanf(const char *restrict s, const char *restrict fmt, ...)
+int
+scope__iso99_sscanf(const char *restrict s, const char *restrict fmt, ...)
 {
 	int ret;
 	va_list ap;
