@@ -140,6 +140,7 @@ extern int           scopelibc_gettimeofday(struct timeval *, struct timezone *)
 extern int           scopelibc_timer_create(clockid_t, struct sigevent *, timer_t *);
 extern int           scopelibc_timer_settime(timer_t, int, const struct itimerspec *, struct itimerspec *);
 extern int           scopelibc_timer_delete(timer_t);
+extern time_t        scopelibc_time(time_t *);
 extern struct tm*    scopelibc_localtime_r(const time_t *, struct tm *);
 extern struct tm*    scopelibc_gmtime_r(const time_t *, struct tm *);
 extern unsigned int  scopelibc_sleep(unsigned int);
@@ -800,6 +801,11 @@ scope_timer_settime(timer_t timerid, int flags, const struct itimerspec *restric
 int
 scope_timer_delete(timer_t timerid) {
     return scopelibc_timer_delete(timerid);
+}
+
+time_t
+scope_time(time_t *tloc) {
+    return scopelibc_time(tloc);
 }
 
 struct tm*

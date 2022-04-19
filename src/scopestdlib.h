@@ -184,6 +184,7 @@ int           scope_gettimeofday(struct timeval *, struct timezone *);
 int           scope_timer_create(clockid_t, struct sigevent *, timer_t *);
 int           scope_timer_settime(timer_t, int, const struct itimerspec *, struct itimerspec *);
 int           scope_timer_delete(timer_t);
+time_t        scope_time(time_t *);
 struct tm*    scope_localtime_r(const time_t *, struct tm *);
 struct tm*    scope_gmtime_r(const time_t *, struct tm *);
 unsigned int  scope_sleep(unsigned int);

@@ -6,6 +6,7 @@ accept scopelibc_accept
 bind scopelibc_bind
 calloc scopelibc_calloc
 chmod scopelibc_chmod
+clearerr scopelibc_clearerr
 clock_gettime scopelibc_clock_gettime
 close scopelibc_close
 closedir scopelibc_closedir
@@ -53,6 +54,7 @@ mprotect scopelibc_mprotect
 munmap scopelibc_munmap
 open scopelibc_open
 opendir scopelibc_opendir
+perror scopelibc_perror
 qsort scopelibc_qsort
 qsort_r scopelibc_qsort_r
 read scopelibc_read
@@ -86,9 +88,11 @@ strstr scopelibc_strstr
 strtod scopelibc_strtod
 strtol scopelibc_strtol
 strtoul scopelibc_strtoul
+sycall scopelibc_syscall
 sysconf scopelibc_sysconf
 tcgetattr scopelibc_tcgetattr
 tcsetattr scopelibc_tcsetattr
+time scopelibc_time
 tolower scopelibc_tolower
 toupper scopelibc_toupper
 usleep scopelibc_usleep
