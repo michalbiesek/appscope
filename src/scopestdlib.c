@@ -79,6 +79,7 @@ extern size_t              scopelibc_strftime(char *, size_t, const char *, cons
 extern size_t              scopelibc_strlen(const char*);
 extern size_t              scopelibc_strnlen(const char *, size_t);
 extern char*               scopelibc_strerror(int);
+extern int                 scopelibc_strerror_r(int, char *, size_t);
 extern double              scopelibc_strtod(const char *, char **);
 extern long                scopelibc_strtol(const char *, char **, int);
 extern long long           scopelibc_strtoll(const char *, char **, int);
@@ -528,6 +529,11 @@ scope_strnlen(const char *s, size_t maxlen) {
 char*
 scope_strerror(int errnum) {
     return scopelibc_strerror(errnum);
+}
+
+int
+scope_strerror_r(int err, char *buf, size_t buflen) {
+    return scopelibc_strerror_r(err, buf, buflen);
 }
 
 double
@@ -1030,7 +1036,7 @@ scope_shmget(key_t key, size_t size, int shmflg) {
 }
 
 int
-scope__snprintf_chk(char *str, size_t maxlen, int flag, size_t slen, const char * format, ...)
+scope___snprintf_chk(char *str, size_t maxlen, int flag, size_t slen, const char * format, ...)
 {
 	int ret;
 	va_list ap;

@@ -125,6 +125,7 @@ size_t             scope_strftime(char *, size_t, const char *, const struct tm 
 size_t             scope_strlen(const char *);
 size_t             scope_strnlen(const char *, size_t);
 char *             scope_strerror(int);
+int                scope_strerror_r(int, char *, size_t);
 double             scope_strtod(const char *, char **);
 long               scope_strtol(const char *, char **, int);
 long long          scope_strtoll(const char *, char **, int);
