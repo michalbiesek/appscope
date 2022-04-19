@@ -11,6 +11,7 @@ closedir scopelibc_closedir
 connect scopelibc_connect
 fclose scopelibc_fclose
 fdopen scopelibc_fdopen
+feof scopelibc_feof
 ferror scopelibc_ferror
 fflush scopelibc_fflush
 fgets scopelibc_fgets
@@ -27,9 +28,13 @@ ftell scopelibc_ftell
 fwrite scopelibc_fwrite
 getaddrinfo scopelibc_getaddrinfo
 getentropy scopelibc_getentropy
+gethostbyname scopelibc_gethostbyname
+getnameinfo scopelibc_getnameinfo
+getpid scopelibc_getpid
 getsockname scopelibc_getsockname
 getsockopt scopelibc_getsockopt
 gettimeofday scopelibc_gettimeofday
+gmtime_r scopelibc_gmtime_r
 ioctl scopelibc_ioctl
 listen scopelibc_listen
 localeconv scopelibc_localeconv
@@ -41,6 +46,7 @@ memcmp scopelibc_memcmp
 memcpy scopelibc_memcpy
 memmove scopelibc_memmove
 memset scopelibc_memset
+mlock scopelibc_mlock
 mmap scopelibc_mmap
 mprotect scopelibc_mprotect
 munmap scopelibc_munmap
@@ -56,6 +62,9 @@ select scopelibc_select
 sendto scopelibc_sendto
 setbuf scopelibc_setbuf
 setsockopt scopelibc_setsockopt
+shmat scopelibc_shmat
+shmdt scopelibc_shmdt
+shmget scopelibc_shmget
 socket scopelibc_socket
 sprintf scopelibc_sprintf
 sscanf scopelibc_sscanf
@@ -76,8 +85,12 @@ strstr scopelibc_strstr
 strtod scopelibc_strtod
 strtol scopelibc_strtol
 strtoul scopelibc_strtoul
+sysconf scopelibc_sysconf
+tcgetattr scopelibc_tcgetattr
+tcsetattr scopelibc_tcsetattr
 tolower scopelibc_tolower
 toupper scopelibc_toupper
+usleep scopelibc_usleep
 vfprintf scopelibc_vfprintf
 vsnprintf scopelibc_vsnprintf
 write scopelibc_write

@@ -11,6 +11,7 @@
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <sys/shm.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -21,6 +22,7 @@
 #include <pwd.h>
 #include <signal.h>
 #include <stdio.h>
+#include <termios.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -69,6 +71,7 @@ void* scope_memmove(void *, const void *, size_t);
 int   scope_memcmp(const void *, const void *, size_t);
 int   scope_mprotect(void *, size_t, int);
 void* scope_memcpy(void *, const void *, size_t);
+int   scope_mlock(const void *, size_t);
 
 // File handling operations
 FILE*          scope_fopen(const char *, const char *);
@@ -98,6 +101,7 @@ char*          scope_basename(char *);
 int            scope_stat(const char *, struct stat *);
 int            scope_chmod(const char *, mode_t);
 int            scope_fchmod(int, mode_t);
+int            scope_feof(FILE *);
 int            scope_fileno(FILE *);
 int            scope_flock(int, int);
 int            scope_fstat(int, struct stat *);
@@ -147,27 +151,29 @@ char*              scope_strtok(char *, const char *);
 char*              scope_strtok_r(char *, const char *, char **);
 
 // Network handling operations
-int         scope_gethostname(char *, size_t);
-int         scope_getsockname(int, struct sockaddr *, socklen_t *);
-int         scope_getsockopt(int, int, int, void *, socklen_t *);
-int         scope_socket(int, int, int);
-int         scope_accept(int, struct sockaddr *, socklen_t *);
-int         scope_bind(int, const struct sockaddr *, socklen_t);
-int         scope_connect(int, const struct sockaddr *, socklen_t);
-int         scope_listen(int, int);
-void        scope_rewind(FILE *);
-ssize_t     scope_send(int, const void *, size_t, int);
-ssize_t     scope_sendmsg(int, const struct msghdr *, int);
-ssize_t     scope_recv(int, void *, size_t, int);
-ssize_t     scope_recvmsg(int, struct msghdr *, int);
-ssize_t     scope_recvfrom(int, void *, size_t, int, struct sockaddr *, socklen_t *);
-int         scope_poll(struct pollfd *, nfds_t, int);
-int         scope_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
-int         scope_getaddrinfo(const char *, const char *, const struct addrinfo *, struct addrinfo **);
-void        scope_freeaddrinfo(struct addrinfo *);
-int         scope_getpeername(int, struct sockaddr *, socklen_t *);
-const char* scope_inet_ntop(int, const void *, char *, socklen_t);
-uint16_t    scope_ntohs(uint16_t);
+int             scope_gethostname(char *, size_t);
+int             scope_getsockname(int, struct sockaddr *, socklen_t *);
+int             scope_getsockopt(int, int, int, void *, socklen_t *);
+int             scope_socket(int, int, int);
+int             scope_accept(int, struct sockaddr *, socklen_t *);
+int             scope_bind(int, const struct sockaddr *, socklen_t);
+int             scope_connect(int, const struct sockaddr *, socklen_t);
+int             scope_listen(int, int);
+void            scope_rewind(FILE *);
+ssize_t         scope_send(int, const void *, size_t, int);
+ssize_t         scope_sendmsg(int, const struct msghdr *, int);
+ssize_t         scope_recv(int, void *, size_t, int);
+ssize_t         scope_recvmsg(int, struct msghdr *, int);
+ssize_t         scope_recvfrom(int, void *, size_t, int, struct sockaddr *, socklen_t *);
+int             scope_poll(struct pollfd *, nfds_t, int);
+int             scope_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
+int             scope_getaddrinfo(const char *, const char *, const struct addrinfo *, struct addrinfo **);
+void            scope_freeaddrinfo(struct addrinfo *);
+int             scope_getnameinfo(const struct sockaddr *, socklen_t, char *, socklen_t, char *, socklen_t, int);
+int             scope_getpeername(int, struct sockaddr *, socklen_t *);
+struct hostent* scope_gethostbyname(const char *);
+const char*     scope_inet_ntop(int, const void *, char *, socklen_t);
+uint16_t        scope_ntohs(uint16_t);
 
 // Misc
 int           scope_atoi(const char *);
@@ -181,6 +187,7 @@ int           scope_timer_delete(timer_t);
 struct tm*    scope_localtime_r(const time_t *, struct tm *);
 struct tm*    scope_gmtime_r(const time_t *, struct tm *);
 unsigned int  scope_sleep(unsigned int);
+int           scope_usleep(useconds_t);
 int           scope_nanosleep(const struct timespec *, struct timespec *);
 int           scope___xstat(int, const char *, struct stat *);
 int           scope_sigaction(int, const struct sigaction *, struct sigaction *);
@@ -215,5 +222,11 @@ int           scope_uname(struct utsname *);
 int           scope_arch_prctl(int, unsigned long);
 int           scope_getrusage(int, struct rusage *);
 int           scope_atexit(void (*)(void));
+int           scope_tcsetattr(int, int, const struct termios *);
+int           scope_tcgetattr(int, struct termios *);
+void*         scope_shmat(int, const void *, int);
+int           scope_shmdt(const void *);
+int           scope_shmget(key_t, size_t, int);
+
 
 #endif // __SCOPE_STDLIB_H__

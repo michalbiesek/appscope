@@ -27,6 +27,7 @@ extern void*  scopelibc_memmove(void *, const void *, size_t);
 extern int    scopelibc_memcmp(const void *, const void *, size_t);
 extern int    scopelibc_mprotect(void *, size_t, int);
 extern void*  scopelibc_memcpy(void *, const void *, size_t);
+extern int    scopelibc_mlock(const void *, size_t);
 
 // File handling operations
 extern FILE*          scopelibc_fopen(const char *, const char *);
@@ -56,6 +57,7 @@ extern char*          scopelibc_basename(char *);
 extern int            scopelibc_stat(const char *, struct stat *);
 extern int            scopelibc_chmod(const char *, mode_t);
 extern int            scopelibc_fchmod(int, mode_t);
+extern int            scopelibc_feof(FILE *);
 extern int            scopelibc_fileno(FILE *);
 extern int            scopelibc_flock(int, int);
 extern int            scopelibc_fstat(int, struct stat *);
@@ -105,27 +107,29 @@ extern char*               scopelibc_strtok(char *, const char *);
 extern char*               scopelibc_strtok_r(char *, const char *, char **);
 
 // Network handling operations
-extern int         scopelibc_gethostname(char *, size_t);
-extern int         scopelibc_getsockname(int, struct sockaddr *, socklen_t *);
-extern int         scopelibc_getsockopt(int, int, int, void *, socklen_t *);
-extern int         scopelibc_socket(int, int, int);
-extern int         scopelibc_bind(int, const struct sockaddr *, socklen_t);
-extern int         scopelibc_accept(int, struct sockaddr *, socklen_t *);
-extern int         scopelibc_connect(int, const struct sockaddr *, socklen_t);
-extern int         scopelibc_listen(int, int);
-extern void        scopelibc_rewind(FILE *);
-extern ssize_t     scopelibc_send(int, const void *, size_t, int);
-extern ssize_t     scopelibc_sendmsg(int, const struct msghdr *, int);
-extern ssize_t     scopelibc_recv(int, void *, size_t, int);
-extern ssize_t     scopelibc_recvmsg(int, struct msghdr *, int);
-extern ssize_t     scopelibc_recvfrom(int, void *, size_t, int, struct sockaddr *, socklen_t *);
-extern int         scopelibc_poll(struct pollfd *, nfds_t, int);
-extern int         scopelibc_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
-extern int         scopelibc_getaddrinfo(const char *, const char *, const struct addrinfo *, struct addrinfo **);
-extern void        scopelibc_freeaddrinfo(struct addrinfo *);
-extern int         scopelibc_getpeername(int, struct sockaddr *, socklen_t *);
-extern const char* scopelibc_inet_ntop(int, const void *, char *, socklen_t);
-extern uint16_t    scopelibc_ntohs(uint16_t);
+extern int             scopelibc_gethostname(char *, size_t);
+extern int             scopelibc_getsockname(int, struct sockaddr *, socklen_t *);
+extern int             scopelibc_getsockopt(int, int, int, void *, socklen_t *);
+extern int             scopelibc_socket(int, int, int);
+extern int             scopelibc_bind(int, const struct sockaddr *, socklen_t);
+extern int             scopelibc_accept(int, struct sockaddr *, socklen_t *);
+extern int             scopelibc_connect(int, const struct sockaddr *, socklen_t);
+extern int             scopelibc_listen(int, int);
+extern void            scopelibc_rewind(FILE *);
+extern ssize_t         scopelibc_send(int, const void *, size_t, int);
+extern ssize_t         scopelibc_sendmsg(int, const struct msghdr *, int);
+extern ssize_t         scopelibc_recv(int, void *, size_t, int);
+extern ssize_t         scopelibc_recvmsg(int, struct msghdr *, int);
+extern ssize_t         scopelibc_recvfrom(int, void *, size_t, int, struct sockaddr *, socklen_t *);
+extern int             scopelibc_poll(struct pollfd *, nfds_t, int);
+extern int             scopelibc_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
+extern int             scopelibc_getaddrinfo(const char *, const char *, const struct addrinfo *, struct addrinfo **);
+extern void            scopelibc_freeaddrinfo(struct addrinfo *);
+extern int             scopelibc_getnameinfo(const struct sockaddr *, socklen_t, char *, socklen_t, char *, socklen_t, int);
+extern int             scopelibc_getpeername(int, struct sockaddr *, socklen_t *);
+extern struct hostent* scopelibc_gethostbyname(const char *);
+extern const char*     scopelibc_inet_ntop(int, const void *, char *, socklen_t);
+extern uint16_t        scopelibc_ntohs(uint16_t);
 
 // Misc handling operations
 extern int           scopelibc_atoi(const char *);
@@ -139,6 +143,7 @@ extern int           scopelibc_timer_delete(timer_t);
 extern struct tm*    scopelibc_localtime_r(const time_t *, struct tm *);
 extern struct tm*    scopelibc_gmtime_r(const time_t *, struct tm *);
 extern unsigned int  scopelibc_sleep(unsigned int);
+extern int           scopelibc_usleep(useconds_t);
 extern int           scopelibc_nanosleep(const struct timespec *, struct timespec *);
 extern int           scopelibc___xstat(int, const char *, struct stat *);
 extern int           scopelibc_sigaction(int, const struct sigaction *, struct sigaction *);
@@ -174,6 +179,11 @@ extern int           scopelibc_uname(struct utsname *);
 extern int           scopelibc_arch_prctl(int, unsigned long);
 extern int           scopelibc_getrusage(int , struct rusage *);
 extern int           scopelibc_atexit(void (*)(void));
+extern int           scopelibc_tcsetattr(int, int, const struct termios *);
+extern int           scopelibc_tcgetattr(int, struct termios *);
+extern void*         scopelibc_shmat(int, const void *, int);
+extern int           scopelibc_shmdt(const void *);
+extern int           scopelibc_shmget(key_t, size_t, int);
 
 // Fork handling operations
 
@@ -252,6 +262,11 @@ scope_mprotect(void *addr, size_t len, int prot) {
 void*
 scope_memcpy(void *restrict dest, const void *restrict src, size_t n) {
     return scopelibc_memcpy(dest, src, n);
+}
+
+int
+scope_mlock(const void *addr, size_t len) {
+    return scopelibc_mlock(addr, len);
 }
 
 
@@ -388,6 +403,11 @@ scope_chmod(const char *path, mode_t mode) {
 int
 scope_fchmod(int fildes, mode_t mode) {
     return scopelibc_fchmod(fildes, mode);
+}
+
+int
+scope_feof(FILE *stream) {
+    return scopelibc_feof(stream);
 }
 
 int
@@ -711,9 +731,18 @@ scope_freeaddrinfo(struct addrinfo *ai) {
     scopelibc_freeaddrinfo(ai);
 }
 
+int scope_getnameinfo(const struct sockaddr *restrict addr, socklen_t addrlen, char *restrict host, socklen_t hostlen, char *restrict serv, socklen_t servlen, int flags) {
+    return scopelibc_getnameinfo(addr, addrlen, host, hostlen, serv, servlen, flags);
+}
+
 int
 scope_getpeername(int fd, struct sockaddr *restrict addr, socklen_t *restrict len) {
     return scopelibc_getpeername(fd, addr, len);
+}
+
+struct hostent*
+scope_gethostbyname(const char *name) {
+    return scopelibc_gethostbyname(name);
 }
 
 const char*
@@ -781,6 +810,11 @@ scope_gmtime_r(const time_t *timep, struct tm *result) {
 unsigned int
 scope_sleep(unsigned int seconds) {
     return scopelibc_sleep(seconds);
+}
+
+int
+scope_usleep(useconds_t usec) {
+    return scopelibc_usleep(usec);
 }
 
 int
@@ -956,6 +990,31 @@ scope_getrusage(int who, struct rusage *usage) {
 int
 scope_atexit(void (*atexit_func)(void)) {
     return scopelibc_atexit(atexit_func);
+}
+
+int
+scope_tcsetattr(int fildes, int optional_actions, const struct termios *termios_p) {
+    return scopelibc_tcsetattr(fildes, optional_actions, termios_p);
+}
+
+int
+scope_tcgetattr(int fildes, struct termios *termios_p) {
+    return scopelibc_tcgetattr(fildes, termios_p);
+}
+
+void*
+scope_shmat(int shmid, const void *shmaddr, int shmflg) {
+    return scopelibc_shmat(shmid, shmaddr, shmflg);
+}
+
+int
+scope_shmdt(const void *shmaddr) {
+    return scopelibc_shmdt(shmaddr);
+}
+
+int
+scope_shmget(key_t key, size_t size, int shmflg) {
+    return scopelibc_shmget(key, size, shmflg);
 }
 
 
