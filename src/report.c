@@ -457,21 +457,21 @@ httpFields(event_field_t *fields, http_report *hreport, char *hdr,
 
     while ((thishdr = scope_strtok_r(NULL, "\r\n", &savea)) != NULL) {
         // From RFC 2616 Section 4.2 "Field names are case-insensitive."
-        if (strcasestr(thishdr, "Host:")) {
+        if (scope_strcasestr(thishdr, "Host:")) {
             H_ATTRIB(fields[hreport->ix], "http_host", scope_strchr(thishdr, ':') + 2, 1);
             HTTP_NEXT_FLD(hreport->ix);
-        } else if (strcasestr(thishdr, "User-Agent:")) {
+        } else if (scope_strcasestr(thishdr, "User-Agent:")) {
             H_ATTRIB(fields[hreport->ix], "http_user_agent", scope_strchr(thishdr, ':') + 2, 5);
             HTTP_NEXT_FLD(hreport->ix);
-        } else if (strcasestr(thishdr, "X-Forwarded-For:")) {
+        } else if (scope_strcasestr(thishdr, "X-Forwarded-For:")) {
             H_ATTRIB(fields[hreport->ix], "http_client_ip", scope_strchr(thishdr, ':') + 2, 5);
             HTTP_NEXT_FLD(hreport->ix);
-        } else if (strcasestr(thishdr, "Content-Length:")) {
+        } else if (scope_strcasestr(thishdr, "Content-Length:")) {
             scope_errno = 0;
             if (((hreport->clen = scope_strtoull(scope_strchr(thishdr, ':') + 2, NULL, 0)) == 0) || (scope_errno != 0)) {
                 hreport->clen = -1;
             }
-        } else if (strcasestr(thishdr, "x-appscope:")) {
+        } else if (scope_strcasestr(thishdr, "x-appscope:")) {
                 H_ATTRIB(fields[hreport->ix], "x-appscope", scope_strchr(thishdr, ':') + 2, 5);
                 HTTP_NEXT_FLD(hreport->ix);
         } else if ((numExtracts = cfgEvtFormatNumHeaders(cfg)) > 0) {
