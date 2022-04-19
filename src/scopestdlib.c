@@ -105,6 +105,7 @@ extern char*               scopelibc_strpbrk(const char *, const char *);
 extern char*               scopelibc_strcasestr(const char *, const char *);
 extern char*               scopelibc_strtok(char *, const char *);
 extern char*               scopelibc_strtok_r(char *, const char *, char **);
+extern const char*         scopelibc_gai_strerror(int);
 
 // Network handling operations
 extern int             scopelibc_gethostname(char *, size_t);
@@ -637,6 +638,11 @@ scope_strtok(char *restrict str, const char *restrict delim) {
 char*
 scope_strtok_r(char *restrict str, const char *restrict delim, char **restrict saveptr) {
     return scopelibc_strtok_r(str, delim, saveptr);
+}
+
+const char*
+scope_gai_strerror(int errcode) {
+    return scopelibc_gai_strerror(errcode);
 }
 
 

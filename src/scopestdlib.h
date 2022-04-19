@@ -37,6 +37,7 @@ extern int  scopelibc_sscanf(const char *, const char *, ...);
 extern int  scopelibc_sprintf(char *, const char *, ...);
 extern int  scopelibc_asprintf(char **, const char *, ...);
 extern int  scopelibc_errno_val;
+extern FILE scopelibc___stdin_FILE;
 extern FILE scopelibc___stdout_FILE;
 extern FILE scopelibc___stderr_FILE;
 
@@ -51,6 +52,7 @@ extern FILE scopelibc___stderr_FILE;
 #define scope_sprintf  scopelibc_sprintf
 #define scope_asprintf scopelibc_asprintf
 #define scope_errno    scopelibc_errno_val
+#define scope_stdin    (&scopelibc___stdin_FILE)
 #define scope_stdout   (&scopelibc___stdout_FILE)
 #define scope_stderr   (&scopelibc___stderr_FILE)
 
@@ -149,6 +151,7 @@ char*              scope_strpbrk(const char *, const char *);
 char*              scope_strcasestr(const char *, const char *);
 char*              scope_strtok(char *, const char *);
 char*              scope_strtok_r(char *, const char *, char **);
+const char*        scope_gai_strerror(int);
 
 // Network handling operations
 int             scope_gethostname(char *, size_t);
