@@ -178,6 +178,7 @@ int             scope_getpeername(int, struct sockaddr *, socklen_t *);
 struct hostent* scope_gethostbyname(const char *);
 const char*     scope_inet_ntop(int, const void *, char *, socklen_t);
 uint16_t        scope_ntohs(uint16_t);
+uint16_t        scope_htons(uint16_t);
 
 // Misc
 int           scope_atoi(const char *);

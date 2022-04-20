@@ -132,6 +132,7 @@ extern int             scopelibc_getpeername(int, struct sockaddr *, socklen_t *
 extern struct hostent* scopelibc_gethostbyname(const char *);
 extern const char*     scopelibc_inet_ntop(int, const void *, char *, socklen_t);
 extern uint16_t        scopelibc_ntohs(uint16_t);
+extern uint16_t        scopelibc_htons(uint16_t);
 
 // Misc handling operations
 extern int           scopelibc_atoi(const char *);
@@ -766,6 +767,11 @@ scope_inet_ntop(int af, const void *restrict src, char *restrict dst, socklen_t 
 uint16_t
 scope_ntohs(uint16_t netshort) {
     return scopelibc_ntohs(netshort);
+}
+
+uint16_t
+scope_htons(uint16_t hostshort) {
+    return scopelibc_htons(hostshort);
 }
 
 // Misc
