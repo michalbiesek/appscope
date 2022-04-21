@@ -121,7 +121,7 @@ ldscope ./plainServerDynamic ${PORT} &
 
 # this sleep gives the server a chance to bind to the port
 # before we try to hit it with curl
-sleep 0.5
+sleep 1
 curl http://localhost:${PORT}/hello
 ERR+=$?
 
@@ -129,7 +129,7 @@ ERR+=$?
 pkill -f plainServerDynamic
 
 # this sleep gives plainServerDynamic a chance to report its events on exit
-sleep 0.5
+sleep 1
 
 evaltest
 
@@ -179,7 +179,7 @@ ldscope ./plainServerStatic ${PORT} &
 
 # this sleep gives the server a chance to bind to the port
 # before we try to hit it with curl
-sleep 0.5
+sleep 1
 curl http://localhost:${PORT}/hello
 ERR+=$?
 
@@ -187,7 +187,7 @@ ERR+=$?
 pkill -f plainServerStatic
 
 # this sleep gives plainServerStatic a chance to report its events on exit
-sleep 0.5
+sleep 1
 
 evaltest
 
@@ -237,7 +237,7 @@ ldscope ./tlsServerDynamic ${PORT} &
 
 # this sleep gives the server a chance to bind to the port
 # before we try to hit it with curl
-sleep 0.5
+sleep 1
 curl -k --key server.key --cert server.crt https://localhost:${PORT}/hello
 ERR+=$?
 
@@ -245,7 +245,7 @@ ERR+=$?
 pkill -f tlsServerDynamic
 
 # this sleep gives tlsServerDynamic a chance to report its events on exit
-sleep 0.5
+sleep 1
 
 evaltest
 
@@ -296,7 +296,7 @@ SCOPE_GO_STRUCT_PATH=$STRUCT_PATH ldscope ./tlsServerStatic ${PORT} &
 
 # this sleep gives the server a chance to bind to the port
 # before we try to hit it with curl
-sleep 0.5
+sleep 1
 curl -k --key server.key --cert server.crt https://localhost:${PORT}/hello
 ERR+=$?
 if [ $ERR -ne "0" ]; then
@@ -306,7 +306,7 @@ fi
 pkill -f tlsServerStatic
 
 # this sleep gives tlsServerStatic a chance to report its events on exit
-sleep 0.5
+sleep 1
 
 evaltest
 
@@ -355,7 +355,7 @@ ldscope ./plainClientDynamic
 ERR+=$?
 
 # this sleep gives plainClientDynamic a chance to report its events on exit
-sleep 0.5
+sleep 1
 
 evaltest
 
@@ -402,7 +402,7 @@ ldscope ./plainClientStatic
 ERR+=$?
 
 # this sleep gives plainClientStatic a chance to report its events on exit
-sleep 0.5
+sleep 1
 
 evaltest
 
@@ -449,7 +449,7 @@ ldscope ./tlsClientDynamic
 ERR+=$?
 
 # this sleep gives tlsClientDynamic a chance to report its events on exit
-sleep 0.5
+sleep 1
 
 evaltest
 
@@ -496,7 +496,7 @@ SCOPE_GO_STRUCT_PATH=$STRUCT_PATH ldscope ./tlsClientStatic
 ERR+=$?
 
 # this sleep gives tlsClientStatic a chance to report its events on exit
-sleep 0.5
+sleep 1
 
 evaltest
 
