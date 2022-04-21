@@ -1,11 +1,13 @@
 #! /bin/bash
 
-DEBUG=0  # set this to 1 to capture the EVT_FILE for each test
+DEBUG=1  # set this to 1 to capture the EVT_FILE for each test
 
 FAILED_TEST_LIST=""
 FAILED_TEST_COUNT=0
 
 EVT_FILE="/go/events.log"
+ERR_FILE="stderr.txt"
+LOG_FILE="/go/log.log"
 touch $EVT_FILE
 
 starttest(){
@@ -37,9 +39,12 @@ endtest(){
     # copy the EVT_FILE to help with debugging
     if (( $DEBUG )) || [ $RESULT == "FAILED" ]; then
         cp $EVT_FILE $EVT_FILE.$CURRENT_TEST
+        cp $LOG_FILE $LOG_FILE.$CURRENT_TEST
     fi
 
     rm $EVT_FILE
+    rm -f $ERR_FILE
+    rm -f $LOG_FILE
 }
 
 export SCOPE_PAYLOAD_ENABLE=true
@@ -503,19 +508,19 @@ endtest
 #
 # fileThread
 #
-starttest fileThread
-cd /go/thread
-ldscope ./fileThread
-ERR+=$?
-evaltest
+# starttest fileThread
+# cd /go/thread
+# ldscope ./fileThread
+# ERR+=$?
+# evaltest
 
-grep fileThread $EVT_FILE > /dev/null
-ERR+=$?
+# grep fileThread $EVT_FILE > /dev/null
+# ERR+=$?
 
-evalPayload
-ERR+=$?
+# evalPayload
+# ERR+=$?
 
-endtest
+# endtest
 
 
 #
@@ -553,163 +558,163 @@ ERR+=$?
 
 endtest
 
-#
-#  influxdb tests
-#
-dbfile="/go/influx/db/meta/meta.db"
-influx_verbose=0
+# #
+# #  influxdb tests
+# #
+# dbfile="/go/influx/db/meta/meta.db"
+# influx_verbose=0
 
-influx_start_server() {
-    rm -f /go/influx/db/*.event
+# influx_start_server() {
+#     rm -f /go/influx/db/*.event
 
-    if (( $influx_verbose )); then
-        SCOPE_EVENT_DEST=file:///go/influx/db/influxd.event ldscope $1 &
-    else
-        SCOPE_EVENT_DEST=file:///go/influx/db/influxd.event ldscope $1 2>/dev/null &
-    fi
+#     if (( $influx_verbose )); then
+#         SCOPE_EVENT_DEST=file:///go/influx/db/influxd.event ldscope $1 &
+#     else
+#         SCOPE_EVENT_DEST=file:///go/influx/db/influxd.event ldscope $1 2>/dev/null &
+#     fi
 
-    until test -e "$dbfile" ; do
-	    sleep 1
-    done
+#     until test -e "$dbfile" ; do
+# 	    sleep 1
+#     done
 
-}
+# }
 
-influx_eval() {
-    pkill -f $2
+# influx_eval() {
+#     pkill -f $2
 
-    pexist="influxd"
-    until test -z "$pexist" ; do
-	    sleep 1
-	    pexist=`ps -ef | grep influxd | grep config`
-    done
+#     pexist="influxd"
+#     until test -z "$pexist" ; do
+# 	    sleep 1
+# 	    pexist=`ps -ef | grep influxd | grep config`
+#     done
 
-    evaltest
-    cnt=`grep -c http.req /go/influx/db/influxd.event`
-    if (test "$cnt" -lt $1); then
-	    echo "ERROR: Server count is $cnt"
-	    ERR+=1
-    else
-	    echo "Server Success count is $cnt"
-    fi
+#     evaltest
+#     cnt=`grep -c http.req /go/influx/db/influxd.event`
+#     if (test "$cnt" -lt $1); then
+# 	    echo "ERROR: Server count is $cnt"
+# 	    ERR+=1
+#     else
+# 	    echo "Server Success count is $cnt"
+#     fi
 
-    grep http.req /go/influx/db/influxd.event | grep "127.0.0.1" > /dev/null
-    ERR+=$?
+#     grep http.req /go/influx/db/influxd.event | grep "127.0.0.1" > /dev/null
+#     ERR+=$?
 
-    if [ -e  "/go/influx/db/influxc.event" ]; then
-        cnt=`grep -c http.req /go/influx/db/influxc.event`
-        if (test "$cnt" -lt $1); then
-	        echo "ERROR: Client count is $cnt"
-	        ERR+=1
-        else
-	        echo "Client Success count is $cnt"
-        fi
-    fi
+#     if [ -e  "/go/influx/db/influxc.event" ]; then
+#         cnt=`grep -c http.req /go/influx/db/influxc.event`
+#         if (test "$cnt" -lt $1); then
+# 	        echo "ERROR: Client count is $cnt"
+# 	        ERR+=1
+#         else
+# 	        echo "Client Success count is $cnt"
+#         fi
+#     fi
 
-    rm -r /go/influx/db/*
-    touch /go/influx/db/data.txt
-    touch $EVT_FILE
+#     rm -r /go/influx/db/*
+#     touch /go/influx/db/data.txt
+#     touch $EVT_FILE
 
-    evalPayload
-    ERR+=$?
+#     evalPayload
+#     ERR+=$?
 
-    endtest
+#     endtest
 
-}
+# }
 
-#
-# influx static stress test
-#
-# we've seen that the stress test does not run repeatedly
-# in a container/EC2 environment. There is a standalone
-# script that will run stress, Commentend out here.
-#
-sleep 1
+# #
+# # influx static stress test
+# #
+# # we've seen that the stress test does not run repeatedly
+# # in a container/EC2 environment. There is a standalone
+# # script that will run stress, Commentend out here.
+# #
+# sleep 1
 
-# This test has race conditions where it closes sockets
-# while other threads are reading/writing data on them.
-# SCOPE_HTTP_SERIALIZE_ENABLE ensures that a close and
-# read/write can't happen at the same time.
-export SCOPE_HTTP_SERIALIZE_ENABLE=true
-unset SCOPE_PAYLOAD_ENABLE
-starttest influx_static_stress
+# # This test has race conditions where it closes sockets
+# # while other threads are reading/writing data on them.
+# # SCOPE_HTTP_SERIALIZE_ENABLE ensures that a close and
+# # read/write can't happen at the same time.
+# export SCOPE_HTTP_SERIALIZE_ENABLE=true
+# unset SCOPE_PAYLOAD_ENABLE
+# starttest influx_static_stress
 
-influx_start_server "/go/influx/influxd_stat --config /go/influx/influxdb.conf"
+# influx_start_server "/go/influx/influxd_stat --config /go/influx/influxdb.conf"
 
-SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/stress_test insert -n 1000000 -f
+# SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/stress_test insert -n 1000000 -f
 
-influx_eval 50 ldscope
+# influx_eval 50 ldscope
 
-unset SCOPE_HTTP_SERIALIZE_ENABLE
-export SCOPE_PAYLOAD_ENABLE=true
+# unset SCOPE_HTTP_SERIALIZE_ENABLE
+# export SCOPE_PAYLOAD_ENABLE=true
 
-#
-# influx static TLS test
-#
-sleep 1
-starttest influx_static_tls
+# #
+# # influx static TLS test
+# #
+# sleep 1
+# starttest influx_static_tls
 
-influx_start_server "/go/influx/influxd_stat --config /go/influx/influxdb_ssl.conf"
+# influx_start_server "/go/influx/influxd_stat --config /go/influx/influxdb_ssl.conf"
 
-SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event /go/influx/influx_stat -ssl -unsafeSsl -host localhost -execute 'CREATE DATABASE goats'
-SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_stat -ssl -unsafeSsl -host localhost -execute 'SHOW DATABASES'
+# SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event /go/influx/influx_stat -ssl -unsafeSsl -host localhost -execute 'CREATE DATABASE goats'
+# SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_stat -ssl -unsafeSsl -host localhost -execute 'SHOW DATABASES'
 
-if (test $influx_verbose -eq 0); then
-    sleep 1
-fi
+# if (test $influx_verbose -eq 0); then
+#     sleep 1
+# fi
 
-SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_stat -ssl -unsafeSsl -host localhost -import -path=/go/influx/data.txt -precision=s
-SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_stat -ssl -unsafeSsl -host localhost -execute 'SHOW DATABASES'
+# SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_stat -ssl -unsafeSsl -host localhost -import -path=/go/influx/data.txt -precision=s
+# SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_stat -ssl -unsafeSsl -host localhost -execute 'SHOW DATABASES'
 
-influx_eval 2 ldscope
-
-
-#
-# influx dynamic TLS test
-#
-sleep 1
-starttest influx_dynamic_tls
-
-influx_start_server "/go/influx/influxd_dyn --config /go/influx/influxdb_ssl.conf"
-
-SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_dyn -ssl -unsafeSsl -host localhost -execute 'CREATE DATABASE goats'
-SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_dyn -ssl -unsafeSsl -host localhost -execute 'SHOW DATABASES'
-
-influx_eval 2 influxd
-
-#
-# influx static clear test
-#
-sleep 1
-starttest influx_static_clear
-
-influx_start_server "/go/influx/influxd_stat --config /go/influx/influxdb.conf"
-
-SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_stat -host localhost -execute 'CREATE DATABASE sheep'
-SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_stat -host localhost -execute 'SHOW DATABASES'
-
-influx_eval 2 ldscope
+# influx_eval 2 ldscope
 
 
-#
-# influx dynamic clear test
-#
-sleep 1
-starttest influx_dynamic_clear
+# #
+# # influx dynamic TLS test
+# #
+# sleep 1
+# starttest influx_dynamic_tls
 
-influx_start_server "/go/influx/influxd_dyn --config /go/influx/influxdb.conf"
+# influx_start_server "/go/influx/influxd_dyn --config /go/influx/influxdb_ssl.conf"
 
-SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_dyn -host localhost -execute 'CREATE DATABASE sheep'
-SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_dyn -host localhost -execute 'SHOW DATABASES'
+# SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_dyn -ssl -unsafeSsl -host localhost -execute 'CREATE DATABASE goats'
+# SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_dyn -ssl -unsafeSsl -host localhost -execute 'SHOW DATABASES'
 
-if (test $influx_verbose -eq 0); then
-    sleep 1
-fi
+# influx_eval 2 influxd
+
+# #
+# # influx static clear test
+# #
+# sleep 1
+# starttest influx_static_clear
+
+# influx_start_server "/go/influx/influxd_stat --config /go/influx/influxdb.conf"
+
+# SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_stat -host localhost -execute 'CREATE DATABASE sheep'
+# SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_stat -host localhost -execute 'SHOW DATABASES'
+
+# influx_eval 2 ldscope
 
 
-SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_dyn -import -path=/go/influx/data.txt -precision=s
-SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_dyn -host localhost -execute 'SHOW DATABASES'
+# #
+# # influx dynamic clear test
+# #
+# sleep 1
+# starttest influx_dynamic_clear
 
-influx_eval 2 influxd
+# influx_start_server "/go/influx/influxd_dyn --config /go/influx/influxdb.conf"
+
+# SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_dyn -host localhost -execute 'CREATE DATABASE sheep'
+# SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_dyn -host localhost -execute 'SHOW DATABASES'
+
+# if (test $influx_verbose -eq 0); then
+#     sleep 1
+# fi
+
+
+# SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_dyn -import -path=/go/influx/data.txt -precision=s
+# SCOPE_EVENT_DEST=file:///go/influx/db/influxc.event ldscope /go/influx/influx_dyn -host localhost -execute 'SHOW DATABASES'
+
+# influx_eval 2 influxd
 
 unset SCOPE_PAYLOAD_ENABLE
 unset SCOPE_PAYLOAD_HEADER
