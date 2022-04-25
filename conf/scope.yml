@@ -747,7 +747,7 @@ cribl:
     #   Default:  edge
     #   Override: the protocol token in the $SCOPE_CRIBL or $SCOPE_CRIBL_CLOUD URL
     #
-    type: edge
+    type: tcp
 
     # Connection host/address
     #   Type:     string
@@ -798,7 +798,7 @@ cribl:
       #
       # Only applies when the connection type is tcp.
       #
-      enable: false
+      enable: true
 
       # Validate the TLS server certificate
       #   Type:     boolean
@@ -826,7 +826,7 @@ cribl:
       #
       # Only applies if the connection type is tcp and TLS is enabled.
       #
-      cacertpath: ''
+      cacertpath: '/home/michalbiesek/Github/test_cert/domain.crt'
 
 # Tags for events and metrics
 #
