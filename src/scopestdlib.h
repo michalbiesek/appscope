@@ -58,8 +58,8 @@ extern FILE scopelibc___stderr_FILE;
 #define scope_stderr   (&scopelibc___stderr_FILE)
 
 void  scope_init_vdso_ehdr(void);
-void  scope_op_before_fork(void);
-void  scope_op_after_fork(int);
+void  scope_op_before_fork(struct addrinfo *ai);
+void  scope_op_after_fork(struct addrinfo *ai, int);
 
 // Memory management handling operations
 void* scope_memalign(size_t, size_t);

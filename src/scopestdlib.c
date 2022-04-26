@@ -13,6 +13,8 @@
 extern void  scopelibc_init_vdso_ehdr(unsigned long);
 extern void  scopelibc_lock_before_fork_op(void);
 extern void  scopelibc_unlock_after_fork_op(int);
+extern void  scopelibc_lockaddrinfo_before_fork(struct addrinfo *);
+extern void  scopelibc_lockaddrinfo_after_fork(struct addrinfo *, int);
 
 // Memory management handling operations
 extern void*  scopelibc_memalign(size_t, size_t);
@@ -201,13 +203,15 @@ scope_init_vdso_ehdr(void) {
 }
 
 void
-scope_op_before_fork(void) {
+scope_op_before_fork(struct addrinfo *ai) {
+    scopelibc_lockaddrinfo_before_fork(ai);
     scopelibc_lock_before_fork_op();
 }
 
 void
-scope_op_after_fork(int who) {
+scope_op_after_fork(struct addrinfo *ai, int who) {
     scopelibc_unlock_after_fork_op(who);
+    scopelibc_lockaddrinfo_after_fork(ai, who);
 }
 
 // Memory management handling operations
