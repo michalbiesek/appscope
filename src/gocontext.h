@@ -69,6 +69,23 @@ typedef struct {
     uint32_t frame_size;   // size of go stack frame
 } tap_t;
 
+
+// the enum below must be inline with go_16_schema & go_17_schema .tap array
+typedef enum {
+    GO_WRITE_INDX = 0,
+    GO_OPENAT_INDX = 1,
+    GO_UNLINKAT_INDX = 2,
+    GO_GETDENTS_INDX = 3,
+    GO_SOCKET_INDX = 4,
+    GO_ACCEPT_INDX = 5,
+    GO_READ_INDX = 6,
+    GO_CLOSE_INDX = 7,
+    GO_TLS_READ_INDX = 8,
+    GO_TLS_WRITE_INDX = 9,
+    GO_READ_RESP_INDX = 10,
+    GO_PC_WRITE_INDX = 11,
+} go_indx_enum;
+
 typedef struct {
     go_arg_offsets_t arg_offsets;
     go_struct_offsets_t struct_offsets;

@@ -881,11 +881,7 @@ c_write(char *stackaddr)
 EXPORTON void *
 go_write(char *stackptr)
 {
-    if (g_go_major_ver > 16) {
-        return do_cfunc(stackptr, c_write, go_hook_reg_write);
-    } else {
-        return do_cfunc(stackptr, c_write, go_hook_write);
-    }
+    return do_cfunc(stackptr, c_write, g_go_schema->tap[GO_WRITE_INDX].assembly_fn);
 }
 
 // Extract data from syscall.Getdents (read dir)
@@ -903,11 +899,7 @@ c_getdents(char *stackaddr)
 EXPORTON void *
 go_getdents(char *stackptr)
 {
-    if (g_go_major_ver > 16) {
-        return do_cfunc(stackptr, c_getdents, go_hook_reg_getdents);
-    } else {
-        return do_cfunc(stackptr, c_getdents, go_hook_getdents);
-    }
+    return do_cfunc(stackptr, c_getdents, g_go_schema->tap[GO_GETDENTS_INDX].assembly_fn);
 }
 
 // Extract data from syscall.unlinkat (delete file)
@@ -932,11 +924,7 @@ c_unlinkat(char *stackaddr)
 EXPORTON void *
 go_unlinkat(char *stackptr)
 {
-    if (g_go_major_ver > 16) {
-        return do_cfunc(stackptr, c_unlinkat, go_hook_reg_unlinkat);
-    } else {
-        return do_cfunc(stackptr, c_unlinkat, go_hook_unlinkat);
-    }
+    return do_cfunc(stackptr, c_unlinkat, g_go_schema->tap[GO_UNLINKAT_INDX].assembly_fn);
 }
 
 // Extract data from syscall.openat (file open)
@@ -961,11 +949,7 @@ c_open(char *stackaddr)
 EXPORTON void *
 go_open(char *stackptr)
 {
-    if (g_go_major_ver > 16) {
-        return do_cfunc(stackptr, c_open, go_hook_reg_open);
-    } else {
-        return do_cfunc(stackptr, c_open, go_hook_open);
-    }
+    return do_cfunc(stackptr, c_open, g_go_schema->tap[GO_OPENAT_INDX].assembly_fn);
 }
 
 // Extract data from syscall.Close (close)
@@ -984,11 +968,7 @@ c_close(char *stackaddr)
 EXPORTON void *
 go_close(char *stackptr)
 {
-    if (g_go_major_ver > 16) {
-        return do_cfunc(stackptr, c_close, go_hook_reg_close);
-    } else {
-        return do_cfunc(stackptr, c_close, go_hook_close);
-    }
+    return do_cfunc(stackptr, c_close, g_go_schema->tap[GO_CLOSE_INDX].assembly_fn);
 }
 
 // Extract data from syscall.read (read)
@@ -1009,11 +989,7 @@ c_read(char *stackaddr)
 EXPORTON void *
 go_read(char *stackptr)
 {
-    if (g_go_major_ver > 16) {
-        return do_cfunc(stackptr, c_read, go_hook_reg_read);
-    } else {
-        return do_cfunc(stackptr, c_read, go_hook_read);
-    }
+    return do_cfunc(stackptr, c_read, g_go_schema->tap[GO_READ_INDX].assembly_fn);
 }
 
 // Extract data from syscall.socket (net open)
@@ -1035,11 +1011,7 @@ c_socket(char *stackaddr)
 EXPORTON void *
 go_socket(char *stackptr)
 {
-    if (g_go_major_ver > 16) {
-        return do_cfunc(stackptr, c_socket, go_hook_reg_socket);
-    } else {
-        return do_cfunc(stackptr, c_socket, go_hook_socket);
-    }
+    return do_cfunc(stackptr, c_socket, g_go_schema->tap[GO_SOCKET_INDX].assembly_fn);
 }
 
 // Extract data from syscall.accept4 (plain server accept)
@@ -1060,11 +1032,7 @@ c_accept4(char *stackaddr)
 EXPORTON void *
 go_accept4(char *stackptr)
 {
-    if (g_go_major_ver > 16) {
-        return do_cfunc(stackptr, c_accept4, go_hook_reg_accept4);
-    } else {
-        return do_cfunc(stackptr, c_accept4, go_hook_accept4);
-    }
+    return do_cfunc(stackptr, c_accept4, g_go_schema->tap[GO_ACCEPT_INDX].assembly_fn);
 }
 
 /*
@@ -1140,11 +1108,7 @@ c_http_server_read(char *stackaddr)
 EXPORTON void *
 go_tls_read(char *stackptr)
 {
-    if (g_go_major_ver > 16) {
-        return do_cfunc(stackptr, c_http_server_read, go_hook_reg_tls_read);
-    } else {
-        return do_cfunc(stackptr, c_http_server_read, go_hook_tls_read);
-    }
+    return do_cfunc(stackptr, c_http_server_read, g_go_schema->tap[GO_TLS_READ_INDX].assembly_fn);
 }
 
 /*
@@ -1193,11 +1157,7 @@ c_http_server_write(char *stackaddr)
 EXPORTON void *
 go_tls_write(char *stackptr)
 {
-    if (g_go_major_ver > 16) {
-        return do_cfunc(stackptr, c_http_server_write, go_hook_reg_tls_write);
-    } else {
-        return do_cfunc(stackptr, c_http_server_write, go_hook_tls_write);
-    }
+    return do_cfunc(stackptr, c_http_server_write, g_go_schema->tap[GO_TLS_WRITE_INDX].assembly_fn);
 }
 
 /*
@@ -1252,11 +1212,7 @@ c_http_client_write(char *stackaddr)
 EXPORTON void *
 go_pc_write(char *stackptr)
 {
-    if (g_go_major_ver > 16) {
-        return do_cfunc(stackptr, c_http_client_write, go_hook_reg_pc_write);
-    } else {
-        return do_cfunc(stackptr, c_http_client_write, go_hook_pc_write);
-    }
+    return do_cfunc(stackptr, c_http_client_write, g_go_schema->tap[GO_WRITE_INDX].assembly_fn);
 }
 
 /*
@@ -1317,11 +1273,7 @@ c_http_client_read(char *stackaddr)
 EXPORTON void *
 go_readResponse(char *stackptr)
 {
-    if (g_go_major_ver > 16) {
-        return do_cfunc(stackptr, c_http_client_read, go_hook_reg_readResponse);
-    } else {
-        return do_cfunc(stackptr, c_http_client_read, go_hook_readResponse);
-    }
+    return do_cfunc(stackptr, c_http_client_read, g_go_schema->tap[GO_READ_RESP_INDX].assembly_fn);
 }
 
 extern void handleExit(void);
