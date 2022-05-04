@@ -70,6 +70,8 @@ typedef struct {
 } tap_t;
 
 typedef struct {
+    char *(*new_go_str)(void *);
+    void  (*delete_go_str)(char *);
     go_arg_offsets_t arg_offsets;
     go_struct_offsets_t struct_offsets;
     tap_t tap[];

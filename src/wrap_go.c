@@ -51,7 +51,50 @@ atomicCasU64(uint64_t* ptr, uint64_t oldval, uint64_t newval)
 
 int g_go_major_ver = UNKNOWN_GO_VER;
 
+// c_str() is provided to convert a go-style string to a c-style string.
+// The resulting c_str will need to be passed to free() when it is no
+// longer needed.
+static char *
+c_str(gostring_t *go_str)
+{
+    if (!go_str || go_str->len <= 0) return NULL;
+
+    char *path;
+    if ((path = scope_calloc(1, go_str->len+1)) == NULL) return NULL;
+    scope_memmove(path, go_str->str, go_str->len);
+    path[go_str->len] = '\0';
+
+    return path;
+}
+
+static char *
+new_go_str(void *go_str)
+{
+    return (!go_str) ? NULL : (char *)*(uint64_t *)go_str;
+}
+
+static void
+delete_go_str_nop(char *str)
+{
+    // Go 17 and higher use null terminated strings instead of a string and a length
+}
+
+static char *
+new_go_str_c_str(void *go_str)
+{
+    return c_str((gostring_t *)go_str);
+}
+
+static void
+delete_go_str_c_str(char *str) 
+{ 
+    if(str) 
+        scope_free(str);
+}
+
 go_schema_t go_16_schema = {
+    .new_go_str = new_go_str_c_str,
+    .delete_go_str = delete_go_str_c_str,
     .arg_offsets = {
         .c_write_fd=0x8,
         .c_write_buf=0x10,
@@ -135,6 +178,8 @@ go_schema_t go_16_schema = {
 };
 
 go_schema_t go_17_schema = {
+    .new_go_str = new_go_str,
+    .delete_go_str = delete_go_str_nop,
     .arg_offsets = {
         .c_write_fd=0x8,
         .c_write_buf=0x10,
@@ -213,6 +258,8 @@ go_schema_t go_17_schema = {
 
 go_schema_t *g_go_schema = &go_16_schema; // overridden if later version
 
+#define GO_NEW_STR(x)            (g_go_schema->new_go_str(x))
+#define GO_DELETE_STR(x)         (g_go_schema->delete_go_str(x))
 #define GO_HOOK_WRITE            (g_go_schema->tap[0].assembly_fn)
 #define GO_HOOK_OPEN             (g_go_schema->tap[1].assembly_fn)
 #define GO_HOOK_UNLINKAT         (g_go_schema->tap[2].assembly_fn)
@@ -238,42 +285,6 @@ devnull(const char* fmt, ...)
 }
 #endif
 
-// c_str() is provided to convert a go-style string to a c-style string.
-// The resulting c_str will need to be passed to free() when it is no
-// longer needed.
-static char *
-c_str(gostring_t *go_str)
-{
-    if (!go_str || go_str->len <= 0) return NULL;
-
-    char *path;
-    if ((path = scope_calloc(1, go_str->len+1)) == NULL) return NULL;
-    scope_memmove(path, go_str->str, go_str->len);
-    path[go_str->len] = '\0';
-
-    return path;
-}
-
-static char *
-go_str(void *go_str)
-{
-    // Go 17 and higher use null terminated strings instead of a string and a length
-    if (g_go_major_ver > 16) {
-       // We need to deference the address first before casting to a char *
-       if (!go_str) return NULL;
-       return (char *)*(uint64_t *)go_str;
-    }
-    return c_str((gostring_t *)go_str);
-}
-
-static void
-free_go_str(char *str) {
-    // Go 17 and higher use null terminated strings instead of a string and a length
-    if (g_go_major_ver > 16) {
-        return;
-    }
-    if(str) scope_free(str);
-}
 
 // Detect the beginning of a Go Function
 // by identifying instructions in the preamble.
@@ -905,14 +916,14 @@ static void
 c_write(char *stackaddr)
 {
     uint64_t fd = *(uint64_t *)(stackaddr + g_go_schema->arg_offsets.c_write_fd);
-    char *buf   = go_str((void *)(stackaddr + g_go_schema->arg_offsets.c_write_buf));
+    char *buf   = GO_NEW_STR((void *)(stackaddr + g_go_schema->arg_offsets.c_write_buf));
     uint64_t rc = *(uint64_t *)(stackaddr + g_go_schema->arg_offsets.c_write_rc);
     uint64_t initialTime = getTime();
 
     funcprint("Scope: write fd %ld rc %ld buf %s\n", fd, rc, buf);
     doWrite(fd, initialTime, (rc != -1), buf, rc, "go_write", BUF, 0);
 
-    free_go_str(buf);
+    GO_DELETE_STR(buf);
 }
 
 EXPORTON void *
@@ -944,7 +955,7 @@ static void
 c_unlinkat(char *stackaddr)
 {
     uint64_t dirfd = *(uint64_t *)(stackaddr + g_go_schema->arg_offsets.c_unlinkat_dirfd);
-    char *pathname = go_str((void *)(stackaddr + g_go_schema->arg_offsets.c_unlinkat_pathname));
+    char *pathname = GO_NEW_STR((void *)(stackaddr + g_go_schema->arg_offsets.c_unlinkat_pathname));
     uint64_t flags = *(uint64_t *)(stackaddr + g_go_schema->arg_offsets.c_unlinkat_flags);
 
     if (!pathname) {
@@ -957,7 +968,7 @@ c_unlinkat(char *stackaddr)
     funcprint("Scope: unlinkat dirfd %ld pathname %s flags %ld\n", dirfd, pathname, flags);
     doDelete(pathname, "go_unlinkat");
 
-    free_go_str(pathname);
+    GO_DELETE_STR(pathname);
 }
 
 EXPORTON void *
@@ -972,7 +983,7 @@ static void
 c_open(char *stackaddr)
 {
     uint64_t fd = *(uint64_t *)(stackaddr + g_go_schema->arg_offsets.c_open_fd);
-    char *path  = go_str((void *)(stackaddr + g_go_schema->arg_offsets.c_open_path));
+    char *path  = GO_NEW_STR((void *)(stackaddr + g_go_schema->arg_offsets.c_open_path));
 
     if (!path) {
         scopeLogError("ERROR:go_open: null pathname");
@@ -984,7 +995,7 @@ c_open(char *stackaddr)
     funcprint("Scope: open of %ld\n", fd);
     doOpen(fd, path, FD, "open");
 
-    free_go_str(path);
+    GO_NEW_STR(path);
 }
 
 EXPORTON void *
@@ -1017,7 +1028,7 @@ static void
 c_read(char *stackaddr)
 {
     uint64_t fd = *(uint64_t *)(stackaddr + g_go_schema->arg_offsets.c_read_fd);
-    char *buf   = go_str((void *)(stackaddr + g_go_schema->arg_offsets.c_read_buf));
+    char *buf   = GO_NEW_STR((void *)(stackaddr + g_go_schema->arg_offsets.c_read_buf));
     uint64_t rc = *(uint64_t *)(stackaddr + g_go_schema->arg_offsets.c_read_rc);
     uint64_t initialTime = getTime();
 
@@ -1026,7 +1037,7 @@ c_read(char *stackaddr)
     funcprint("Scope: read of %ld rc %ld\n", fd, rc);
     doRead(fd, initialTime, (rc != -1), buf, rc, "go_read", BUF, 0);
 
-    free_go_str(buf);
+    GO_DELETE_STR(buf);
 }
 
 EXPORTON void *
@@ -1108,7 +1119,7 @@ c_http_server_read(char *stackaddr)
 
     uint64_t connReader = *(uint64_t *)(stackaddr + g_go_schema->arg_offsets.c_http_server_read_connReader); 
     if (!connReader) return;   // protect from dereferencing null
-    char *buf           = go_str((void *)(stackaddr + g_go_schema->arg_offsets.c_http_server_read_buf));
+    char *buf           = GO_NEW_STR((void *)(stackaddr + g_go_schema->arg_offsets.c_http_server_read_buf));
     // buf len 0x18
     // buf cap 0x20
     uint64_t rc         = *(uint64_t *)(stackaddr + g_go_schema->arg_offsets.c_http_server_read_rc);
@@ -1147,7 +1158,7 @@ c_http_server_read(char *stackaddr)
         }
     }
 
-    free_go_str(buf);
+    GO_DELETE_STR(buf);
 }
 
 EXPORTON void *
@@ -1176,7 +1187,7 @@ c_http_server_write(char *stackaddr)
     int fd = -1;
     uint64_t conn = *(uint64_t *)(stackaddr + g_go_schema->arg_offsets.c_http_server_write_conn);
     if (!conn) return;         // protect from dereferencing null
-    char *buf     = go_str((void *)(stackaddr + g_go_schema->arg_offsets.c_http_server_write_buf));
+    char *buf     = GO_NEW_STR((void *)(stackaddr + g_go_schema->arg_offsets.c_http_server_write_buf));
     uint64_t rc   = *(uint64_t *)(stackaddr + g_go_schema->arg_offsets.c_http_server_write_rc);
     uint64_t w_conn_rwc_if, w_conn_rwc, netFD, pfd;
 
@@ -1198,7 +1209,7 @@ c_http_server_write(char *stackaddr)
         }
     }
 
-    free_go_str(buf);
+    GO_DELETE_STR(buf);
 }
 
 EXPORTON void *
@@ -1229,7 +1240,7 @@ c_http_client_write(char *stackaddr)
 
     int fd = -1;
     uint64_t w_pc = *(uint64_t *)(stackaddr + g_go_schema->arg_offsets.c_http_client_write_w_pc);
-    char *buf     = go_str((void *)(stackaddr + g_go_schema->arg_offsets.c_http_client_write_buf));
+    char *buf     = GO_NEW_STR((void *)(stackaddr + g_go_schema->arg_offsets.c_http_client_write_buf));
     uint64_t rc   = *(uint64_t *)(stackaddr + g_go_schema->arg_offsets.c_http_client_write_rc);
     uint64_t pc_conn_if, w_pc_conn, netFD, pfd;
 
@@ -1255,7 +1266,7 @@ c_http_client_write(char *stackaddr)
         funcprint("Scope: c_http_client_write of %d\n", fd);
     }
 
-    free_go_str(buf);
+    GO_DELETE_STR(buf);
 }
 
 EXPORTON void *
@@ -1308,7 +1319,7 @@ c_http_client_read(char *stackaddr)
         }
 
         if ((pc_br = *(uint64_t *)(pc + g_go_schema->struct_offsets.persistConn_to_bufrd)) != 0) {
-            buf = go_str((void *)(pc_br + g_go_schema->struct_offsets.bufrd_to_buf));
+            buf = GO_NEW_STR((void *)(pc_br + g_go_schema->struct_offsets.bufrd_to_buf));
             // len is part of the []byte struct; the func doesn't return a len
             len = *(uint64_t *)(pc_br + 0x08);
         }
@@ -1318,7 +1329,7 @@ c_http_client_read(char *stackaddr)
             funcprint("Scope: c_http_client_read of %d\n", fd);
         }
 
-        free_go_str(buf);
+        GO_DELETE_STR(buf);
     }
 }
 
