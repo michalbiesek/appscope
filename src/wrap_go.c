@@ -266,7 +266,7 @@ go_str(void *go_str)
     if (!go_str_tmp || go_str_tmp->len <= 0) return NULL;
 
     char *c_str;
-    if ((c_str = scope_calloc(1, go_str_tmp->len+1)) == NULL) return NULL;
+    if ((c_str = scope_malloc(go_str_tmp->len + 1)) == NULL) return NULL;
     scope_memmove(c_str, go_str_tmp->str, go_str_tmp->len);
     c_str[go_str_tmp->len] = '\0';
 
