@@ -1199,7 +1199,11 @@ c_open(char *stackaddr)
     }
 
     funcprint("Scope: open of %ld\n", fd);
-    doOpen(fd, path, FD, "open");
+    if (fd != -1) {
+        doOpen(fd, path, FD, "open");
+    } else {
+        doUpdateState(FS_ERR_OPEN_CLOSE, fd, 0, "open", path);
+    }
 
     free_go_str(path);
 }
