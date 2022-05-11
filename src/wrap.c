@@ -1121,13 +1121,6 @@ periodic(void *arg)
     return NULL;
 }
 
-// TODO; should this move to os/linux/os.c?
-void *
-memcpy(void *dest, const void *src, size_t n)
-{
-    return memmove(dest, src, n);
-}
-
 static int
 ssl_read_hook(SSL *ssl, void *buf, int num)
 {
