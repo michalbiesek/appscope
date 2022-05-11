@@ -3008,9 +3008,9 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
                 UNIT_FIELD("byte"),
                 FIELDEND
             };
-            scope_memmove(&rxFields, &fields, sizeof(fields));
+            scope_memcpy(&rxFields, &fields, sizeof(fields));
             event_t rxUnixMetric = INT_EVENT("net.rx", net->rxBytes.evt, DELTA, rxFields);
-            scope_memmove(&rxMetric, &rxUnixMetric, sizeof(event_t));
+            scope_memcpy(&rxMetric, &rxUnixMetric, sizeof(event_t));
         } else {
             if (net->localConn.ss_family == AF_INET) {
                 if (scope_inet_ntop(AF_INET,
@@ -3060,9 +3060,9 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
                 UNIT_FIELD("byte"),
                 FIELDEND
             };
-            scope_memmove(&rxFields, &fields, sizeof(fields));
+            scope_memcpy(&rxFields, &fields, sizeof(fields));
             event_t rxNetMetric = INT_EVENT("net.rx", net->rxBytes.evt, DELTA, rxFields);
-            scope_memmove(&rxMetric, &rxNetMetric, sizeof(event_t));
+            scope_memcpy(&rxMetric, &rxNetMetric, sizeof(event_t));
         }
 
         // Don't report zeros.
@@ -3085,7 +3085,7 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
         }
 
         event_t rxNetMetric = INT_EVENT("net.rx", net->rxBytes.mtc, DELTA, rxFields);
-        scope_memmove(&rxMetric, &rxNetMetric, sizeof(event_t));
+        scope_memcpy(&rxMetric, &rxNetMetric, sizeof(event_t));
         if (cmdSendMetric(g_mtc, &rxMetric)) {
             scopeLogError("ERROR: doNetMetric:NETRX:cmdSendMetric");
         }
@@ -3138,9 +3138,9 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
                 UNIT_FIELD("byte"),
                 FIELDEND
             };
-            scope_memmove(&txFields, &fields, sizeof(fields));
+            scope_memcpy(&txFields, &fields, sizeof(fields));
             event_t txUnixMetric = INT_EVENT("net.tx", net->txBytes.evt, DELTA, txFields);
-            scope_memmove(&txMetric, &txUnixMetric, sizeof(event_t));
+            scope_memcpy(&txMetric, &txUnixMetric, sizeof(event_t));
         } else {
             if (net->localConn.ss_family == AF_INET) {
                 if (scope_inet_ntop(AF_INET,
@@ -3191,9 +3191,9 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
                 UNIT_FIELD("byte"),
                 FIELDEND
             };
-            scope_memmove(&txFields, &fields, sizeof(fields));
+            scope_memcpy(&txFields, &fields, sizeof(fields));
             event_t txNetMetric = INT_EVENT("net.tx", net->txBytes.evt, DELTA, txFields);
-            scope_memmove(&txMetric, &txNetMetric, sizeof(event_t));
+            scope_memcpy(&txMetric, &txNetMetric, sizeof(event_t));
         }
 
         // Don't report zeros.
@@ -3212,7 +3212,7 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
         }
 
         event_t txNetMetric = INT_EVENT("net.tx", net->txBytes.mtc, DELTA, txFields);
-        scope_memmove(&txMetric, &txNetMetric, sizeof(event_t));
+        scope_memcpy(&txMetric, &txNetMetric, sizeof(event_t));
         if (cmdSendMetric(g_mtc, &txMetric)) {
             scopeLogError("ERROR: doNetMetric:NETTX:cmdSendMetric");
         }
@@ -3331,7 +3331,7 @@ reportCapturedMetric(const captured_metric_t *metric)
             goto out;
         }
         event_t flt_met = FLT_EVENT(name, doubleval, typeFromStr(metric->type), builtInFields);
-        scope_memmove(&out_mtc, &flt_met, sizeof(event_t));
+        scope_memcpy(&out_mtc, &flt_met, sizeof(event_t));
     } else {
         // Value looks like an integer value...
         scope_errno = 0;
@@ -3341,7 +3341,7 @@ reportCapturedMetric(const captured_metric_t *metric)
             goto out;
         }
         event_t int_met = INT_EVENT(name, intval, typeFromStr(metric->type), builtInFields);
-        scope_memmove(&out_mtc, &int_met, sizeof(event_t));
+        scope_memcpy(&out_mtc, &int_met, sizeof(event_t));
     }
 
     out_mtc.capturedFields = capturedFields;
@@ -3543,9 +3543,9 @@ doPayload()
             if (cfgLogStreamEnable(g_cfg.staticfg)) {
                 bdata = scope_calloc(1, hlen + pinfo->len);
                 if (bdata) {
-                    scope_memmove(bdata, pay, hlen);
+                    scope_memcpy(bdata, pay, hlen);
                     scope_strncat(bdata, "\n", hlen);
-                    scope_memmove(&bdata[hlen], pinfo->data, pinfo->len);
+                    scope_memcpy(&bdata[hlen], pinfo->data, pinfo->len);
                     cmdSendPayload(g_ctl, bdata, hlen + pinfo->len);
                 }
             } else if (ctlPayDir(g_ctl)) {

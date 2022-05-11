@@ -249,7 +249,7 @@ go_str(void *go_str)
 
     char *c_str;
     if ((c_str = scope_calloc(1, go_str_tmp->len+1)) == NULL) return NULL;
-    scope_memmove(c_str, go_str_tmp->str, go_str_tmp->len);
+    scope_memcpy(c_str, go_str_tmp->str, go_str_tmp->len);
     c_str[go_str_tmp->len] = '\0';
 
     return c_str;
@@ -343,7 +343,7 @@ getGoVersionAddr(const char* buf)
                 uint64_t *addressPtr = (uint64_t*)&sec_data[0x10];
                 go_build_ver_addr = (void*)*addressPtr;
             } else if (sec_data[0xf] == 0x02) {
-                scope_memmove(g_go_build_ver, (char*)&sec_data[0x21], 6);
+                scope_memcpy(g_go_build_ver, (char*)&sec_data[0x21], 6);
                 g_go_build_ver[6] = '\0';
                 go_build_ver_addr = &g_go_build_ver;
             }

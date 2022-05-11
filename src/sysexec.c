@@ -112,7 +112,7 @@ load_sections(char *buf, char *addr, size_t mlen)
             sec_name = section_strtab + sections[i].sh_name;
             //sysprint("load_sections: laddr = %p len = 0x%lx end = %p section: %s\n", laddr, len, laddr + len, sec_name);
             if ((type != SHT_NOBITS) && ((flags & SHF_ALLOC) || (flags & SHF_EXECINSTR))) {
-                scope_memmove(laddr, &buf[sections[i].sh_offset], len);
+                scope_memcpy(laddr, &buf[sections[i].sh_offset], len);
             } else if (type == SHT_NOBITS) {
                 scope_memset(laddr, 0, len);
             }
@@ -191,7 +191,7 @@ load_elf(char *buf)
         return (Elf64_Addr)NULL;
     }
 
-    scope_memmove(pheadaddr, phead, (size_t)(pnum * phsize));
+    scope_memcpy(pheadaddr, phead, (size_t)(pnum * phsize));
 
     for (i = 0; i < pnum; i++) {
         if (phead[i].p_type == PT_LOAD) {

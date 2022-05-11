@@ -415,7 +415,7 @@ postStatErrState(metric_t stat_err, metric_t type, const char *funcop, const cha
         scope_strncpy(sep->funcop, funcop, scope_strnlen(funcop, sizeof(sep->funcop)));
     }
 
-    scope_memmove(&sep->counters, &g_ctrs, sizeof(g_ctrs));
+    scope_memcpy(&sep->counters, &g_ctrs, sizeof(g_ctrs));
 
     cmdPostEvent(g_ctl, (char *)sep);
 
@@ -456,7 +456,7 @@ postFSState(int fd, metric_t type, fs_info *fs, const char *funcop, const char *
     fs_info *fsp = scope_calloc(1, len);
     if (!fsp) return FALSE;
 
-    if (fs) scope_memmove(fsp, fs, len);
+    if (fs) scope_memcpy(fsp, fs, len);
     fsp->fd = fd;
     fsp->evtype = EVT_FS;
     fsp->data_type = type;
@@ -489,7 +489,7 @@ postDNSState(int fd, metric_t type, net_info *net, uint64_t duration, const char
     net_info *netp = scope_calloc(1, len);
     if (!netp) return FALSE;
 
-    if (net) scope_memmove(netp, net, len);
+    if (net) scope_memcpy(netp, net, len);
     netp->fd = fd;
     netp->evtype = EVT_DNS;
     netp->data_type = type;
@@ -502,7 +502,7 @@ postDNSState(int fd, metric_t type, net_info *net, uint64_t duration, const char
         scope_strncpy(netp->dnsName, domain, scope_strnlen(domain, sizeof(netp->dnsName)));
     }
 
-    scope_memmove(&netp->counters, &g_ctrs, sizeof(g_ctrs));
+    scope_memcpy(&netp->counters, &g_ctrs, sizeof(g_ctrs));
 
     cmdPostEvent(g_ctl, (char *)netp);
 
@@ -546,11 +546,11 @@ postNetState(int fd, metric_t type, net_info *net)
     net_info *netp = scope_calloc(1, len);
     if (!netp) return FALSE;
 
-    scope_memmove(netp, net, len);
+    scope_memcpy(netp, net, len);
     netp->fd = fd;
     netp->evtype = EVT_NET;
     netp->data_type = type;
-    scope_memmove(&netp->counters, &g_ctrs, sizeof(g_ctrs));
+    scope_memcpy(&netp->counters, &g_ctrs, sizeof(g_ctrs));
 
     cmdPostEvent(g_ctl, (char *)netp);
     return mtc_needs_reporting;
@@ -1054,7 +1054,7 @@ extractPayload(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
             scope_free(pinfo);
             return -1;
         }
-        scope_memmove(pinfo->data, buf, len);
+        scope_memcpy(pinfo->data, buf, len);
     } else if (dtype == MSG) {
         int i;
         size_t blen = 0;
@@ -1071,7 +1071,7 @@ extractPayload(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
                 }
 
                 pinfo->data = temp;
-                scope_memmove(&pinfo->data[blen], iov->iov_base, iov->iov_len);
+                scope_memcpy(&pinfo->data[blen], iov->iov_base, iov->iov_len);
                 blen += iov->iov_len;
             }
         }
@@ -1090,7 +1090,7 @@ extractPayload(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
                 }
 
                 pinfo->data = temp;
-                scope_memmove(&pinfo->data[blen], iov[i].iov_base, iov[i].iov_len);
+                scope_memcpy(&pinfo->data[blen], iov[i].iov_base, iov[i].iov_len);
                 blen += iov[i].iov_len;
             }
         }
@@ -1102,7 +1102,7 @@ extractPayload(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
     }
 
     if (net) {
-        scope_memmove(&pinfo->net, net, sizeof(net_info));
+        scope_memcpy(&pinfo->net, net, sizeof(net_info));
     } else {
         pinfo->net.active = 0;
     }
@@ -1557,11 +1557,11 @@ doSetConnection(int sd, const struct sockaddr *addr, socklen_t len, control_type
     if (((net = getNetEntry(sd)) != NULL) && addr && (len > 0)) {
         if (endp == LOCAL) {
             if ((net->type == SOCK_STREAM) && (net->addrSetLocal == TRUE)) return;
-            scope_memmove(&g_netinfo[sd].localConn, addr, len);
+            scope_memcpy(&g_netinfo[sd].localConn, addr, len);
             if (net->type == SOCK_STREAM) net->addrSetLocal = TRUE;
         } else {
             if ((net->type == SOCK_STREAM) && (net->addrSetRemote == TRUE)) return;
-            scope_memmove(&g_netinfo[sd].remoteConn, addr, len);
+            scope_memcpy(&g_netinfo[sd].remoteConn, addr, len);
             if (net->type == SOCK_STREAM) net->addrSetRemote = TRUE;
         }
 
@@ -2261,7 +2261,7 @@ doDupSock(int oldfd, int newfd)
         return -1;
     }
 
-    scope_memmove(&g_netinfo[newfd], &g_netinfo[oldfd], sizeof(struct net_info_t));
+    scope_memcpy(&g_netinfo[newfd], &g_netinfo[oldfd], sizeof(struct net_info_t));
     g_netinfo[newfd].active = TRUE;
     g_netinfo[newfd].uid = getTime();
     g_netinfo[newfd].numTX = (counters_element_t){.mtc=0, .evt=0};
