@@ -96,6 +96,7 @@
         "statx04",
         "preadv203",
         "statx07",
+        "statx08",
         "recvmsg02",
         "access04",
         "fcntl07_64",

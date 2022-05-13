@@ -9,11 +9,12 @@ RUN yum -y update && \
 
 RUN mkdir -p /opt/test-runner/logs/ /opt/test
 
+ARG LTP_VERSION=20220121
 RUN cd /opt/test && \
-      wget https://github.com/linux-test-project/ltp/archive/refs/tags/20210524.zip && \
-      unzip 20210524.zip && \
-      rm -f 20210524.zip && \
-      mv ltp-20210524 ltp && \
+      wget https://github.com/linux-test-project/ltp/archive/refs/tags/${LTP_VERSION}.zip && \
+      unzip ${LTP_VERSION}.zip && \
+      rm -f ${LTP_VERSION}.zip && \
+      mv ltp-${LTP_VERSION} ltp && \
       cd /opt/test/ltp && \
       make autotools && \
       ./configure && \
