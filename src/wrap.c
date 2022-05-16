@@ -1551,8 +1551,28 @@ initEnv(int *attachedFlag)
 }
 
 void
-scope_sig_handler(int signal)
+scope_sig_handler(int sig, siginfo_t *info, void *secret)
 {
+    scopeLogError("!scope_sig_handler signal %d errno %d fault address %p, reason of fault:", info->si_signo, info->si_errno, info->si_addr);
+    int sig_code = info->si_code;
+
+    switch (sig_code) {
+        case SEGV_MAPERR:
+            scopeLogError("Address not mapped to object");
+            break;
+        case SEGV_ACCERR:
+            scopeLogError("Invalid permissions for mapped object");
+            break;
+        case SEGV_BNDERR:
+            scopeLogError("Failed address bound checks");
+            break;
+        case SEGV_PKUERR:
+            scopeLogError("Access was denied by memory protection keys");
+            break;
+        default: 
+            scopeLogError("Unknown Error");
+            break;
+    }
     scopeBacktrace(CFG_LOG_ERROR);
     abort();
 }
@@ -1562,7 +1582,8 @@ initSigSegvHandler(void)
 {
     if (checkEnv("SCOPE_SIGSEGV_HANDLER", "true") && g_fn.sigaction) {
         struct sigaction act = { 0 };
-        act.sa_handler = (void (*)(int)) scope_sig_handler;
+        act.sa_handler = (void (*)) scope_sig_handler;
+        act.sa_flags = SA_RESTART | SA_SIGINFO;
         g_fn.sigaction(SIGSEGV, &act, NULL);
     }
 }
