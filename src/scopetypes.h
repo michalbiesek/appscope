@@ -172,6 +172,7 @@ typedef unsigned int bool;
 //    SCOPE_PID                      provided by library
 //    SCOPE_PAYLOAD_HEADER           write payload headers to files
 //    SCOPE_ALLOW_CONSTRUCT_DBG      allows debug inside the constructor
+//    SCOPE_SIGSEGV_HANDLER          allows to register SIGSEGV handler
 //    SCOPE_QUEUE_LENGTH             override default circular buffer sizes
 //    SCOPE_ALLOW_BINARY_CONSOLE     "true" outputs all console data, always
 
