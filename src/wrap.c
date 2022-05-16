@@ -1550,6 +1550,23 @@ initEnv(int *attachedFlag)
     scope_fclose(fd);
 }
 
+void
+scope_sig_handler(int signal)
+{
+    scopeBacktrace(CFG_LOG_ERROR);
+    abort();
+}
+
+static void
+initSigSegvHandler(void)
+{
+    if (checkEnv("SCOPE_SIGSEGV_HANDLER", "true") && g_fn.sigaction) {
+        struct sigaction act = { 0 };
+        act.sa_handler = (void (*)(int)) scope_sig_handler;
+        g_fn.sigaction(SIGSEGV, &act, NULL);
+    }
+}
+
 __attribute__((constructor)) void
 init(void)
 {
@@ -1597,6 +1614,7 @@ init(void)
     g_constructor_debug_enabled = checkEnv("SCOPE_ALLOW_CONSTRUCT_DBG", "true");
 
     initState();
+    initSigSegvHandler();
 
     g_nsslist = lstCreate(freeNssEntry);
 
@@ -1636,6 +1654,7 @@ init(void)
     }
 
     osInitJavaAgent();
+
 }
 
 EXPORTON int
