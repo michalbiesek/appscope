@@ -137,6 +137,31 @@ fi
 
 endtest
 
+#
+# verify segfault_test
+#
+
+starttest segfault_test
+
+cd /opt/segfault_test/
+
+SCOPE_SIGSEGV_HANDLER=true ldscope ./segfault_test
+
+if [ $? -eq 0 ]; then
+    ERR+=1
+fi
+
+grep -- "--- scopeBacktrace" $SCOPE_LOG_FILE > /dev/null
+ERR+=$?
+
+grep "culprit_function" $SCOPE_LOG_FILE > /dev/null
+ERR+=$?
+
+grep "test_function" $SCOPE_LOG_FILE > /dev/null
+ERR+=$?
+
+endtest
+
 if (( $FAILED_TEST_COUNT == 0 )); then
     echo ""
     echo ""
