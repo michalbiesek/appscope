@@ -1,8 +1,13 @@
 #ifndef __SCOPE_STDLIB_H__
 #define __SCOPE_STDLIB_H__
 
+#ifndef __USE_GNU
+#define __USE_GNU
+#endif
+
 #include <arpa/inet.h>
 #include <arpa/nameser.h>
+#include <dlfcn.h>
 #include <dirent.h>
 #include <grp.h>
 #include <link.h>
@@ -221,6 +226,7 @@ gid_t         scope_getgid(void);
 void*         scope_dlopen(const char *, int);
 void*         scope_dlsym(void *, const char *);
 int           scope_dlclose(void *);
+int           scope_dl_iterate_phdr(int (*)(struct dl_phdr_info *, size_t, void *), void *);
 long          scope_ptrace(int, pid_t, void *, void *);
 pid_t         scope_waitpid(pid_t, int *, int);
 char*         scope_getenv(const char *);

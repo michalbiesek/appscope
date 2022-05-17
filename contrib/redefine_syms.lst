@@ -12,6 +12,7 @@ clock_gettime scopelibc_clock_gettime
 close scopelibc_close
 closedir scopelibc_closedir
 connect scopelibc_connect
+dl_iterate_phdr scopelibc_dl_iterate_phdr
 fclose scopelibc_fclose
 fdopen scopelibc_fdopen
 feof scopelibc_feof
