@@ -105,7 +105,7 @@ build/libunwind/src/.libs/libunwind.a:
 	@echo "$${CI:+::group::}Building libunwind"
 	@$(RM) -r build/libunwind
 	@mkdir build/libunwind
-	cd build/libunwind && autoreconf -fvi ../../libunwind && ../../libunwind/configure --disable-shared --disable-minidebuginfo CFLAGS=-fPIC && $(MAKE)
+	cd build/libunwind && autoreconf -fvi ../../libunwind && ../../libunwind/configure --disable-pthread-api --disable-shared --disable-minidebuginfo CFLAGS=-fPIC && $(MAKE)
 	objcopy --redefine-syms redefine_syms.lst build/libunwind/src/.libs/libunwind.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 

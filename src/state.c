@@ -2376,6 +2376,7 @@ doClose(int fd, const char *func)
 void
 doOpen(int fd, const char *path, fs_type_t type, const char *func)
 {
+    scopeBacktrace(CFG_LOG_ERROR);
     if (fd == -1) {
         doUpdateState(FS_ERR_OPEN_CLOSE, -1, 0, func, path);
         return;
