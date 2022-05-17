@@ -11,6 +11,18 @@
 #include "fn.h"
 #include "scopeelf.h"
 
+int g_go_static = FALSE;
+
+void
+setGoAppStateStatic(int static_state) {
+    g_go_static = static_state;
+}
+
+int
+getgoAppStateStatic(void) {
+    return g_go_static;
+}
+
 void
 freeElf(char *buf, size_t len)
 {
@@ -153,6 +165,16 @@ out:
         ebuf = NULL;
     }
     return ebuf;
+}
+
+int
+elfDlIteratePhdr(int (*callback) (struct dl_phdr_info *info, size_t size, void *data), void *data)
+{
+    // TODO provide implementaiton for static GO
+    // We cannot use dl_iterate_phdr since it uses TLS
+    // To retrieve information about gosymbols we need to implement own
+    // dl_iterate_phdr
+    return (getgoAppStateStatic() == FALSE) ? dl_iterate_phdr(callback, data) : 0;
 }
 
 /*

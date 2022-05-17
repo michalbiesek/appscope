@@ -13,6 +13,7 @@
 #include "utils.h"
 #include "fn.h"
 #include "capstone/capstone.h"
+#include "scopeelf.h"
 #include "scopestdlib.h"
 
 #define GOPCLNTAB_MAGIC_112 0xfffffffb

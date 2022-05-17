@@ -26,6 +26,7 @@
 #include "fn.h"
 #include "os.h"
 #include "utils.h"
+#include "scopeelf.h"
 #include "scopestdlib.h"
 
 #define NET_ENTRIES 1024
@@ -35,7 +36,6 @@
 
 extern rtconfig g_cfg;
 
-int g_go_static = FALSE;
 int g_numNinfo = NET_ENTRIES;
 int g_numFSinfo = FS_ENTRIES;
 int g_http_guard_enabled = TRUE;
@@ -1435,17 +1435,6 @@ getFSContentType(int fd)
     DBG(NULL);
     return FS_CONTENT_UNKNOWN;
 }
-
-void
-setGoAppStateStatic(int static_state) {
-    g_go_static = static_state;
-}
-
-int
-getgoAppStateStatic(void) {
-    return g_go_static;
-}
-
 
 void
 setFSContentType(int fd, fs_content_type_t type)
