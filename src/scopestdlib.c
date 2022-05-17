@@ -11,6 +11,7 @@
 
 // Internal standard library references
 extern void  scopelibc_init_vdso_ehdr(unsigned long);
+extern void  scopelibc_init_phdr(unsigned long, unsigned long, unsigned long);
 extern void  scopelibc_lock_before_fork_op(void);
 extern void  scopelibc_unlock_after_fork_op(int);
 
@@ -201,9 +202,13 @@ extern int           scopelibc_sched_getcpu(void);
 // Internal library operations
 
 void
-scope_init_vdso_ehdr(void) {
+scope_init_aux_val(void) {
     unsigned long ehdr = getauxval(AT_SYSINFO_EHDR);
+    unsigned long phdr = getauxval(AT_PHDR);
+    unsigned long phnum = getauxval(AT_PHNUM);
+    unsigned long phent = getauxval(AT_PHENT);
     scopelibc_init_vdso_ehdr(ehdr);
+    scopelibc_init_phdr(phdr, phnum, phent);
 }
 
 void

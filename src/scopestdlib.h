@@ -62,7 +62,7 @@ extern FILE scopelibc___stderr_FILE;
 #define scope_stdout   (&scopelibc___stdout_FILE)
 #define scope_stderr   (&scopelibc___stderr_FILE)
 
-void  scope_init_vdso_ehdr(void);
+void  scope_init_aux_val(void);
 void  scope_op_before_fork(void);
 void  scope_op_after_fork(int);
 

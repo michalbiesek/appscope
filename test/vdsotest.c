@@ -26,7 +26,7 @@ vdso_functions_before_init(void **state)
 static void
 vdso_functions_after_init(void **state)
 {
-    scope_init_vdso_ehdr();
+    scope_init_aux_val();
     struct timespec ts;
     scope_clock_gettime(CLOCK_MONOTONIC, &ts);
     scope_sched_getcpu();
