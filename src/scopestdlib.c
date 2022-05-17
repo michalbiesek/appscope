@@ -175,6 +175,7 @@ extern gid_t         scopelibc_getgid(void);
 extern void*         scopelibc_dlopen(const char *, int);
 extern int           scopelibc_dlclose(void *);
 extern void*         scopelibc_dlsym(void *, const char *);
+extern int           scopelibc_dl_iterate_phdr(int (*)(struct dl_phdr_info *, size_t, void *), void *);
 extern long          scopelibc_ptrace(int, pid_t, void *, void *);
 extern pid_t         scopelibc_waitpid(pid_t, int *, int);
 extern char*         scopelibc_getenv(const char *);
@@ -972,6 +973,11 @@ scope_dlopen(const char *filename, int flags) {
 int
 scope_dlclose(void *handle) {
     return scopelibc_dlclose(handle);
+}
+
+int
+scope_dl_iterate_phdr(int (*callback)(struct dl_phdr_info *info, size_t size, void *data), void *data) {
+    return scopelibc_dl_iterate_phdr(callback, data);
 }
 
 void*
