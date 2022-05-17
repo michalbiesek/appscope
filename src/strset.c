@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include "scopestdlib.h"
 #include "scopetypes.h"
 #include "strset.h"
