@@ -37,6 +37,7 @@ cJSON/libcjson.a:
 	@echo "$${CI:+::group::}Building cJSON"
 	cd cJSON && $(MAKE)
 	objcopy --redefine-syms redefine_syms.lst cJSON/libcjson.a
+	objcopy --redefine-syms redefine_syms_old_api.lst cJSON/libcjson.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 build/cmocka/src/libcmocka.so:
@@ -61,6 +62,8 @@ build/funchook/libfunchook.a:
 	cd build/funchook && $(MAKE) capstone_src funchook-static
 	objcopy --redefine-syms redefine_syms.lst build/funchook/libfunchook.a
 	objcopy --redefine-syms redefine_syms.lst build/funchook/capstone_src-prefix/src/capstone_src-build/libcapstone.a
+	objcopy --redefine-syms redefine_syms_old_api.lst build/funchook/libfunchook.a
+	objcopy --redefine-syms redefine_syms_old_api.lst build/funchook/capstone_src-prefix/src/capstone_src-build/libcapstone.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 # Can't be cached because we have to `autoreconf` the source folder.
@@ -70,6 +73,7 @@ build/libyaml/src/.libs/libyaml.a:
 	@mkdir build/libyaml
 	cd build/libyaml && autoreconf -fvi ../../libyaml && ../../libyaml/configure CFLAGS=-fPIC LIBS=-ldl && $(MAKE)
 	objcopy --redefine-syms redefine_syms.lst build/libyaml/src/.libs/libyaml.a
+	objcopy --redefine-syms redefine_syms_old_api.lst build/libyaml/src/.libs/libyaml.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 build/openssl/libssl.a build/openssl/libcrypto.a:
@@ -82,6 +86,8 @@ build/openssl/libssl.a build/openssl/libcrypto.a:
 	objcopy --redefine-sym SSL_write=SCOPE_SSL_write build/openssl/libssl.a
 	objcopy --redefine-syms redefine_syms.lst build/openssl/libcrypto.a
 	objcopy --redefine-syms redefine_syms.lst build/openssl/libssl.a
+	objcopy --redefine-syms redefine_syms_old_api.lst build/openssl/libcrypto.a
+	objcopy --redefine-syms redefine_syms_old_api.lst build/openssl/libssl.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 build/pcre2/libpcre2-posix.a build/pcre2/libpcre2-8.a:
@@ -90,6 +96,7 @@ build/pcre2/libpcre2-posix.a build/pcre2/libpcre2-8.a:
 	@mkdir build/pcre2
 	cd build/pcre2 && cmake ../../pcre2 && $(MAKE)
 	objcopy --redefine-syms redefine_syms.lst build/pcre2/libpcre2-8.a
+	objcopy --redefine-syms redefine_syms_old_api.lst build/pcre2/libpcre2-8.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 build/ls-hpack/libls-hpack.a:
@@ -98,6 +105,8 @@ build/ls-hpack/libls-hpack.a:
 	@mkdir build/ls-hpack
 	cd build/ls-hpack && cmake ../../ls-hpack -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=Release -DLSHPACK_XXH=ON && $(MAKE)
 	objcopy --redefine-syms redefine_syms.lst build/ls-hpack/libls-hpack.a
+	objcopy --redefine-syms redefine_syms.lst build/ls-hpack/libls-hpack.a
+	objcopy --redefine-syms redefine_syms_old_api.lst build/ls-hpack/libls-hpack.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 build/musl/lib/libc.a:
