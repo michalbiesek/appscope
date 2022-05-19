@@ -17,7 +17,7 @@ RUN cd /opt/test && \
       cd /opt/test/ltp && \
       make autotools && \
       ./configure && \
-      make -j
+      make -j$(nproc)
 
 RUN source scl_source enable rh-python38 && \
     virtualenv -p $(which python) /opt/test-runner/
@@ -32,7 +32,7 @@ ENV SCOPE_EVENT_METRIC=true
 ENV SCOPE_EVENT_HTTP=true
 
 COPY ./syscalls/altp /opt/test/altp
-RUN cd /opt/test/altp && make -j
+RUN cd /opt/test/altp && make -j$(nproc)
 
 COPY ./test_runner/requirements.txt /opt/test-runner/requirements.txt
 RUN /opt/test-runner/bin/pip install -r /opt/test-runner/requirements.txt
