@@ -244,3 +244,6 @@
     ZUINT32_it;
     ZUINT64_it;
 };
+GLIBC_2.3.3 {
+   dlopen;
+};

@@ -44,6 +44,29 @@
 #define SSL_FUNC_READ "SSL_read"
 #define SSL_FUNC_WRITE "SSL_write"
 
+// __asm__(".symver pthread_sigmask, pthread_sigmask@GLIBC_2.2.5");
+// __asm__(".symver dlerror, dlerror@GLIBC_2.2.5");
+// __asm__(".symver dladdr, dladdr@GLIBC_2.2.5");
+// __asm__(".symver dlsym, dlsym@GLIBC_2.2.5");
+// __asm__(".symver dlclose, dlclose@GLIBC_2.2.5");
+// __asm__(".symver dlinfo, dlinfo@GLIBC_2.3.3");
+// __asm__(".symver pthread_rwlock_destroy, pthread_rwlock_destroy@GLIBC_2.2.5");
+// __asm__(".symver pthread_setspecific, pthread_setspecific@GLIBC_2.2.5");
+// __asm__(".symver pthread_once, pthread_once@GLIBC_2.2.5");
+// __asm__(".symver pthread_rwlock_rdlock, pthread_rwlock_rdlock@GLIBC_2.2.5");
+// __asm__(".symver pthread_key_create, pthread_key_create@GLIBC_2.2.5");
+// __asm__(".symver pthread_rwlock_init, pthread_rwlock_init@GLIBC_2.2.5");
+// __asm__(".symver pthread_rwlock_unlock, pthread_rwlock_unlock@GLIBC_2.2.5");
+// __asm__(".symver pthread_rwlock_wrlock, pthread_rwlock_wrlock@GLIBC_2.2.5");
+// __asm__(".symver pthread_key_delete, pthread_key_delete@GLIBC_2.2.5");
+// __asm__(".symver pthread_getspecific, pthread_getspecific@GLIBC_2.2.5");
+// __asm__(".symver timer_settime, timer_settime@GLIBC_2.3.3");
+// __asm__(".symver timer_create, timer_create@GLIBC_2.3.3");
+// __asm__(".symver timer_delete, timer_delete@GLIBC_2.3.3");
+// __asm__(".symver fstat, fstat@");
+// __asm__(".symver stat, stat@");
+
+
 static thread_timing g_thread = {0};
 static config_t *g_staticfg = NULL;
 static log_t *g_prevlog = NULL;

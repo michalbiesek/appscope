@@ -941,9 +941,10 @@ scope_getgid(void) {
     return scopelibc_getgid();
 }
 
+__asm__(".symver scope_dlopen, dlopen@GLIBC_2.3.3");
 void*
 scope_dlopen(const char *filename, int flags) {
-    return scopelibc_dlopen(filename, flags);
+    return dlopen(filename, flags);
 }
 
 int
