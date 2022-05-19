@@ -52,22 +52,18 @@ def main():
     scope_data_collector = ScopeDataCollector(args.metric_type)
     data_listener = create_listener(args.metric_type, scope_data_collector)
 
+    test_type = {'nginx'   : nginx,
+                'splunk'   : splunk,
+                'cribl'    : cribl,
+                'syscalls' : syscalls,
+                'elastic'  : elastic,
+                'kafka'    : kafka_test}
+
     with data_listener:
         try:
             runner = Runner(test_watcher, scope_data_collector)
             runner.add_test_set_validators(default_test_set_validators)
-            if args.target == 'nginx':
-                nginx.configure(runner, args)
-            if args.target == 'splunk':
-                splunk.configure(runner, args)
-            if args.target == 'cribl':
-                cribl.configure(runner, args)
-            if args.target == 'syscalls':
-                syscalls.configure(runner, args)
-            if args.target == 'elastic':
-                elastic.configure(runner, args)
-            if args.target == 'kafka':
-                kafka_test.configure(runner, args)
+            test_type[args.target].configure(runner, args)
             runner.run()
             test_watcher.finish()
         except Exception as e:
