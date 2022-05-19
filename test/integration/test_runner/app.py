@@ -71,7 +71,7 @@ def main():
             test_watcher.finish_with_error(str(e))
 
     print_summary(test_watcher.get_all_results())
-    store_results_to_file(watcher=test_watcher, path=logs_path, scope_version="")
+    store_results_to_file(watcher=test_watcher, path=logs_path)
     logging.shutdown()
 
     return (0, 1)[test_watcher.has_failures()]

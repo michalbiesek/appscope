@@ -14,7 +14,7 @@ def get_status(result):
     return "fail" if not result.passed else "pass"
 
 
-def store_results_to_file(watcher: TestWatcher, path: str, scope_version: str):
+def store_results_to_file(watcher: TestWatcher, path: str):
     def exec_data_to_json(exec_data: TestExecutionData):
         return {
             "status": get_status(exec_data.result),
@@ -42,7 +42,6 @@ def store_results_to_file(watcher: TestWatcher, path: str, scope_version: str):
         summary_row = {
             "id": watcher.execution_id,
             "type": "summary",
-            "scope_version": scope_version,
             "execution_error": watcher.execution_error,
             "status": "pass" if not watcher.has_failures() else "fail",
             "start_date": watcher.start_date.isoformat(),
