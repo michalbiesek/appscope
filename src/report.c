@@ -1500,9 +1500,10 @@ doErrorMetric(metric_t type, control_type_t source,
              atomicSwapU64(&value->evt, 0);
         }
 
-        // Only report if enabled
-        if (((g_summary.net.error) && (source == EVENT_BASED)) ||
-            ((!g_summary.net.error) && (source == PERIODIC)))  {
+        // Only report if metrics enabled
+        if ((!networkEnable()) ||
+           ((g_summary.net.error) && (source == EVENT_BASED)) ||
+           ((!g_summary.net.error) && (source == PERIODIC))) {
             return;
         }
         // Don't report zeros.
@@ -1587,9 +1588,11 @@ doErrorMetric(metric_t type, control_type_t source,
             atomicSwapU64(&value->evt, 0);
         }
 
-        // Only report if enabled
-        if (((*summarize) && (source == EVENT_BASED)) ||
-            ((!*summarize) && (source == PERIODIC)))  {
+
+        // Only report if metrics enabled
+        if ((!fsEnable()) ||
+            ((*summarize) && (source == EVENT_BASED)) ||
+            ((!*summarize) && (source == PERIODIC))) {
             return;
         }
 
@@ -1669,8 +1672,8 @@ doDNSMetricName(metric_t type, net_info *net)
             }
         }
 
-        // Only report if enabled
-        if (g_summary.net.dns) {
+        // Only report if metrics enabled
+        if ((g_summary.net.dns) || (!dnsEnable())) {
             return;
         }
 
@@ -1726,8 +1729,8 @@ doDNSMetricName(metric_t type, net_info *net)
             atomicSwapU64(&ctrs->dnsDurationTotal.evt, 0);
         }
 
-        // Only report if enabled
-        if (g_summary.net.dns) {
+        // Only report if metrics enabled
+        if ((g_summary.net.dns) || (!dnsEnable())) {
             return;
         }
 
@@ -2231,6 +2234,12 @@ doFSMetric(metric_t type, fs_info *fs, control_type_t source,
             ////atomicSwapU64(&g_ctrs.fsDurationTotal.evt, 0);
         }
 
+        // Only report if metrics enabled
+        if (((g_summary.fs.read_write) && (source == EVENT_BASED)) ||
+           (!fsEnable())) {
+            return;
+        }
+
         dur = 0ULL;
         cachedDurationNum = fs->numDuration.mtc; // avoid div by zero
         if (cachedDurationNum >= 1) {
@@ -2240,11 +2249,6 @@ doFSMetric(metric_t type, fs_info *fs, control_type_t source,
 
         // Don't report zeros
         if (dur == 0ULL) return;
-
-        // Only report if enabled
-        if ((g_summary.fs.read_write) && (source == EVENT_BASED)) {
-            return;
-        }
 
         event_field_t fields[] = {
             PROC_FIELD(g_proc.procname),
@@ -2319,8 +2323,9 @@ doFSMetric(metric_t type, fs_info *fs, control_type_t source,
             ////atomicSwapU64(global_counter->evt, 0);
         }
 
-        // Only report if enabled
-        if ((g_summary.fs.read_write) && (source == EVENT_BASED)) {
+        // Only report if metrics enabled
+        if (((g_summary.fs.read_write) && (source == EVENT_BASED)) ||
+           (!fsEnable())) {
             return;
         }
 
@@ -2417,8 +2422,10 @@ doFSMetric(metric_t type, fs_info *fs, control_type_t source,
 
         if (reported == TRUE) atomicSwapU64(&numops->evt, 0);
 
-        // Only report if enabled
-        if (*summarize && (source == EVENT_BASED)) {
+
+        // Only report if metrics enabled
+        if ((*summarize && (source == EVENT_BASED)) ||
+           (!fsEnable())) {
             return;
         }
 
@@ -2520,22 +2527,6 @@ doTotalNetRxTx(metric_t type)
 void
 doTotal(metric_t type)
 {
-    // Only report if enabled
-    if (((type == TOT_READ || type == TOT_WRITE) && (!g_summary.fs.read_write)) ||
-        ((type == TOT_RX || type == TOT_TX) && (!g_summary.net.rx_tx)) ||
-        ((type == TOT_SEEK) && (!g_summary.fs.seek)) ||
-        ((type == TOT_STAT) && (!g_summary.fs.stat)) ||
-        ((type == TOT_OPEN || type == TOT_CLOSE) && (!g_summary.fs.open_close)) ||
-        ((type == TOT_DNS) && (!g_summary.net.dns))) {
-        return;
-    }
-    if ((type == TOT_PORTS || type == TOT_TCP_CONN || 
-        type == TOT_UDP_CONN || type == TOT_OTHER_CONN || 
-        type == TOT_NET_OPEN || type == TOT_NET_CLOSE) &&
-        (!g_summary.net.open_close)) {
-        return;
-    }
-
     const char* metric = "UNKNOWN";
     counters_element_t* value = NULL;
     const char* err_str = "UNKNOWN";
@@ -2544,50 +2535,68 @@ doTotal(metric_t type)
      
     switch (type) {
         case TOT_READ:
+            if (!g_summary.fs.read_write || (!fsEnable()))
+                return;
             metric = "fs.read";
             value = &g_ctrs.readBytes;
             err_str = "ERROR: doTotal:TOT_READ:cmdSendMetric";
             break;
         case TOT_WRITE:
+            if (!g_summary.fs.read_write || (!fsEnable()))
+                return;
             metric = "fs.write";
             value = &g_ctrs.writeBytes;
             err_str = "ERROR: doTotal:TOT_WRITE:cmdSendMetric";
             break;
         case TOT_RX:
         case TOT_TX:
+            if (!g_summary.net.rx_tx || (!networkEnable()))
+                return;
             doTotalNetRxTx(type);
             return;   // <--  We're doing the work above; nothing to see here.
         case TOT_SEEK:
+            if (!g_summary.fs.seek || (!fsEnable()))
+                return;
             metric = "fs.seek";
             value = &g_ctrs.numSeek;
             err_str = "ERROR: doTotal:TOT_SEEK:cmdSendMetric";
             units = "operation";
             break;
         case TOT_STAT:
+            if (!g_summary.fs.stat || (!fsEnable()))
+                return;
             metric = "fs.stat";
             value = &g_ctrs.numStat;
             err_str = "ERROR: doTotal:TOT_STAT:cmdSendMetric";
             units = "operation";
             break;
         case TOT_OPEN:
+            if (!g_summary.fs.open_close || (!fsEnable()))
+                return;
             metric = "fs.open";
             value = &g_ctrs.numOpen;
             err_str = "ERROR: doTotal:TOT_OPEN:cmdSendMetric";
             units = "operation";
             break;
         case TOT_CLOSE:
+            if (!g_summary.fs.open_close || (!fsEnable()))
+                return;
             metric = "fs.close";
             value = &g_ctrs.numClose;
             err_str = "ERROR: doTotal:TOT_CLOSE:cmdSendMetric";
             units = "operation";
             break;
         case TOT_DNS:
+            if (!g_summary.net.dns || (!dnsEnable()))
+                return;
             metric = "dns.req";
             value = &g_ctrs.numDNS;
             err_str = "ERROR: doTotal:TOT_DNS:cmdSendMetric";
             units = "request";
             break;
         case TOT_PORTS:
+            if (!g_summary.net.open_close || (!networkEnable()))
+                return;
             metric = "net.port";
             value = &g_ctrs.openPorts;
             err_str = "ERROR: doTotal:TOT_PORTS:cmdSendMetric";
@@ -2595,6 +2604,8 @@ doTotal(metric_t type)
             aggregation_type = CURRENT;
             break;
         case TOT_TCP_CONN:
+            if (!g_summary.net.open_close || (!networkEnable()))
+                return;
             metric = "net.tcp";
             value = &g_ctrs.netConnectionsTcp;
             err_str = "ERROR: doTotal:TOT_TCP_CONN:cmdSendMetric";
@@ -2602,6 +2613,8 @@ doTotal(metric_t type)
             aggregation_type = CURRENT;
             break;
         case TOT_UDP_CONN:
+            if (!g_summary.net.open_close || (!networkEnable()))
+                return;
             metric = "net.udp";
             value = &g_ctrs.netConnectionsUdp;
             err_str = "ERROR: doTotal:TOT_UDP_CONN:cmdSendMetric";
@@ -2609,6 +2622,8 @@ doTotal(metric_t type)
             aggregation_type = CURRENT;
             break;
         case TOT_OTHER_CONN:
+            if (!g_summary.net.open_close || (!networkEnable()))
+                return;
             metric = "net.other";
             value = &g_ctrs.netConnectionsOther;
             err_str = "ERROR: doTotal:TOT_OTHER_CONN:cmdSendMetric";
@@ -2616,12 +2631,16 @@ doTotal(metric_t type)
             aggregation_type = CURRENT;
             break;
         case TOT_NET_OPEN:
+            if (!g_summary.net.open_close || (!networkEnable()))
+                return;
             metric = "net.open";
             value = &g_ctrs.netConnOpen;
             err_str = "ERROR: doTotal:TOT_NET_OPEN:cmdSendMetric";
             units = "connection";
             break;
         case TOT_NET_CLOSE:
+            if (!g_summary.net.open_close || (!networkEnable()))
+                return;
             metric = "net.close";
             value = &g_ctrs.netConnClose;
             err_str = "ERROR: doTotal:TOT_NET_CLOSE:cmdSendMetric";
@@ -2806,8 +2825,9 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
             //atomicSwapU64(value->evt, 0ULL);
         }
 
-        // Only report if enabled
-        if ((g_summary.net.open_close) && (source == EVENT_BASED)) {
+        // Only report metric if enabled
+        if (((g_summary.net.open_close) && (source == EVENT_BASED)) ||
+           (!networkEnable())) {
             return;
         }
 
@@ -2827,7 +2847,8 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
         doNetOpenEvent(net);
 
         // Only report metric if enabled
-        if ((g_summary.net.open_close) && (source == EVENT_BASED)) {
+        if (((g_summary.net.open_close) && (source == EVENT_BASED)) ||
+           (!networkEnable())) {
             return;
         }
 
@@ -2861,7 +2882,8 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
     case CONNECTION_CLOSE:
     {
         // Only report metric if enabled
-        if ((g_summary.net.open_close) && (source == EVENT_BASED)) {
+        if (((g_summary.net.open_close) && (source == EVENT_BASED)) ||
+           (!networkEnable())) {
             return;
         }
 
@@ -2940,7 +2962,8 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
         doNetCloseEvent(net, dur);
 
         // Only report metric if enabled
-        if ((g_summary.net.open_close) && (source == EVENT_BASED)) {
+        if (((g_summary.net.open_close) && (source == EVENT_BASED)) ||
+           (!networkEnable())) {
             return;
         }
 
@@ -3084,16 +3107,13 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
              atomicSwapU64(&net->rxBytes.evt, 0);
         }
 
-        if ((g_summary.net.rx_tx) && (source == EVENT_BASED)) {
+        if (((g_summary.net.rx_tx) && (source == EVENT_BASED)) ||
+           (!networkEnable())) {
             return;
         }
 
         // Don't report zeros.
         if (net->rxBytes.mtc == 0ULL) return;
-
-        if ((g_summary.net.rx_tx) && (source == EVENT_BASED)) {
-            return;
-        }
 
         event_t rxNetMetric = INT_EVENT("net.rx", net->rxBytes.mtc, DELTA, rxFields);
         scope_memmove(&rxMetric, &rxNetMetric, sizeof(event_t));
@@ -3218,7 +3238,8 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
         // Don't report zeros.
         if (net->txBytes.mtc == 0ULL) return;
 
-        if ((g_summary.net.rx_tx) && (source == EVENT_BASED)) {
+        if (((g_summary.net.rx_tx) && (source == EVENT_BASED)) ||
+           (!networkEnable())) {
             return;
         }
 
@@ -3395,7 +3416,9 @@ doConnection(void)
 void
 doHttpAgg()
 {
-    httpAggSendReport(g_http_agg, g_mtc);
+    if (httpEnable()) {
+        httpAggSendReport(g_http_agg, g_mtc);
+    }
     httpAggReset(g_http_agg);
 }
 
