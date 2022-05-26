@@ -2656,10 +2656,21 @@ void
 doTotalDuration(metric_t type)
 {
     // Only report if enabled
-    if (((type == TOT_FS_DURATION) && (!g_summary.fs.open_close)) ||
-        ((type == TOT_NET_DURATION) && (!g_summary.net.open_close)) ||
-        ((type == TOT_DNS_DURATION) && (!g_summary.net.dns))) {
-        return;
+    switch(type) {
+        case TOT_FS_DURATION:
+            if (!g_summary.fs.open_close || (!fsEnable()))
+                return;
+            break;
+        case TOT_NET_DURATION:
+            if (!g_summary.net.open_close || (!networkEnable()))
+                return;
+            break;
+        case TOT_DNS_DURATION:
+            if (!g_summary.net.dns || (!dnsEnable()))
+                return;
+            break;
+        default:
+            DBG(NULL);
     }
 
     const char* metric = "UNKNOWN";
