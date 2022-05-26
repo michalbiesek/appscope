@@ -1,0 +1,245 @@
+#!/bin/bash
+DEBUG=0  # set this to 1 to capture the OUTFILE for each test
+
+FAILED_TEST_LIST=""
+FAILED_TEST_COUNT=0
+
+EVT_FILE="/opt/test-runner/logs/events.log"
+METRIC_FILE="/opt/test-runner/logs/metrics.log"
+SCOPE_LOG_FILE="/opt/test-runner/logs/scope.log"
+
+starttest(){
+    CURRENT_TEST=$1
+    echo "==================================="
+    echo "       Testing $CURRENT_TEST       "
+    echo "==================================="
+    ERR=0
+}
+
+evaltest(){
+    if [ $? -ne 0 ]; then
+        echo "It appears that node hotshot.ts crashed."
+        ERR+=1
+    fi
+    echo "       Evaluating $CURRENT_TEST"
+}
+
+endtest(){
+    if [ $ERR -eq "0" ]; then
+        RESULT=PASSED
+    else
+        cat $METRIC_FILE
+        RESULT=FAILED
+        FAILED_TEST_LIST+=$CURRENT_TEST
+        FAILED_TEST_LIST+=" "
+        FAILED_TEST_COUNT=$(($FAILED_TEST_COUNT + 1))
+    fi
+
+    echo "*************** $CURRENT_TEST $RESULT ***************"
+    echo ""
+    echo ""
+
+    # copy the EVT_FILE to help with debugging
+    if (( $DEBUG )) || [ $RESULT == "FAILED" ]; then
+        cp $EVT_FILE $EVT_FILE.$CURRENT_TEST 2>/dev/null
+        cp $METRIC_FILE $METRIC_FILE.$CURRENT_TEST 2>/dev/null
+        cp $LOG_FILE $LOG_FILE.$CURRENT_TEST 2>/dev/null
+    fi
+
+    rm -f $EVT_FILE
+    rm -f $METRIC_FILE
+    rm -f $LOG_FILE
+}
+
+starttest fs_disable_event_disable
+
+cd /opt/test-runner
+
+SCOPE_EVENT_ENABLE=false SCOPE_METRIC_FS=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+endtest
+
+starttest network_disable_event_disable
+
+cd /opt/test-runner
+
+SCOPE_EVENT_ENABLE=false SCOPE_METRIC_NETWORK=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+endtest
+
+starttest http_disable_event_disable
+
+cd /opt/test-runner
+
+SCOPE_EVENT_ENABLE=false SCOPE_METRIC_HTTP=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+endtest
+
+starttest dns_disable_event_disable
+
+cd /opt/test-runner
+
+SCOPE_EVENT_ENABLE=false SCOPE_METRIC_DNS=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+endtest
+
+starttest proc_disable_event_disable
+
+SCOPE_EVENT_ENABLE=false SCOPE_METRIC_PROC=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+count=$(grep 'proc.start:' $METRIC_FILE | wc -l)
+if [ $count -ne 0 ] ; then
+    ERR+=1
+fi
+
+count=$(grep 'proc.cpu:' $METRIC_FILE | wc -l)
+if [ $count -ne 0 ] ; then
+    ERR+=1
+fi
+
+count=$(grep 'proc.mem:' $METRIC_FILE | wc -l)
+if [ $count -ne 0 ] ; then
+    ERR+=1
+fi
+
+count=$(grep 'proc.thread:' $METRIC_FILE | wc -l)
+if [ $count -ne 0 ] ; then
+    ERR+=1
+fi
+
+count=$(grep 'proc.fd:' $METRIC_FILE | wc -l)
+if [ $count -ne 0 ] ; then
+    ERR+=1
+fi
+
+count=$(grep 'proc.child:' $METRIC_FILE | wc -l)
+if [ $count -ne 0 ] ; then
+    ERR+=1
+fi
+
+
+endtest
+
+starttest fs_disable_event_enable
+
+cd /opt/test-runner
+
+SCOPE_METRIC_FS=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+endtest
+
+starttest network_disable_event_enable
+
+cd /opt/test-runner
+
+SCOPE_METRIC_NETWORK=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+endtest
+
+starttest http_disable_event_enable
+
+cd /opt/test-runner
+
+SCOPE_METRIC_DNS=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+endtest
+
+starttest dns_disable_event_enable
+
+cd /opt/test-runner
+
+SCOPE_METRIC_HTTP=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+endtest
+
+starttest proc_disable_event_enable
+
+cd /opt/test-runner
+
+SCOPE_METRIC_PROC=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+endtest
+
+starttest fs_network_http_dns_proc_disable_event_enable
+
+cd /opt/test-runner
+
+SCOPE_METRIC_FS=false SCOPE_METRIC_NETWORK=false SCOPE_METRIC_HTTP=false SCOPE_METRIC_PROC=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+# check if metric file is empty
+if [ -s "$METRIC_FILE" ]; then
+    ERR+=1
+fi
+
+endtest
+
+starttest fs_disable_event_metric_enable
+
+cd /opt/test-runner
+
+SCOPE_EVENT_METRIC=true SCOPE_METRIC_FS=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+endtest
+
+starttest network_disable_event_metric_enable
+
+cd /opt/test-runner
+
+SCOPE_EVENT_METRIC=true SCOPE_METRIC_NETWORK=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+endtest
+
+starttest http_disable_event_metric_enable
+
+cd /opt/test-runner
+
+SCOPE_EVENT_METRIC=true SCOPE_METRIC_DNS=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+endtest
+
+starttest dns_disable_event_metric_enable
+
+cd /opt/test-runner
+
+SCOPE_EVENT_METRIC=true SCOPE_METRIC_HTTP=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+endtest
+
+starttest proc_disable_event_metric_enable
+
+cd /opt/test-runner
+
+SCOPE_EVENT_METRIC=true SCOPE_METRIC_PROC=false ldscope -- curl https://cribl.io
+ERR+=$?
+
+endtest
+
+if (( $FAILED_TEST_COUNT == 0 )); then
+    echo ""
+    echo ""
+    echo "*************** ALL TESTS PASSED ***************"
+else
+    echo "*************** SOME TESTS FAILED ***************"
+    echo "Failed tests: $FAILED_TEST_LIST"
+    echo "Refer to these files for more info:"
+    for FAILED_TEST in $FAILED_TEST_LIST; do
+        echo "  $OUTFILE.$FAILED_TEST"
+    done
+fi
+
+exit ${FAILED_TEST_COUNT}
