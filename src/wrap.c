@@ -902,6 +902,8 @@ doReset()
     atomicCasU64(&reentrancy_guard, 1ULL, 0ULL);
 
     reportProcessStart(g_ctl, TRUE, CFG_WHICH_MAX);
+    doProcStartMetric();
+
     threadInit();
 }
 
@@ -1689,6 +1691,7 @@ init(void)
     g_cfg.blockconn = DEFAULT_PORTBLOCK;
 
     reportProcessStart(g_ctl, TRUE, CFG_WHICH_MAX);
+    doProcStartMetric();
 
     // replaces atexit(handleExit);  Allows events to be reported before
     // the TLS destructors are run.  This mechanism is used regardless
