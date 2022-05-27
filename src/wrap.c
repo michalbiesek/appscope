@@ -625,12 +625,7 @@ doConfig(config_t *cfg)
     }
 
     setVerbosity(cfgMtcVerbosity(cfg));
-
-    setFsEnable(cfgMtcFsEnable(cfg));
-    setNetworkEnable(cfgMtcNetworkEnable(cfg));
-    setHttpEnable(cfgMtcHttpEnable(cfg));
-    setDnsEnable(cfgMtcDnsEnable(cfg));
-    setProcEnable(cfgMtcProcEnable(cfg));
+    setCategoryMtcEnable(cfgMtcFsEnable(cfg), cfgMtcNetEnable(cfg), cfgMtcHttpEnable(cfg), cfgMtcDnsEnable(cfg), cfgMtcProcEnable(cfg));
 
     g_cmddir = cfgCmdDir(cfg);
     g_sendprocessstart = cfgSendProcessStartMsg(cfg);
@@ -923,7 +918,7 @@ reportPeriodicStuff(void)
     doPayload();
 
     // TODO: move the code inside if below to report.c
-    if (procEnable()) {
+    if (procMtcEnable()) {
         // We report CPU time for this period.
         cpu = doGetProcCPU();
         if (cpu != -1) {
