@@ -6,6 +6,7 @@ RUN apt update \
       binutils \
       curl \
       netcat \
+      python3 \
     && rm -rf /var/lib/apt/lists/*
 
 ENV SCOPE_CRIBL_ENABLE=false

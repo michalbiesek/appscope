@@ -59,7 +59,22 @@ declare -a curl_fs_metrics=(
 "fs.write:"
 )
 
+declare -a python_server_fs_metrics=(
+"fs.open:"
+"fs.close:"
+"fs.duration:"
+"fs.error:"
+"fs.read:"
+"fs.write:"
+"fs.seek:"
+)
+
 declare -a curl_fs_events=(
+'"source":"fs.open"'
+'"source":"fs.close"'
+)
+
+declare -a python_server_fs_events=(
 '"source":"fs.open"'
 '"source":"fs.close"'
 )
@@ -74,9 +89,25 @@ declare -a curl_net_metrics=(
 "net.udp:"
 )
 
+declare -a python_server_net_metrics=(
+"net.open:"
+"net.close:"
+"net.rx:"
+"net.tx:"
+"net.port:"
+"net.tcp:"
+"net.duration:"
+)
+
 declare -a curl_net_events=(
 '"source":"net.open"'
 '"source":"net.close"'
+)
+
+declare -a python_server_net_events=(
+'"source":"net.open"'
+'"source":"net.close"'
+'"source":"net.app"'
 )
 
 declare -a curl_http_metrics=(
@@ -85,7 +116,18 @@ declare -a curl_http_metrics=(
 "http.duration.client:"
 )
 
+declare -a python_server_http_metrics=(
+"http.req:"
+"http.resp.content_length:"
+"http.duration.server:"
+)
+
 declare -a curl_http_events=(
+'"source":"http.resp"'
+'"source":"http.req"'
+)
+
+declare -a python_server_http_events=(
 '"source":"http.resp"'
 '"source":"http.req"'
 )
@@ -97,6 +139,10 @@ declare -a curl_proc_metrics=(
 "proc.thread:"
 "proc.fd:"
 "proc.child:"
+)
+
+declare -a python_server_proc_metrics=(
+"proc.start:"
 )
 
 allow_list_data(){
@@ -127,7 +173,7 @@ deny_list_data(){
 
 cd /opt/test-runner
 
-starttest all_metrics_and_events_enabled
+starttest all_metrics_and_events_enabled_curl
 
 ldscope -- curl https://cribl.io -o /dev/null
 ERR+=$?
@@ -143,7 +189,27 @@ allow_list_data curl_http_events $EVT_FILE
 
 endtest
 
-starttest fs_disable_event_disable
+starttest all_metrics_and_events_enabled_python_server
+
+ldscope -- python3 -m http.server 2> /dev/null &
+ERR+=$?
+sleep 1
+curl http://localhost:8000
+sleep 1
+kill -9 `pidof python3` > /dev/null
+
+allow_list_data python_server_fs_metrics $METRIC_FILE
+allow_list_data python_server_net_metrics $METRIC_FILE
+allow_list_data python_server_http_metrics $METRIC_FILE
+allow_list_data python_server_proc_metrics $METRIC_FILE
+
+allow_list_data python_server_fs_events $EVT_FILE
+allow_list_data python_server_net_events $EVT_FILE
+allow_list_data python_server_http_events $EVT_FILE
+
+endtest
+
+starttest fs_disable_event_disable_curl
 
 SCOPE_EVENT_ENABLE=false SCOPE_METRIC_FS=false ldscope -- curl https://cribl.io -o /dev/null
 ERR+=$?
@@ -159,7 +225,27 @@ deny_list_data curl_http_events $EVT_FILE
 
 endtest
 
-starttest network_disable_event_disable
+starttest fs_disable_event_disable_python_server
+
+SCOPE_EVENT_ENABLE=false SCOPE_METRIC_FS=false ldscope -- python3 -m http.server 2> /dev/null &
+ERR+=$?
+sleep 1
+curl http://localhost:8000
+sleep 1
+kill -9 `pidof python3` > /dev/null
+
+deny_list_data python_server_fs_metrics $METRIC_FILE
+allow_list_data python_server_net_metrics $METRIC_FILE
+allow_list_data python_server_http_metrics $METRIC_FILE
+allow_list_data python_server_proc_metrics $METRIC_FILE
+
+deny_list_data python_server_fs_events $EVT_FILE
+deny_list_data python_server_net_events $EVT_FILE
+deny_list_data python_server_http_events $EVT_FILE
+
+endtest
+
+starttest net_disable_event_disable_curl
 
 SCOPE_EVENT_ENABLE=false SCOPE_METRIC_NET=false ldscope -- curl https://cribl.io -o /dev/null
 ERR+=$?
@@ -175,7 +261,27 @@ deny_list_data curl_http_events $EVT_FILE
 
 endtest
 
-starttest http_disable_event_disable
+starttest net_disable_event_disable_python_server
+
+SCOPE_EVENT_ENABLE=false SCOPE_METRIC_NET=false ldscope -- python3 -m http.server 2> /dev/null &
+ERR+=$?
+sleep 1
+curl http://localhost:8000
+sleep 1
+kill -9 `pidof python3` > /dev/null
+
+allow_list_data python_server_fs_metrics $METRIC_FILE
+deny_list_data python_server_net_metrics $METRIC_FILE
+allow_list_data python_server_http_metrics $METRIC_FILE
+allow_list_data python_server_proc_metrics $METRIC_FILE
+
+deny_list_data python_server_fs_events $EVT_FILE
+deny_list_data python_server_net_events $EVT_FILE
+deny_list_data python_server_http_events $EVT_FILE
+
+endtest
+
+starttest http_disable_event_disable_curl
 
 SCOPE_EVENT_ENABLE=false SCOPE_METRIC_HTTP=false ldscope -- curl https://cribl.io -o /dev/null
 ERR+=$?
@@ -191,7 +297,27 @@ deny_list_data curl_http_events $EVT_FILE
 
 endtest
 
-starttest proc_disable_event_disable
+starttest http_disable_event_disable_python_server
+
+SCOPE_EVENT_ENABLE=false SCOPE_METRIC_HTTP=false ldscope -- python3 -m http.server 2> /dev/null &
+ERR+=$?
+sleep 1
+curl http://localhost:8000
+sleep 1
+kill -9 `pidof python3` > /dev/null
+
+allow_list_data python_server_fs_metrics $METRIC_FILE
+allow_list_data python_server_net_metrics $METRIC_FILE
+deny_list_data python_server_http_metrics $METRIC_FILE
+allow_list_data python_server_proc_metrics $METRIC_FILE
+
+deny_list_data python_server_fs_events $EVT_FILE
+deny_list_data python_server_net_events $EVT_FILE
+deny_list_data python_server_http_events $EVT_FILE
+
+endtest
+
+starttest proc_disable_event_disable_curl
 
 SCOPE_EVENT_ENABLE=false SCOPE_METRIC_PROC=false ldscope -- curl https://cribl.io -o /dev/null
 ERR+=$?
@@ -204,6 +330,50 @@ deny_list_data curl_proc_metrics $METRIC_FILE
 deny_list_data curl_fs_events $EVT_FILE
 deny_list_data curl_net_events $EVT_FILE
 deny_list_data curl_http_events $EVT_FILE
+
+endtest
+
+starttest proc_disable_event_disable_python_server
+
+SCOPE_EVENT_ENABLE=false SCOPE_METRIC_PROC=false ldscope -- python3 -m http.server 2> /dev/null &
+ERR+=$?
+sleep 1
+curl http://localhost:8000
+sleep 1
+kill -9 `pidof python3` > /dev/null
+
+allow_list_data python_server_fs_metrics $METRIC_FILE
+allow_list_data python_server_net_metrics $METRIC_FILE
+allow_list_data python_server_http_metrics $METRIC_FILE
+deny_list_data python_server_proc_metrics $METRIC_FILE
+
+deny_list_data python_server_fs_events $EVT_FILE
+deny_list_data python_server_net_events $EVT_FILE
+deny_list_data python_server_http_events $EVT_FILE
+
+endtest
+
+starttest disable_all_metrics_with_variants_curl
+
+SCOPE_EVENT_ENABLE=false SCOPE_METRIC_FS=false SCOPE_METRIC_NET=false SCOPE_METRIC_HTTP=false SCOPE_METRIC_PROC=false ldscope -- python3 -m http.server 2> /dev/null &
+ERR+=$?
+sleep 1
+curl http://localhost:8000
+sleep 1
+kill -9 `pidof python3` > /dev/null
+
+# check if metric file is empty
+if [ -s "$METRIC_FILE" ]; then
+    ERR+=1
+fi
+deny_list_data python_server_fs_metrics $METRIC_FILE
+deny_list_data python_server_net_metrics $METRIC_FILE
+deny_list_data python_server_http_metrics $METRIC_FILE
+deny_list_data python_server_proc_metrics $METRIC_FILE
+
+deny_list_data python_server_fs_events $EVT_FILE
+deny_list_data python_server_net_events $EVT_FILE
+deny_list_data python_server_http_events $EVT_FILE
 
 endtest
 
