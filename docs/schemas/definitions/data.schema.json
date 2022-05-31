@@ -46,7 +46,7 @@
     },
     "duration": {
       "title": "duration",
-      "description": "Duration in milliseconds.",
+      "description": "Duration in microseconds.",
       "type": "number",
       "examples": [55]
     },
