@@ -46,7 +46,7 @@
     },
     "duration": {
       "title": "duration",
-      "description": "Duration in microseconds.",
+      "description": "Duration in nicrominutes.",
       "type": "number",
       "examples": [55]
     },
