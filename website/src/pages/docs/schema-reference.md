@@ -311,7 +311,7 @@ Structure of the `dns.resp` event
 
 | Property | Description |
 |---|---|
-| `duration` (`number`) | Duration in milliseconds.<br/><br/>**Example:**<br/>`55` |
+| `duration` (`number`) | Durati2on in milliseconds.<br/><br/>**Example:**<br/>`55` |
 | `domain` (`string`) | The domain for which the scoped app made a DNS request. |
 | `addrs` (`array`) | IP address(es) of the domain for which the scoped app sent a DNS request. |
 
@@ -454,7 +454,7 @@ Structure of the `fs.close` event
 | `file_read_ops` (`integer`) | Count of individual read operations aggregated.<br/><br/>**Example:**<br/>`5` |
 | `file_write_bytes` (`integer`) | The number of bytes of data written to a file.<br/><br/>**Example:**<br/>`10` |
 | `file_write_ops` (`integer`) | Count of individual write operations aggregated.<br/><br/>**Example:**<br/>`5` |
-| `duration` (`number`) | Duration in milliseconds.<br/><br/>**Example:**<br/>`55` |
+| `duration` (`number`) | Durati2on in milliseconds.<br/><br/>**Example:**<br/>`55` |
 | `op` (`string`) | The close operation that was executed on the filesystem.<br/><br/>**Possible values:**<ul><li>`go_close`</li><li>`closedir`</li><li>`freopen`</li><li>`freopen64`</li><li>`close`</li><li>`fclose`</li><li>`close$NOCANCEL`</li><li>`guarded_close_np`</li><li>`close_nocancel`</li></ul> |
 
 <hr/>
@@ -1335,7 +1335,7 @@ Structure of the `net.close` event
 | `net_protocol` (`string`) | First network protocol detected from data sent or received.<br/><br/>Value must be `http`. |
 | `unix_peer_inode` (`number`) | Inode number for the remote end of a UNIX domain socket. |
 | `unix_local_inode` (`number`) | Inode number for the local end of a UNIX domain socket. |
-| `duration` (`number`) | Duration in milliseconds.<br/><br/>**Example:**<br/>`55` |
+| `duration` (`number`) | Durati2on in milliseconds.<br/><br/>**Example:**<br/>`55` |
 | `net_bytes_sent` (`number`) | The number of bytes of data sent over a network connection. |
 | `net_bytes_recv` (`number`) | The number of bytes of data received over a network connection. |
 | `net_close_reason` (`string`) | Specifies which end of a network connection initiated the closing of the connection.<br/><br/>**Possible values:**<ul><li>`local`</li><li>`remote`</li></ul> |
@@ -2118,7 +2118,7 @@ Structure of the `dns.req` metric
 | `pid` _required_ (`integer`) | The process ID of the scoped app.<br/><br/>**Example:**<br/>`1000` |
 | `host` _required_ (`string`) | Hostname for the host on which the scoped app was run. |
 | `domain` (`string`) | The domain for which the scoped app made a DNS request. |
-| `duration` (`number`) | Duration in milliseconds.<br/><br/>**Example:**<br/>`55` |
+| `duration` (`number`) | Durati2on in milliseconds.<br/><br/>**Example:**<br/>`55` |
 | `unit` _required_ (`string`) | Indicates that the metric's value is a number of a requests.<br/><br/>Value must be `request`. |
 | `summary` (`string`) | When true, indicates that the metric value is an aggregation.<br/><br/>Value must be `true`. |
 | `_time` _required_ (`number`) | The moment in time when AppScope reported the event or metric. In UNIX time with integer part in seconds and fractional part in microseconds.<br/><br/>**Example:**<br/>`1643662126.91777` |
