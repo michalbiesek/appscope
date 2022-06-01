@@ -3405,8 +3405,11 @@ doConnection(void)
 {
     bool ready = FALSE;
 
+    // here should be backoff algorithm
     // if no connection, don't pull data from the queue
     if (ctlNeedsConnection(g_ctl, CFG_CTL)) {
+        scopeLogError("DoConnection");
+        // scopeBacktrace(CFG_LOG_ERROR);
         if (ctlConnect(g_ctl, CFG_CTL)) {
             reportProcessStart(g_ctl, FALSE, CFG_CTL);
             ready = TRUE;
