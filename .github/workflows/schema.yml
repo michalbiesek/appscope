@@ -32,3 +32,5 @@ jobs:
         with:
           commit_message: Update JSON Schema Markdown file
           file_pattern: "./website/src/pages/docs/schema-reference.md"
+          push_options: '--force'
+          create_branch: true
