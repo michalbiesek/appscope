@@ -140,16 +140,13 @@ enum_map_t watchTypeMap[] = {
     {NULL,                    -1}
 };
 
-// TODO extend the structure below with statsd
-// Keep in mind that metric_category_t is a bit no
-// so statsd should be a last one
-
 enum_map_t mtcCategoriesWatchTypeMap[] = {
     {"fs",                    CFG_MTC_FS},
     {"net",                   CFG_MTC_NET},
     {"http",                  CFG_MTC_HTTP},
     {"dns",                   CFG_MTC_DNS},
     {"process",               CFG_MTC_PROC},
+    {"statsd",                CFG_MTC_STATSD},
     {NULL,                    -1}
 };
 
@@ -165,7 +162,6 @@ void cfgMtcFormatSetFromStr(config_t*, const char*);
 void cfgMtcStatsDPrefixSetFromStr(config_t*, const char*);
 void cfgMtcStatsDMaxLenSetFromStr(config_t*, const char*);
 void cfgMtcPeriodSetFromStr(config_t*, const char*);
-void cfgMtcStatsdEnableSetFromStr(config_t*, const char*);
 void cfgMtcCategoryEnableSetFromStr(config_t*, const char*, metric_category_t);
 void cfgCmdDirSetFromStr(config_t*, const char*);
 void cfgConfigEventSetFromStr(config_t*, const char*);
@@ -464,7 +460,7 @@ processEnvStyleInput(config_t *cfg, const char *env_line)
     } else if (!scope_strcmp(env_name, "SCOPE_SUMMARY_PERIOD")) {
         cfgMtcPeriodSetFromStr(cfg, value);
     } else if (!scope_strcmp(env_name, "SCOPE_METRIC_STATSD")) {
-        cfgMtcStatsdEnableSetFromStr(cfg, value);
+        cfgMtcCategoryEnableSetFromStr(cfg, value, CFG_MTC_STATSD);
     } else if (!scope_strcmp(env_name, "SCOPE_METRIC_FS")) {
         cfgMtcCategoryEnableSetFromStr(cfg, value, CFG_MTC_FS);
     } else if (!scope_strcmp(env_name, "SCOPE_METRIC_NET")) {
@@ -699,13 +695,6 @@ cfgMtcPeriodSetFromStr(config_t* cfg, const char* value)
     if (scope_errno || *endptr) return;
 
     cfgMtcPeriodSet(cfg, x);
-}
-
-void
-cfgMtcStatsdEnableSetFromStr(config_t *cfg, const char *value)
-{
-    if (!cfg || !value) return;
-    cfgMtcStatsdEnableSet(cfg, strToVal(boolMap, value));
 }
 
 void
@@ -1243,12 +1232,9 @@ processMtcWatchType(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     if (node->type != YAML_SCALAR_NODE) return;
 
     char* value = stringVal(node);
-    if (!scope_strcmp(value, "statsd")) {
-        cfgMtcStatsdEnableSet(config, TRUE);
-    }
 
     metric_category_t category;
-    for(category = CFG_MTC_FS; category <= CFG_MTC_PROC; ++category) {
+    for(category = CFG_MTC_FS; category <= CFG_MTC_STATSD; ++category) {
         if (!scope_strcmp(value, mtcCategoriesWatchTypeMap[category].str)) {
             cfgMtcCategoryEnableSet(config, TRUE, category);
         }
@@ -1283,10 +1269,8 @@ processMtcWatch(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 
     // absence of one of these values means to clear it.
     // clear them all, then set values for whatever we find.
-    cfgMtcStatsdEnableSet(config, FALSE);
-    
     metric_category_t category;
-    for (category=CFG_MTC_FS; category<=CFG_MTC_PROC; ++category) {
+    for (category=CFG_MTC_FS; category<=CFG_MTC_STATSD; ++category) {
         cfgMtcCategoryEnableSet(config, FALSE, category);
     }
 
@@ -2292,39 +2276,10 @@ createMetricWatchArrayJson(config_t* cfg)
 
     if (!(root = cJSON_CreateArray())) goto err;
 
-    if (cfgMtcStatsdEnable(cfg)) {
+    metric_category_t category;
+    for(category = CFG_MTC_FS; category <= CFG_MTC_STATSD; ++category) {
         cJSON* item;
-        if (!(item = createMetricWatchObjectJson(cfg, "statsd"))) goto err;
-        cJSON_AddItemToArray(root, item);
-    }
-
-    if (cfgMtcFsEnable(cfg)) {
-        cJSON* item;
-        if (!(item = createMetricWatchObjectJson(cfg, "fs"))) goto err;
-        cJSON_AddItemToArray(root, item);
-    }
-
-    if (cfgMtcNetEnable(cfg)) {
-        cJSON* item;
-        if (!(item = createMetricWatchObjectJson(cfg, "net"))) goto err;
-        cJSON_AddItemToArray(root, item);
-    }
-
-    if (cfgMtcHttpEnable(cfg)) {
-        cJSON* item;
-        if (!(item = createMetricWatchObjectJson(cfg, "http"))) goto err;
-        cJSON_AddItemToArray(root, item);
-    }
-
-    if (cfgMtcDnsEnable(cfg)) {
-        cJSON* item;
-        if (!(item = createMetricWatchObjectJson(cfg, "dns"))) goto err;
-        cJSON_AddItemToArray(root, item);
-    }
-
-    if (cfgMtcProcEnable(cfg)) {
-        cJSON* item;
-        if (!(item = createMetricWatchObjectJson(cfg, "process"))) goto err;
+        if (!(item = createMetricWatchObjectJson(cfg, mtcCategoriesWatchTypeMap[category].str))) goto err;
         cJSON_AddItemToArray(root, item);
     }
 
