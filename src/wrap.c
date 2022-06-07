@@ -1343,6 +1343,15 @@ hookInject()
     return FALSE;
 }
 
+static int call_backtrace = 0;
+
+EXPORTON int
+start_addr_hook(int *(main) (int, char * *, char * *), int argc, char * * ubp_av, void (*init) (void), void (*fini) (void), void (*rtld_fini) (void), void (* stack_end))
+{
+    call_backtrace = 1;
+    return g_fn.start(main, argc, ubp_av, init, fini, rtld_fini, stack_end);
+}
+
 static void
 initHook(int attachedFlag)
 {
@@ -1351,6 +1360,7 @@ initHook(int attachedFlag)
     bool should_we_patch = FALSE;
     char *full_path = NULL;
     elf_buf_t *ebuf = NULL;
+    Elf64_Addr start;
 
     // env vars are not always set as needed, be explicit here
     // this is duplicated if we were started from the scope exec
@@ -1385,6 +1395,11 @@ initHook(int attachedFlag)
         // So, while we have the exec open, we look to see if we can dig it out.
         g_fn.uv__read = getSymbol(ebuf->buf, "uv__read");
         scopeLog(CFG_LOG_TRACE, "%s:%d uv__read at %p", __FUNCTION__, __LINE__, g_fn.uv__read);
+
+        Elf64_Ehdr *ehdr = (Elf64_Ehdr *) ebuf->buf;
+        start = ehdr->e_entry;
+        g_fn.start = (int (*)(int *(*) (int, char * *, char * *), int, char **, void (*) (void), void (*) (void), void (*) (void), void (*)))start;
+        // g_fn.start = getSymbol(ebuf->buf, "__libc_start_main");
     }
 
     if (full_path) scope_free(full_path);
@@ -1436,6 +1451,8 @@ initHook(int attachedFlag)
         ((g_ismusl == FALSE) && g_fn.sendmmsg) ||
         ((g_ismusl == TRUE) && (g_fn.sendto || g_fn.recvfrom))) {
         funchook = funchook_create();
+
+        rc = funchook_prepare(funchook, (void**)&start, start_addr_hook);
 
         if (logLevel(g_log) <= CFG_LOG_TRACE) {
             // TODO: add some mechanism to get the config'd log file path
@@ -1643,7 +1660,7 @@ void wait_in_loop(void)
 __attribute__((constructor)) void
 init(void)
 {
-    // wait_in_loop();
+    wait_in_loop();
     scope_init_vdso_ehdr();
     g_fn.calloc = dlsym(RTLD_NEXT, "calloc");
     if (!g_fn.calloc) g_fn.calloc = dlsym(RTLD_DEFAULT, "calloc");
@@ -1776,7 +1793,6 @@ sigaction(int signum, const struct sigaction *act, struct sigaction *oldact)
     return g_fn.sigaction(signum, act, oldact);
 }
 
-static int call_backtrace = 0;
 static size_t no_bytes_allocated;
 static void *calloc_mem = NULL;
 

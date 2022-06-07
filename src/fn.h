@@ -260,6 +260,7 @@ typedef struct {
     char *(*strdup)(const char *);
     void *(*mmap)(void *, size_t, int, int, int, off_t);
     int  (*munmap)(void *, size_t);
+    int (*start)(int *(*) (int, char * *, char * *), int, char **, void (*) (void), void (*) (void), void (*) (void), void (*));
 #endif // __linux__
 
 #if defined(__linux__) && defined(__STATX__)
