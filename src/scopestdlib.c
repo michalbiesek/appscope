@@ -143,59 +143,60 @@ extern uint16_t        scopelibc_ntohs(uint16_t);
 extern uint16_t        scopelibc_htons(uint16_t);
 
 // Misc handling operations
-extern int           scopelibc_atoi(const char *);
-extern int           scopelibc_isspace(int);
-extern int           scopelibc_isprint(int);
-extern void          scopelibc_perror(const char*);
-extern int           scopelibc_gettimeofday(struct timeval *, struct timezone *);
-extern int           scopelibc_timer_create(clockid_t, struct sigevent *, timer_t *);
-extern int           scopelibc_timer_settime(timer_t, int, const struct itimerspec *, struct itimerspec *);
-extern int           scopelibc_timer_delete(timer_t);
-extern time_t        scopelibc_time(time_t *);
-extern struct tm*    scopelibc_localtime_r(const time_t *, struct tm *);
-extern struct tm*    scopelibc_gmtime_r(const time_t *, struct tm *);
-extern unsigned int  scopelibc_sleep(unsigned int);
-extern int           scopelibc_usleep(useconds_t);
-extern int           scopelibc_nanosleep(const struct timespec *, struct timespec *);
-extern int           scopelibc_sigaction(int, const struct sigaction *, struct sigaction *);
-extern int           scopelibc_sigemptyset(sigset_t *);
-extern int           scopelibc_pthread_create(pthread_t *, const pthread_attr_t *, void *(*)(void *), void *);
-extern int           scopelibc_pthread_barrier_init(pthread_barrier_t *, const pthread_barrierattr_t *, unsigned);
-extern int           scopelibc_pthread_barrier_destroy(pthread_barrier_t *);
-extern int           scopelibc_pthread_barrier_wait(pthread_barrier_t *);
-extern int           scopelibc_dlclose(void *);
-extern int           scopelibc_ns_initparse(const unsigned char *, int, ns_msg *);
-extern int           scopelibc_ns_parserr(ns_msg *, ns_sect, int, ns_rr *);
-extern int           scopelibc_getgrgid_r(gid_t, struct group *, char *, size_t, struct group **);
-extern int           scopelibc_getpwuid_r(uid_t, struct passwd *, char *, size_t, struct passwd **);
-extern pid_t         scopelibc_getpid(void);
-extern pid_t         scopelibc_getppid(void);
-extern uid_t         scopelibc_getuid(void);
-extern gid_t         scopelibc_getgid(void);
-extern void*         scopelibc_dlopen(const char *, int);
-extern int           scopelibc_dlclose(void *);
-extern void*         scopelibc_dlsym(void *, const char *);
-extern long          scopelibc_ptrace(int, pid_t, void *, void *);
-extern pid_t         scopelibc_waitpid(pid_t, int *, int);
-extern char*         scopelibc_getenv(const char *);
-extern int           scopelibc_setenv(const char *, const char *, int);
-extern struct lconv* scopelibc_localeconv(void);
-extern int           scopelibc_shm_open(const char *, int, mode_t);
-extern int           scopelibc_shm_unlink(const char *);
-extern long          scopelibc_sysconf(int);
-extern int           scopelibc_mkstemp(char *);
-extern int           scopelibc_clock_gettime(clockid_t, struct timespec *);
-extern int           scopelibc_getpagesize(void);
-extern int           scopelibc_uname(struct utsname *);
-extern int           scopelibc_arch_prctl(int, unsigned long);
-extern int           scopelibc_getrusage(int , struct rusage *);
-extern int           scopelibc_atexit(void (*)(void));
-extern int           scopelibc_tcsetattr(int, int, const struct termios *);
-extern int           scopelibc_tcgetattr(int, struct termios *);
-extern void*         scopelibc_shmat(int, const void *, int);
-extern int           scopelibc_shmdt(const void *);
-extern int           scopelibc_shmget(key_t, size_t, int);
-extern int           scopelibc_sched_getcpu(void);
+extern int                    scopelibc_atoi(const char *);
+extern int                    scopelibc_isspace(int);
+extern int                    scopelibc_isprint(int);
+extern void                   scopelibc_perror(const char*);
+extern int                    scopelibc_gettimeofday(struct timeval *, struct timezone *);
+extern int                    scopelibc_timer_create(clockid_t, struct sigevent *, timer_t *);
+extern int                    scopelibc_timer_settime(timer_t, int, const struct itimerspec *, struct itimerspec *);
+extern int                    scopelibc_timer_delete(timer_t);
+extern time_t                 scopelibc_time(time_t *);
+extern struct tm*             scopelibc_localtime_r(const time_t *, struct tm *);
+extern struct tm*             scopelibc_gmtime_r(const time_t *, struct tm *);
+extern unsigned int           scopelibc_sleep(unsigned int);
+extern int                    scopelibc_usleep(useconds_t);
+extern int                    scopelibc_nanosleep(const struct timespec *, struct timespec *);
+extern int                    scopelibc_sigaction(int, const struct sigaction *, struct sigaction *);
+extern int                    scopelibc_sigemptyset(sigset_t *);
+extern int                    scopelibc_pthread_create(pthread_t *, const pthread_attr_t *, void *(*)(void *), void *);
+extern int                    scopelibc_pthread_barrier_init(pthread_barrier_t *, const pthread_barrierattr_t *, unsigned);
+extern int                    scopelibc_pthread_barrier_destroy(pthread_barrier_t *);
+extern int                    scopelibc_pthread_barrier_wait(pthread_barrier_t *);
+extern int                    scopelibc_dlclose(void *);
+extern int                    scopelibc_ns_initparse(const unsigned char *, int, ns_msg *);
+extern int                    scopelibc_ns_parserr(ns_msg *, ns_sect, int, ns_rr *);
+extern int                    scopelibc_getgrgid_r(gid_t, struct group *, char *, size_t, struct group **);
+extern int                    scopelibc_getpwuid_r(uid_t, struct passwd *, char *, size_t, struct passwd **);
+extern pid_t                  scopelibc_getpid(void);
+extern pid_t                  scopelibc_getppid(void);
+extern uid_t                  scopelibc_getuid(void);
+extern gid_t                  scopelibc_getgid(void);
+extern void*                  scopelibc_dlopen(const char *, int);
+extern int                    scopelibc_dlclose(void *);
+extern void*                  scopelibc_dlsym(void *, const char *);
+extern long                   scopelibc_ptrace(int, pid_t, void *, void *);
+extern pid_t                  scopelibc_waitpid(pid_t, int *, int);
+extern char*                  scopelibc_getenv(const char *);
+extern int                    scopelibc_setenv(const char *, const char *, int);
+extern struct lconv*          scopelibc_localeconv(void);
+extern int                    scopelibc_shm_open(const char *, int, mode_t);
+extern int                    scopelibc_shm_unlink(const char *);
+extern long                   scopelibc_sysconf(int);
+extern int                    scopelibc_mkstemp(char *);
+extern int                    scopelibc_clock_gettime(clockid_t, struct timespec *);
+extern int                    scopelibc_getpagesize(void);
+extern int                    scopelibc_uname(struct utsname *);
+extern int                    scopelibc_arch_prctl(int, unsigned long);
+extern int                    scopelibc_getrusage(int , struct rusage *);
+extern int                    scopelibc_atexit(void (*)(void));
+extern int                    scopelibc_tcsetattr(int, int, const struct termios *);
+extern int                    scopelibc_tcgetattr(int, struct termios *);
+extern void*                  scopelibc_shmat(int, const void *, int);
+extern int                    scopelibc_shmdt(const void *);
+extern int                    scopelibc_shmget(key_t, size_t, int);
+extern int                    scopelibc_sched_getcpu(void);
+extern const unsigned short** scopelibc___ctype_b_loc(void);
 
 static int g_go_static;
 
@@ -1109,6 +1110,11 @@ scope_shmget(key_t key, size_t size, int shmflg) {
 int
 scope_sched_getcpu(void) {
     return scopelibc_sched_getcpu();
+}
+
+const unsigned short **
+scope__ctype_b_loc(void) {
+    return scopelibc___ctype_b_loc();
 }
 
 int
