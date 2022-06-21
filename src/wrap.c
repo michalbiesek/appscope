@@ -1818,7 +1818,7 @@ freopen(const char *pathname, const char *mode, FILE *orig_stream)
 }
 
 #ifdef __linux__
-EXPORTON int
+EXPORTOFF int
 nanosleep(const struct timespec *req, struct timespec *rem)
 {
     stopTimer();
@@ -1826,7 +1826,7 @@ nanosleep(const struct timespec *req, struct timespec *rem)
     return g_fn.nanosleep(req, rem);
 }
 
-EXPORTON int
+EXPORTOFF int
 select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout)
 {
     stopTimer();
@@ -1834,7 +1834,7 @@ select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct ti
     return g_fn.select(nfds, readfds, writefds, exceptfds, timeout);
 }
 
-EXPORTON int
+EXPORTOFF int
 sigsuspend(const sigset_t *mask)
 {
     stopTimer();
@@ -1842,7 +1842,7 @@ sigsuspend(const sigset_t *mask)
     return g_fn.sigsuspend(mask);
 }
 
-EXPORTON int
+EXPORTOFF int
 epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
 {
     stopTimer();
