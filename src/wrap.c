@@ -4089,7 +4089,7 @@ fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
     return rc;
 }
 
-EXPORTON size_t
+EXPORTOFF size_t
 __fread_chk(void *ptr, size_t ptrlen, size_t size, size_t nmemb, FILE *stream)
 {
     // TODO: this function aborts & exits on error, add abort functionality
@@ -4103,7 +4103,7 @@ __fread_chk(void *ptr, size_t ptrlen, size_t size, size_t nmemb, FILE *stream)
     return rc;
 }
 
-EXPORTON size_t
+EXPORTOFF size_t
 fread_unlocked(void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
     WRAP_CHECK(fread_unlocked, 0);
@@ -4129,7 +4129,7 @@ fgets(char *s, int n, FILE *stream)
     return rc;
 }
 
-EXPORTON char *
+EXPORTOFF char *
 __fgets_chk(char *s, size_t size, int strsize, FILE *stream)
 {
     // TODO: this function aborts & exits on error, add abort functionality
@@ -4143,7 +4143,7 @@ __fgets_chk(char *s, size_t size, int strsize, FILE *stream)
     return rc;
 }
 
-EXPORTON char *
+EXPORTOFF char *
 fgets_unlocked(char *s, int n, FILE *stream)
 {
     WRAP_CHECK(fgets_unlocked, NULL);
@@ -4156,7 +4156,7 @@ fgets_unlocked(char *s, int n, FILE *stream)
     return rc;
 }
 
-EXPORTON wchar_t *
+EXPORTOFF wchar_t *
 __fgetws_chk(wchar_t *ws, size_t size, int strsize, FILE *stream)
 {
     // TODO: this function aborts & exits on error, add abort functionality
@@ -4170,7 +4170,7 @@ __fgetws_chk(wchar_t *ws, size_t size, int strsize, FILE *stream)
     return rc;
 }
 
-EXPORTON wchar_t *
+EXPORTOFF wchar_t *
 fgetws(wchar_t *ws, int n, FILE *stream)
 {
     WRAP_CHECK(fgetws, NULL);
@@ -4183,7 +4183,7 @@ fgetws(wchar_t *ws, int n, FILE *stream)
     return rc;
 }
 
-EXPORTON wint_t
+EXPORTOFF wint_t
 fgetwc(FILE *stream)
 {
     WRAP_CHECK(fgetwc, WEOF);
@@ -4196,7 +4196,7 @@ fgetwc(FILE *stream)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fgetc(FILE *stream)
 {
     WRAP_CHECK(fgetc, EOF);
@@ -4209,7 +4209,7 @@ fgetc(FILE *stream)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fputc(int c, FILE *stream)
 {
     WRAP_CHECK(fputc, EOF);
@@ -4225,7 +4225,7 @@ fputc(int c, FILE *stream)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fputc_unlocked(int c, FILE *stream)
 {
     WRAP_CHECK(fputc_unlocked, EOF);
@@ -4241,7 +4241,7 @@ fputc_unlocked(int c, FILE *stream)
     return rc;
 }
 
-EXPORTON wint_t
+EXPORTOFF wint_t
 putwc(wchar_t wc, FILE *stream)
 {
     WRAP_CHECK(putwc, WEOF);
@@ -4257,7 +4257,7 @@ putwc(wchar_t wc, FILE *stream)
     return rc;
 }
 
-EXPORTON wint_t
+EXPORTOFF wint_t
 fputwc(wchar_t wc, FILE *stream)
 {
     WRAP_CHECK(fputwc, WEOF);
@@ -4291,7 +4291,7 @@ fscanf(FILE *stream, const char *format, ...)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 getline (char **lineptr, size_t *n, FILE *stream)
 {
     WRAP_CHECK(getline, -1);
@@ -4305,7 +4305,7 @@ getline (char **lineptr, size_t *n, FILE *stream)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 getdelim (char **lineptr, size_t *n, int delimiter, FILE *stream)
 {
     WRAP_CHECK(getdelim, -1);
@@ -4337,7 +4337,7 @@ __getdelim (char **lineptr, size_t *n, int delimiter, FILE *stream)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fcntl(int fd, int cmd, ...)
 {
     struct FuncArgs fArgs;
@@ -4353,7 +4353,7 @@ fcntl(int fd, int cmd, ...)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fcntl64(int fd, int cmd, ...)
 {
     struct FuncArgs fArgs;
@@ -4398,7 +4398,7 @@ dup2(int oldfd, int newfd)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 dup3(int oldfd, int newfd, int flags)
 {
     WRAP_CHECK(dup3, -1);
@@ -4570,7 +4570,7 @@ accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
     return sd;
 }
 
-EXPORTON int
+EXPORTOFF int
 accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags)
 {
     int sd;
@@ -4680,14 +4680,14 @@ internal_sendto(int sockfd, const void *buf, size_t len, int flags,
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 sendto(int sockfd, const void *buf, size_t len, int flags,
        const struct sockaddr *dest_addr, socklen_t addrlen)
 {
     return internal_sendto(sockfd, buf, len, flags, dest_addr, addrlen);
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 sendmsg(int sockfd, const struct msghdr *msg, int flags)
 {
     ssize_t rc;
@@ -4805,7 +4805,7 @@ recv(int sockfd, void *buf, size_t len, int flags)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 __recv_chk(int sockfd, void *buf, size_t len, size_t buflen, int flags)
 {
     ssize_t rc;
@@ -4852,14 +4852,14 @@ internal_recvfrom(int sockfd, void *buf, size_t len, int flags,
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 recvfrom(int sockfd, void *buf, size_t len, int flags,
          struct sockaddr *src_addr, socklen_t *addrlen)
 {
     return internal_recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 __recvfrom_chk(int sockfd, void *buf, size_t len, size_t buflen, int flags,
          struct sockaddr *src_addr, socklen_t *addrlen)
 {
@@ -4919,7 +4919,7 @@ doAccessRights(struct msghdr *msg)
     return 0;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 recvmsg(int sockfd, struct msghdr *msg, int flags)
 {
     ssize_t rc;
@@ -4968,7 +4968,7 @@ recvmsg(int sockfd, struct msghdr *msg, int flags)
 }
 
 #ifdef __linux__
-EXPORTON int
+EXPORTOFF int
 recvmmsg(int sockfd, struct mmsghdr *msgvec, unsigned int vlen,
          int flags, struct timespec *timeout)
 {
@@ -5177,7 +5177,7 @@ scopeLog(cfg_log_level_t level, const char *format, ...)
  * they do not call our lib constructor. We interpose this
  * as a means to call the constructor before the go app runs.
  */
-EXPORTON int
+EXPORTOFF int
 pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                void *(*start_routine)(void *), void *arg)
 {
