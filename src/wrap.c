@@ -2278,7 +2278,7 @@ lseek64(int fd, off64_t offset, int whence)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fseeko64(FILE *stream, off64_t offset, int whence)
 {
     WRAP_CHECK(fseeko64, -1);
@@ -2290,7 +2290,7 @@ fseeko64(FILE *stream, off64_t offset, int whence)
     return rc;
 }
 
-EXPORTON off64_t
+EXPORTOFF off64_t
 ftello64(FILE *stream)
 {
     WRAP_CHECK(ftello64, -1);
@@ -2302,7 +2302,7 @@ ftello64(FILE *stream)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 statfs64(const char *path, struct statfs64 *buf)
 {
     WRAP_CHECK(statfs64, -1);
@@ -2313,7 +2313,7 @@ statfs64(const char *path, struct statfs64 *buf)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fstatfs64(int fd, struct statfs64 *buf)
 {
     WRAP_CHECK(fstatfs64, -1);
@@ -2324,7 +2324,7 @@ fstatfs64(int fd, struct statfs64 *buf)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fsetpos64(FILE *stream, const fpos64_t *pos)
 {
     WRAP_CHECK(fsetpos64, -1);
@@ -2368,7 +2368,7 @@ __lxstat(int ver, const char *path, struct stat *stat_buf)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 __lxstat64(int ver, const char *path, struct stat64 *stat_buf)
 {
     WRAP_CHECK(__lxstat64, -1);
@@ -2424,7 +2424,7 @@ __fxstatat64(int ver, int dirfd, const char * path, struct stat64 * stat_buf, in
 }
 
 #ifdef __STATX__
-EXPORTON int
+EXPORTOFF int
 statx(int dirfd, const char *pathname, int flags,
       unsigned int mask, struct statx *statxbuf)
 {
@@ -2437,7 +2437,7 @@ statx(int dirfd, const char *pathname, int flags,
 }
 #endif // __STATX__
 
-EXPORTON int
+EXPORTOFF int
 statfs(const char *path, struct statfs *buf)
 {
     WRAP_CHECK(statfs, -1);
@@ -2448,7 +2448,7 @@ statfs(const char *path, struct statfs *buf)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fstatfs(int fd, struct statfs *buf)
 {
     WRAP_CHECK(fstatfs, -1);
@@ -2459,7 +2459,7 @@ fstatfs(int fd, struct statfs *buf)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 statvfs(const char *path, struct statvfs *buf)
 {
     WRAP_CHECK(statvfs, -1);
@@ -2470,7 +2470,7 @@ statvfs(const char *path, struct statvfs *buf)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 statvfs64(const char *path, struct statvfs64 *buf)
 {
     WRAP_CHECK(statvfs64, -1);
@@ -2481,7 +2481,7 @@ statvfs64(const char *path, struct statvfs64 *buf)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fstatvfs(int fd, struct statvfs *buf)
 {
     WRAP_CHECK(fstatvfs, -1);
