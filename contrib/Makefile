@@ -47,6 +47,7 @@ build/cmocka/src/libcmocka.so:
 	cd build/cmocka && cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug ../../cmocka && $(MAKE)
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
+# To enable debug please add below -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_C_FLAGS_DEBUG="-g -O0" -DCMAKE_CXX_FLAGS_DEBUG="-g -O0"
 build/funchook/libfunchook.a:
 	@echo "$${CI:+::group::}Building funchook"
 	@$(RM) -r build/funchook
@@ -54,7 +55,7 @@ build/funchook/libfunchook.a:
 	if [ "x86_64" = "$(ARCH)" ]; then \
 		cd build/funchook && cmake -DCMAKE_BUILD_TYPE=Release -DFUNCHOOK_DISASM=capstone ../../funchook; \
 	elif [ "aarch64" = "$(ARCH)" ]; then \
-		cd build/funchook && cmake -DCMAKE_BUILD_TYPE=Release ../../funchook; \
+		cd build/funchook && cmake -DCMAKE_BUILD_TYPE=Release -DFUNCHOOK_DISASM=capstone ../../funchook; \
 	else \
 		echo >&2 "error: unsupported ARCH; \"$(ARCH)\""; \
 		exit 1; \
