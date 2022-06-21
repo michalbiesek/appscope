@@ -3572,7 +3572,7 @@ _exit(int status)
 
 #endif // __linux__
 
-EXPORTON int
+EXPORTOFF int
 close(int fd)
 {
     WRAP_CHECK(close, -1);
@@ -3586,7 +3586,7 @@ close(int fd)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fclose(FILE *stream)
 {
     WRAP_CHECK(fclose, EOF);
@@ -3601,7 +3601,7 @@ fclose(FILE *stream)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fcloseall(void)
 {
     WRAP_CHECK(close, EOF);
@@ -3616,7 +3616,7 @@ fcloseall(void)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 unlink(const char *pathname)
 {
     WRAP_CHECK(unlink, -1);
@@ -3629,7 +3629,7 @@ unlink(const char *pathname)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 unlinkat(int dirfd, const char *pathname, int flags)
 {
     WRAP_CHECK(unlinkat, -1);
@@ -3643,7 +3643,7 @@ unlinkat(int dirfd, const char *pathname, int flags)
 }
 
 #ifdef __APPLE__
-EXPORTON int
+EXPORTOFF int
 close$NOCANCEL(int fd)
 {
     WRAP_CHECK(close$NOCANCEL, -1);
@@ -3656,7 +3656,7 @@ close$NOCANCEL(int fd)
 }
 
 
-EXPORTON int
+EXPORTOFF int
 guarded_close_np(int fd, void *guard)
 {
     WRAP_CHECK(guarded_close_np, -1);
@@ -3678,7 +3678,7 @@ close_nocancel(int fd)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 accept$NOCANCEL(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
     int sd;
@@ -3701,7 +3701,7 @@ accept$NOCANCEL(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
     return sd;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 __sendto_nocancel(int sockfd, const void *buf, size_t len, int flags,
                   const struct sockaddr *dest_addr, socklen_t addrlen)
 {
@@ -3753,7 +3753,7 @@ DNSServiceQueryRecord(void *sdRef, uint32_t flags, uint32_t interfaceIndex,
 
 #endif // __APPLE__
 
-EXPORTON off_t
+EXPORTOFF off_t
 lseek(int fd, off_t offset, int whence)
 {
     WRAP_CHECK(lseek, -1);
@@ -3764,7 +3764,7 @@ lseek(int fd, off_t offset, int whence)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fseek(FILE *stream, long offset, int whence)
 {
     WRAP_CHECK(fseek, -1);
@@ -3775,7 +3775,7 @@ fseek(FILE *stream, long offset, int whence)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fseeko(FILE *stream, off_t offset, int whence)
 {
     WRAP_CHECK(fseeko, -1);
@@ -3786,7 +3786,7 @@ fseeko(FILE *stream, off_t offset, int whence)
     return rc;
 }
 
-EXPORTON long
+EXPORTOFF long
 ftell(FILE *stream)
 {
     WRAP_CHECK(ftell, -1);
@@ -3797,7 +3797,7 @@ ftell(FILE *stream)
     return rc;
 }
 
-EXPORTON off_t
+EXPORTOFF off_t
 ftello(FILE *stream)
 {
     WRAP_CHECK(ftello, -1);
@@ -3819,7 +3819,7 @@ rewind(FILE *stream)
     return;
 }
 
-EXPORTON int
+EXPORTOFF int
 fsetpos(FILE *stream, const fpos_t *pos)
 {
     WRAP_CHECK(fsetpos, -1);
@@ -3830,7 +3830,7 @@ fsetpos(FILE *stream, const fpos_t *pos)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fgetpos(FILE *stream,  fpos_t *pos)
 {
     WRAP_CHECK(fgetpos, -1);
@@ -3841,7 +3841,7 @@ fgetpos(FILE *stream,  fpos_t *pos)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fgetpos64(FILE *stream,  fpos64_t *pos)
 {
     WRAP_CHECK(fgetpos64, -1);
@@ -3910,7 +3910,7 @@ __stdio_write(struct MUSL_IO_FILE *stream, const unsigned char *buf, size_t len)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 write(int fd, const void *buf, size_t count)
 {
     WRAP_CHECK(write, -1);
@@ -3926,7 +3926,7 @@ write(int fd, const void *buf, size_t count)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 pwrite(int fd, const void *buf, size_t nbyte, off_t offset)
 {
     WRAP_CHECK(pwrite, -1);
@@ -3939,7 +3939,7 @@ pwrite(int fd, const void *buf, size_t nbyte, off_t offset)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 writev(int fd, const struct iovec *iov, int iovcnt)
 {
     WRAP_CHECK(writev, -1);
@@ -3952,7 +3952,7 @@ writev(int fd, const struct iovec *iov, int iovcnt)
     return rc;
 }
 
-EXPORTON size_t
+EXPORTOFF size_t
 fwrite(const void * ptr, size_t size, size_t nitems, FILE * stream)
 {
     WRAP_CHECK(fwrite, 0);
@@ -3968,7 +3968,7 @@ fwrite(const void * ptr, size_t size, size_t nitems, FILE * stream)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 puts(const char *s)
 {
     WRAP_CHECK(puts, EOF);
@@ -3989,7 +3989,7 @@ puts(const char *s)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 putchar(int c)
 {
     WRAP_CHECK(putchar, EOF);
@@ -4005,7 +4005,7 @@ putchar(int c)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fputs(const char *s, FILE *stream)
 {
     WRAP_CHECK(fputs, EOF);
@@ -4021,7 +4021,7 @@ fputs(const char *s, FILE *stream)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fputs_unlocked(const char *s, FILE *stream)
 {
     WRAP_CHECK(fputs_unlocked, EOF);
@@ -4050,7 +4050,7 @@ read(int fd, void *buf, size_t count)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 readv(int fd, const struct iovec *iov, int iovcnt)
 {
     WRAP_CHECK(readv, -1);
@@ -4063,7 +4063,7 @@ readv(int fd, const struct iovec *iov, int iovcnt)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 pread(int fd, void *buf, size_t count, off_t offset)
 {
     WRAP_CHECK(pread, -1);
@@ -4076,7 +4076,7 @@ pread(int fd, void *buf, size_t count, off_t offset)
     return rc;
 }
 
-EXPORTON size_t
+EXPORTOFF size_t
 fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
     WRAP_CHECK(fread, 0);
@@ -4513,7 +4513,7 @@ socketpair(int domain, int type, int protocol, int sv[2])
     return sd;
 }
 
-EXPORTON int
+EXPORTOFF int
 shutdown(int sockfd, int how)
 {
     int rc;
