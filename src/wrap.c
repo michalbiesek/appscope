@@ -2077,7 +2077,7 @@ fopen64(const char *pathname, const char *mode)
     return stream;
 }
 
-EXPORTON FILE *
+EXPORTOFF FILE *
 freopen64(const char *pathname, const char *mode, FILE *orig_stream)
 {
     FILE *stream;
@@ -2094,7 +2094,7 @@ freopen64(const char *pathname, const char *mode, FILE *orig_stream)
     return stream;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 pread64(int fd, void *buf, size_t count, off_t offset)
 {
     WRAP_CHECK(pread64, -1);
@@ -2107,7 +2107,7 @@ pread64(int fd, void *buf, size_t count, off_t offset)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 __pread64_chk(int fd, void *buf, size_t count, off_t offset, size_t bufsize)
 {
     WRAP_CHECK(__pread64_chk, -1);
@@ -2120,7 +2120,7 @@ __pread64_chk(int fd, void *buf, size_t count, off_t offset, size_t bufsize)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 preadv(int fd, const struct iovec *iov, int iovcnt, off_t offset)
 {
     WRAP_CHECK(preadv, -1);
@@ -2133,7 +2133,7 @@ preadv(int fd, const struct iovec *iov, int iovcnt, off_t offset)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 preadv2(int fd, const struct iovec *iov, int iovcnt, off_t offset, int flags)
 {
     WRAP_CHECK(preadv2, -1);
@@ -2146,7 +2146,7 @@ preadv2(int fd, const struct iovec *iov, int iovcnt, off_t offset, int flags)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 preadv64v2(int fd, const struct iovec *iov, int iovcnt, off_t offset, int flags)
 {
     WRAP_CHECK(preadv64v2, -1);
@@ -2159,7 +2159,7 @@ preadv64v2(int fd, const struct iovec *iov, int iovcnt, off_t offset, int flags)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 __pread_chk(int fd, void *buf, size_t nbytes, off_t offset, size_t buflen)
 {
     // TODO: this function aborts & exits on error, add abort functionality
@@ -2173,7 +2173,7 @@ __pread_chk(int fd, void *buf, size_t nbytes, off_t offset, size_t buflen)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 __read_chk(int fd, void *buf, size_t nbytes, size_t buflen)
 {
     // TODO: this function aborts & exits on error, add abort functionality
