@@ -1295,6 +1295,14 @@ hookInject()
     return FALSE;
 }
 
+void wait_dbg(void)
+{
+    volatile int test = 1;
+    while(test) {
+        sleep(1);
+    }
+}
+
 static void
 initHook(int attachedFlag)
 {
@@ -1303,7 +1311,7 @@ initHook(int attachedFlag)
     bool should_we_patch = FALSE;
     char *full_path = NULL;
     elf_buf_t *ebuf = NULL;
-
+    // wait_dbg();
     // env vars are not always set as needed, be explicit here
     // this is duplicated if we were started from the scope exec
     if ((osGetExePath(scope_getpid(), &full_path) != -1) &&
