@@ -223,6 +223,7 @@ initFn(void)
     GETADDR(g_fn.dup2, "dup2");
     GETADDR(g_fn.dup3, "dup3");
     GETADDR(g_fn.socket, "socket");
+    GETADDR(g_fn.socketpair, "socketpair");
     GETADDR(g_fn.shutdown, "shutdown");
     GETADDR(g_fn.listen, "listen");
     GETADDR(g_fn.accept, "accept");

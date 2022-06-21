@@ -4481,6 +4481,39 @@ socket(int socket_family, int socket_type, int protocol)
 }
 
 EXPORTON int
+socketpair(int domain, int type, int protocol, int sv[2])
+{
+    int sd;
+
+    WRAP_CHECK(socketpair, -1);
+    sd = g_fn.socketpair(domain, type, protocol, sv);
+    if (sd == 0) {
+        scopeLog(CFG_LOG_DEBUG, "fd_1:%d fd_2:%d socketpair", sv[0], sv[1]);
+        addSock(sv[0], type, domain);
+        addSock(sv[1], type, domain);
+
+        if ((domain == AF_INET) || (domain == AF_INET6)) {
+
+            /*
+             * State used in close()
+             * We define that a UDP socket represents an open 
+             * port when created and is open until the socket is closed
+             *
+             * a UDP socket is open we say the port is open
+             * a UDP socket is closed we say the port is closed
+             */
+            doUpdateState(OPEN_PORTS, sv[0], 1, "socketpair", NULL);
+            doUpdateState(OPEN_PORTS, sv[1], 1, "socketpair", NULL);
+        }
+    } else {
+        doUpdateState(NET_ERR_CONN, sv[0], 0, "socketpair", "nopath");
+        doUpdateState(NET_ERR_CONN, sv[1], 0, "socketpair", "nopath");
+    }
+
+    return sd;
+}
+
+EXPORTON int
 shutdown(int sockfd, int how)
 {
     int rc;

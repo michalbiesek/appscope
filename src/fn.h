@@ -103,6 +103,7 @@ typedef struct {
     int (*dup3)(int, int, int);
     int (*shutdown)(int, int);
     int (*socket)(int, int, int);
+    int (*socketpair)(int, int, int, int [2]);
     int (*listen)(int, int);
     int (*bind)(int, const struct sockaddr *, socklen_t);
     int (*connect)(int, const struct sockaddr *, socklen_t);
