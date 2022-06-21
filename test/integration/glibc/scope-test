@@ -219,6 +219,39 @@ ERR+=$?
 
 endtest
 
+#
+# ldscope execve_test
+#
+
+starttest execve_test
+
+cd /opt/exec_test/
+
+ldscope -- ./exec_test 0
+ERR+=$?
+
+
+egrep '"cmd":"/usr/bin/curl -I https://cribl.io"' $EVT_FILE > /dev/null
+ERR+=$?
+
+endtest
+
+#
+# ldscope execv_test
+#
+
+starttest execv_test
+
+cd /opt/exec_test/
+
+ldscope -- ./exec_test 1
+ERR+=$?
+
+egrep '"cmd":"/usr/bin/wget -S --spider --no-check-certificate https://cribl.io"' $EVT_FILE > /dev/null
+ERR+=$?
+
+endtest
+
 if (( $FAILED_TEST_COUNT == 0 )); then
     echo ""
     echo ""
