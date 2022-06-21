@@ -1713,7 +1713,7 @@ open(const char *pathname, int flags, ...)
     return fd;
 }
 
-EXPORTON int
+EXPORTOFF int
 openat(int dirfd, const char *pathname, int flags, ...)
 {
     int fd;
@@ -1740,7 +1740,7 @@ opendir(const char *name)
     return dirp;
 }
 
-EXPORTON int
+EXPORTOFF int
 closedir(DIR *dirp)
 {
     WRAP_CHECK(closedir, -1);
@@ -1752,7 +1752,7 @@ closedir(DIR *dirp)
     return rc;
 }
 
-EXPORTON struct dirent *
+EXPORTOFF struct dirent *
 readdir(DIR *dirp)
 {
     WRAP_CHECK(readdir, NULL);
@@ -1772,7 +1772,7 @@ readdir(DIR *dirp)
 }
 
 // Note: creat64 is defined to be obsolete
-EXPORTON int
+EXPORTOFF int
 creat(const char *pathname, mode_t mode)
 {
     int fd;
@@ -1797,7 +1797,7 @@ fopen(const char *pathname, const char *mode)
     return stream;
 }
 
-EXPORTON FILE *
+EXPORTOFF FILE *
 freopen(const char *pathname, const char *mode, FILE *orig_stream)
 {
     FILE *stream;
