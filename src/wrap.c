@@ -1402,15 +1402,15 @@ initHook(int attachedFlag)
             funchook_set_debug_file(DEFAULT_LOG_PATH);
         }
 
-        if (should_we_patch) {
-            g_fn.SSL_read = (ssl_rdfunc_t)load_func(NULL, SSL_FUNC_READ);
+        // if (should_we_patch) {
+        //     g_fn.SSL_read = (ssl_rdfunc_t)load_func(NULL, SSL_FUNC_READ);
     
-            rc = funchook_prepare(funchook, (void**)&g_fn.SSL_read, ssl_read_hook);
+        //     rc = funchook_prepare(funchook, (void**)&g_fn.SSL_read, ssl_read_hook);
 
-            g_fn.SSL_write = (ssl_wrfunc_t)load_func(NULL, SSL_FUNC_WRITE);
+        //     g_fn.SSL_write = (ssl_wrfunc_t)load_func(NULL, SSL_FUNC_WRITE);
 
-            rc = funchook_prepare(funchook, (void**)&g_fn.SSL_write, ssl_write_hook);
-        }
+        //     rc = funchook_prepare(funchook, (void**)&g_fn.SSL_write, ssl_write_hook);
+        // }
 
         // sendmmsg, sendto, recvfrom for internal libc use in DNS queries
         if ((g_ismusl == FALSE) && g_fn.sendmmsg) {
@@ -1698,7 +1698,7 @@ sigaction(int signum, const struct sigaction *act, struct sigaction *oldact)
     return g_fn.sigaction(signum, act, oldact);
 }
 
-EXPORTON int
+EXPORTOFF int
 open(const char *pathname, int flags, ...)
 {
     int fd;
@@ -1727,7 +1727,7 @@ openat(int dirfd, const char *pathname, int flags, ...)
     return fd;
 }
 
-EXPORTON DIR *
+EXPORTOFF DIR *
 opendir(const char *name)
 {
     DIR *dirp;
@@ -1784,7 +1784,7 @@ creat(const char *pathname, mode_t mode)
     return fd;
 }
 
-EXPORTON FILE *
+EXPORTOFF FILE *
 fopen(const char *pathname, const char *mode)
 {
     FILE *stream;
@@ -2064,7 +2064,7 @@ creat64(const char *pathname, mode_t mode)
     return fd;
 }
 
-EXPORTON FILE *
+EXPORTOFF FILE *
 fopen64(const char *pathname, const char *mode)
 {
     FILE *stream;
@@ -2335,7 +2335,7 @@ fsetpos64(FILE *stream, const fpos64_t *pos)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 __xstat(int ver, const char *path, struct stat *stat_buf)
 {
     WRAP_CHECK(__xstat, -1);
@@ -2379,7 +2379,7 @@ __lxstat64(int ver, const char *path, struct stat64 *stat_buf)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 __fxstat(int ver, int fd, struct stat *stat_buf)
 {
     WRAP_CHECK(__fxstat, -1);
@@ -2390,7 +2390,7 @@ __fxstat(int ver, int fd, struct stat *stat_buf)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 __fxstat64(int ver, int fd, struct stat64 * stat_buf)
 {
     WRAP_CHECK(__fxstat64, -1);
@@ -3808,7 +3808,7 @@ ftello(FILE *stream)
     return rc;
 }
 
-EXPORTON void
+EXPORTOFF void
 rewind(FILE *stream)
 {
     WRAP_CHECK_VOID(rewind);
@@ -4037,7 +4037,7 @@ fputs_unlocked(const char *s, FILE *stream)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 read(int fd, void *buf, size_t count)
 {
     WRAP_CHECK(read, -1);
@@ -4116,7 +4116,7 @@ fread_unlocked(void *ptr, size_t size, size_t nmemb, FILE *stream)
     return rc;
 }
 
-EXPORTON char *
+EXPORTOFF char *
 fgets(char *s, int n, FILE *stream)
 {
     WRAP_CHECK(fgets, NULL);
@@ -4320,7 +4320,7 @@ getdelim (char **lineptr, size_t *n, int delimiter, FILE *stream)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 __getdelim (char **lineptr, size_t *n, int delimiter, FILE *stream)
 {
     WRAP_CHECK(__getdelim, -1);
@@ -4369,7 +4369,7 @@ fcntl64(int fd, int cmd, ...)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 dup(int fd)
 {
     WRAP_CHECK(dup, -1);
@@ -4379,7 +4379,7 @@ dup(int fd)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 dup2(int oldfd, int newfd)
 {
     WRAP_CHECK(dup2, -1);
@@ -4450,7 +4450,7 @@ fork()
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 socket(int socket_family, int socket_type, int protocol)
 {
     int sd;
@@ -4496,7 +4496,7 @@ shutdown(int sockfd, int how)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 listen(int sockfd, int backlog)
 {
     int rc;
@@ -4514,7 +4514,7 @@ listen(int sockfd, int backlog)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
     int sd;
@@ -4560,7 +4560,7 @@ accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags)
     return sd;
 }
 
-EXPORTON int
+EXPORTOFF int
 bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 {
     int rc;
