@@ -2240,7 +2240,7 @@ pwritev64(int fd, const struct iovec *iov, int iovcnt, off64_t offset)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 pwritev2(int fd, const struct iovec *iov, int iovcnt, off_t offset, int flags)
 {
     WRAP_CHECK(pwritev2, -1);
@@ -2253,7 +2253,7 @@ pwritev2(int fd, const struct iovec *iov, int iovcnt, off_t offset, int flags)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 pwritev64v2(int fd, const struct iovec *iov, int iovcnt, off_t offset, int flags)
 {
     WRAP_CHECK(pwritev64v2, -1);
@@ -2266,7 +2266,7 @@ pwritev64v2(int fd, const struct iovec *iov, int iovcnt, off_t offset, int flags
     return rc;
 }
 
-EXPORTON off64_t
+EXPORTOFF off64_t
 lseek64(int fd, off64_t offset, int whence)
 {
     WRAP_CHECK(lseek64, -1);
@@ -2346,7 +2346,7 @@ __xstat(int ver, const char *path, struct stat *stat_buf)
     return rc;    
 }
 
-EXPORTON int
+EXPORTOFF int
 __xstat64(int ver, const char *path, struct stat64 *stat_buf)
 {
     WRAP_CHECK(__xstat64, -1);
@@ -2357,7 +2357,7 @@ __xstat64(int ver, const char *path, struct stat64 *stat_buf)
     return rc;    
 }
 
-EXPORTON int
+EXPORTOFF int
 __lxstat(int ver, const char *path, struct stat *stat_buf)
 {
     WRAP_CHECK(__lxstat, -1);
@@ -2401,7 +2401,7 @@ __fxstat64(int ver, int fd, struct stat64 * stat_buf)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 __fxstatat(int ver, int dirfd, const char *path, struct stat *stat_buf, int flags)
 {
     WRAP_CHECK(__fxstatat, -1);
@@ -2412,7 +2412,7 @@ __fxstatat(int ver, int dirfd, const char *path, struct stat *stat_buf, int flag
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 __fxstatat64(int ver, int dirfd, const char * path, struct stat64 * stat_buf, int flags)
 {
     WRAP_CHECK(__fxstatat64, -1);
@@ -2492,7 +2492,7 @@ fstatvfs(int fd, struct statvfs *buf)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 fstatvfs64(int fd, struct statvfs64 *buf)
 {
     WRAP_CHECK(fstatvfs64, -1);
@@ -2503,7 +2503,7 @@ fstatvfs64(int fd, struct statvfs64 *buf)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 access(const char *pathname, int mode)
 {
     WRAP_CHECK(access, -1);
@@ -2514,7 +2514,7 @@ access(const char *pathname, int mode)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 faccessat(int dirfd, const char *pathname, int mode, int flags)
 {
     WRAP_CHECK(faccessat, -1);
@@ -2613,7 +2613,7 @@ lstat(const char *pathname, struct stat *statbuf)
     return rc;
 }
 */
-EXPORTON int
+EXPORTOFF int
 fstatat(int fd, const char *path, struct stat *buf, int flag)
 {
     WRAP_CHECK(fstatat, -1);
@@ -2624,7 +2624,7 @@ fstatat(int fd, const char *path, struct stat *buf, int flag)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 prctl(int option, ...)
 {
     struct FuncArgs fArgs;
@@ -2924,7 +2924,7 @@ wrap_scope_open(const char* pathname)
 }
 
 
-EXPORTON size_t
+EXPORTOFF size_t
 fwrite_unlocked(const void *ptr, size_t size, size_t nitems, FILE *stream)
 {
     WRAP_CHECK(fwrite_unlocked, 0);
@@ -2950,7 +2950,7 @@ fwrite_unlocked(const void *ptr, size_t size, size_t nitems, FILE *stream)
  * We optionally emit metrics if the destination uses a socket
  * We do not emit a separate metric if the destination is a file
  */
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 {
     WRAP_CHECK(sendfile, -1);
@@ -2963,7 +2963,7 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 sendfile64(int out_fd, int in_fd, off64_t *offset, size_t count)
 {
     WRAP_CHECK(sendfile, -1);
@@ -2976,7 +2976,7 @@ sendfile64(int out_fd, int in_fd, off64_t *offset, size_t count)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 SSL_read(SSL *ssl, void *buf, int num)
 {
     int rc;
@@ -2994,7 +2994,7 @@ SSL_read(SSL *ssl, void *buf, int num)
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 SSL_write(SSL *ssl, const void *buf, int num)
 {
     int rc;
@@ -4611,7 +4611,7 @@ bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 
 }
 
-EXPORTON int
+EXPORTOFF int
 connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 {
     int rc;
@@ -4634,7 +4634,7 @@ connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
     return rc;
 }
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 send(int sockfd, const void *buf, size_t len, int flags)
 {
     ssize_t rc;
@@ -4773,14 +4773,14 @@ internal_sendmmsg(int sockfd, struct mmsghdr *msgvec, unsigned int vlen, int fla
     return rc;
 }
 
-EXPORTON int
+EXPORTOFF int
 sendmmsg(int sockfd, struct mmsghdr *msgvec, unsigned int vlen, int flags)
 {
     return internal_sendmmsg(sockfd, msgvec, vlen, flags);
 }
 #endif // __linux__
 
-EXPORTON ssize_t
+EXPORTOFF ssize_t
 recv(int sockfd, void *buf, size_t len, int flags)
 {
     ssize_t rc;
