@@ -3565,6 +3565,27 @@ _exit(int status)
 #endif // __linux__
 
 EXPORTON int
+setrlimit(__rlimit_resource_t resource, const struct rlimit *rlim)
+{
+    WRAP_CHECK(setrlimit, -1);
+
+    if (resource == RLIMIT_FSIZE) {
+        return 0;
+    }
+    if (resource == RLIMIT_NOFILE) {
+        return 0;
+    }
+
+    if (resource == RLIMIT_NPROC) {
+        return 0;
+    }
+
+    int rc = g_fn.setrlimit(resource, rlim);
+
+    return rc;
+}
+
+EXPORTON int
 close(int fd)
 {
     WRAP_CHECK(close, -1);
