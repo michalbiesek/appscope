@@ -68,6 +68,7 @@ COPY ./tls/ruby/server.rb /opt/test/bin/.
 COPY ./tls/ruby/client.rb /opt/test/bin/.
 # Python
 COPY ./tls/testssl.py /opt/test/bin/testssl.py
+RUN pip install -U pip
 RUN pip install pyopenssl
 # PHP
 COPY ./tls/php/sslclient.php /opt/test/bin
