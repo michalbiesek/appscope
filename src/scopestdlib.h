@@ -225,6 +225,7 @@ int           scope_getpwuid_r(uid_t, struct passwd *, char *, size_t, struct pa
 pid_t         scope_getpid(void);
 pid_t         scope_getppid(void);
 uid_t         scope_getuid(void);
+uid_t         scope_geteuid(void);
 gid_t         scope_getgid(void);
 void*         scope_dlopen(const char *, int);
 void*         scope_dlsym(void *, const char *);

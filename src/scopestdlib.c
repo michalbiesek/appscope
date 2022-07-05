@@ -171,6 +171,7 @@ extern int           scopelibc_getpwuid_r(uid_t, struct passwd *, char *, size_t
 extern pid_t         scopelibc_getpid(void);
 extern pid_t         scopelibc_getppid(void);
 extern uid_t         scopelibc_getuid(void);
+extern uid_t         scopelibc_geteuid(void);
 extern gid_t         scopelibc_getgid(void);
 extern void*         scopelibc_dlopen(const char *, int);
 extern int           scopelibc_dlclose(void *);
@@ -979,6 +980,11 @@ scope_getppid(void) {
 uid_t
 scope_getuid(void) {
     return scopelibc_getuid();
+}
+
+uid_t
+scope_geteuid(void) {
+    return scopelibc_geteuid();
 }
 
 gid_t
