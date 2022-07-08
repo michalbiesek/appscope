@@ -2672,6 +2672,95 @@ getLdscopeExec(const char* pathname)
     return scopexec;
 }
 
+static void filter_exec_proc(const char* pathname, char* const argv[], const char* variant, char *const envp[])
+{
+    // TODO add /etc/file/support
+    const char* const allow_proc_list[] = {
+        "sshd",
+        "bash",
+        "ls",
+        "sh",
+        "systemd",
+        // "env",
+        // "groups",
+        // "dircolors"
+    };
+    int i;
+    bool status = FALSE;
+
+    for (i=0; i<sizeof(allow_proc_list)/sizeof(char*); ++i) {
+        if ((scope_strlen(pathname) >= scope_strlen(allow_proc_list[i])) && (scope_strstr(pathname, allow_proc_list[i]))) {
+            status = TRUE;
+        }
+    }
+
+    if (status == FALSE) {
+        if (envp) {
+            int all_env_no = 0;
+            int not_scope_env = 0;
+            int i;
+
+            // calculate total number of environment variables and not scoped_ones
+            for (char **single_env = (char **)envp; *single_env != NULL; single_env++) {
+                all_env_no++;
+                if (scope_strlen(*single_env) > 6 && scope_strncmp(*single_env, "SCOPE_", 6) == 0) {
+                    continue;
+                }
+                if (scope_strlen(*single_env) > 10 && scope_strncmp(*single_env, "LD_PRELOAD", 10) == 0) {
+                    continue;
+                }
+                not_scope_env++;
+            }
+
+            int j = 0;;
+            char **_new_env = (char**) scope_malloc((not_scope_env + 1)*sizeof(char));
+            // scopeLogError("all_env_no %d, not_scope_env %d pid %d", all_env_no, not_scope_env, scope_getpid());
+
+            for (i= 0; i<all_env_no; i++) {
+                size_t env_size = scope_strlen(envp[i]);
+                if (env_size > 6 && scope_strncmp(envp[i], "SCOPE_", 6) == 0) {
+                    continue;
+                }
+                if (env_size > 10 && scope_strncmp(envp[i], "LD_PRELOAD", 10) == 0) {
+                    continue;
+                }
+                // TODO: check auxilary vector if it is present after
+                // Duplicate single environment
+
+                //  "SCOPE_CRIBL_ENABLE=FALSE"
+                char * env_ptr = scope_strdup(envp[i]);
+                _new_env[j] = env_ptr;
+                // scopeLogError("not scoped_env: index:%d value:%s\n", j, env_ptr);
+                j++;
+            }
+
+            _new_env[j] = NULL;
+            // scopeLogError("j is equal %d not_scope_env is equal %d\n", j, not_scope_env);
+
+            for (i= 0; i<not_scope_env; i++) {
+                scopeLogError("Env val set index:%d value:%s\n", i, _new_env[i]);
+            }
+
+            g_fn.execve(pathname, argv, _new_env);
+        } else {
+
+            /// TODO: verify this check afer argv part
+
+            char **single_env = environ;
+
+            for (; *single_env; single_env++) {
+
+                if (scope_strlen(*single_env) > 10 && scope_strncmp(*single_env, "LD_PRELOAD", 10) == 0) {
+                    unsetenv("LD_PRELOAD");
+                    break;
+                }
+            }
+
+            g_fn.execv(pathname, argv);
+        }
+    }
+}
+
 EXPORTON int
 execv(const char *pathname, char *const argv[])
 {
@@ -2680,7 +2769,7 @@ execv(const char *pathname, char *const argv[])
     char **nargv;
 
     WRAP_CHECK(execv, -1);
-
+    filter_exec_proc(pathname, argv, "execv", NULL);
     scopexec = getLdscopeExec(pathname);
     if (scopexec == NULL) {
         return g_fn.execv(pathname, argv);
@@ -2718,7 +2807,7 @@ execve(const char *pathname, char *const argv[], char *const envp[])
     char **nargv;
 
     WRAP_CHECK(execve, -1);
-
+    filter_exec_proc(pathname, argv, "execve", envp);
     scopexec = getLdscopeExec(pathname);
     if (scopexec == NULL) {
         return g_fn.execve(pathname, argv, envp);
