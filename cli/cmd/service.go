@@ -56,14 +56,12 @@ var serviceCmd = &cobra.Command{
 		// TODO get libc name
 		libcName := "gnu"
 
-		// Systemd
 		if util.CheckDirExists("/etc/systemd") {
+			// Systemd
 			installSystemd(serviceName, unameMachine, unameSysname, libcName)
 			os.Exit(0)
-		}
-
-		// Init.d
-		if util.CheckDirExists("/etc/init.d") {
+		} else if util.CheckDirExists("/etc/init.d") {
+			// Init.d
 			installInitd(serviceName, unameMachine, unameSysname, libcName)
 			os.Exit(0)
 		}
@@ -97,12 +95,17 @@ func confirm(s string) bool {
 
 func installScope(serviceName string, unameMachine string, unameSysname string, libcName string) string {
 	// determine the library directory
-	libraryDir := fmt.Sprintf("/usr/lib/%s-%s-%s", unameMachine, unameSysname, libcName)
-	if !util.CheckDirExists(libraryDir) {
-		libraryDir = "/usr/lib64"
-		if !util.CheckDirExists(libraryDir) {
-			util.ErrAndExit("error: failed to determine library directory")
+	LibraryDirs := []string{fmt.Sprintf("/usr/lib/%s-%s-%s", unameMachine, unameSysname, libcName), "/usr/lib64", "/usr/lib"}
+	libraryDir := ""
+	for _, libDir := range LibraryDirs {
+		if util.CheckDirExists(libDir) {
+			libraryDir = libDir
+			break
 		}
+	}
+
+	if libraryDir == "" {
+		util.ErrAndExit("error: failed to determine library directory")
 	}
 
 	// extract the library
@@ -244,6 +247,11 @@ func installInitd(serviceName string, unameMachine string, unameSysname string, 
 	}
 
 	libraryPath := installScope(serviceName, unameMachine, unameSysname, libcName)
+
+	if !util.CheckDirExists("/etc/sysconfig/") {
+		err := os.Mkdir("/etc/sysconfig/", 0755)
+		util.CheckErrSprintf(err, "error: failed to create override directory; %v", err)
+	}
 
 	sysconfigFile := "/etc/sysconfig/" + serviceName
 	if !util.CheckFileExists(sysconfigFile) {
