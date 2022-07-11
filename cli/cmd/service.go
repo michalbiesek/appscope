@@ -122,6 +122,9 @@ func installScope(serviceName string, unameMachine string, unameSysname string, 
 		util.CheckErrSprintf(err, "error: failed to extract library; %v", err)
 	}
 
+	// patch the library
+	rc.Patch(libraryPath)
+
 	// create the config directory
 	configBaseDir := "/etc/scope"
 	if !util.CheckDirExists(configBaseDir) {
