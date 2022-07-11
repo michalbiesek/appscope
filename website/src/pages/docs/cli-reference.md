@@ -515,6 +515,30 @@ scope service cribl -c tls://in.my-instance.cribl.cloud:10090
 ```
 
 
+
+
+### filter
+----
+
+Lorem ipsum filter info.
+
+#### Usage
+
+`scope filter [flags]`
+
+#### Examples
+
+```
+scope filter
+```
+
+#### Flags
+
+```
+  -h, --help      Help for filter
+```
+
+
 ### version
 ----
 
