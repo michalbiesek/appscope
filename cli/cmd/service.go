@@ -56,14 +56,16 @@ var serviceCmd = &cobra.Command{
 		// TODO get libc name
 		libcName := "gnu"
 
-		// Systemd
-		if util.CheckDirExists("/etc/systemd") {
+		if util.CheckFileExists("/etc/rc.conf") {
+			// Openrc
+			installOpenRc(serviceName, unameMachine, unameSysname, libcName)
+			os.Exit(0)
+		} else if util.CheckDirExists("/etc/systemd") {
+			// Systemd
 			installSystemd(serviceName, unameMachine, unameSysname, libcName)
 			os.Exit(0)
-		}
-
-		// Init.d
-		if util.CheckDirExists("/etc/init.d") {
+		} else if util.CheckDirExists("/etc/init.d") {
+			// Initd
 			installInitd(serviceName, unameMachine, unameSysname, libcName)
 			os.Exit(0)
 		}
@@ -99,10 +101,8 @@ func installScope(serviceName string, unameMachine string, unameSysname string, 
 	// determine the library directory
 	libraryDir := fmt.Sprintf("/usr/lib/%s-%s-%s", unameMachine, unameSysname, libcName)
 	if !util.CheckDirExists(libraryDir) {
-		libraryDir = "/usr/lib64"
-		if !util.CheckDirExists(libraryDir) {
-			util.ErrAndExit("error: failed to determine library directory")
-		}
+		err := os.MkdirAll(libraryDir, 0755)
+		util.CheckErrSprintf(err, "error: failed to create library directory; %v", err)
 	}
 
 	// extract the library
@@ -197,7 +197,7 @@ func installSystemd(serviceName string, unameMachine string, unameSysname string
 	if !forceFlag {
 		fmt.Printf("\nThis command will make the following changes if not found already:\n")
 		fmt.Printf("  - install libscope.so into /usr/lib/%s-%s-%s/cribl/\n", unameMachine, unameSysname, libcName)
-		fmt.Printf("  - create %s override\n", serviceEnvPath)
+		fmt.Printf("  - create/update %s override\n", serviceEnvPath)
 		fmt.Printf("  - create /etc/scope/%s/scope.yml\n", serviceName)
 		fmt.Printf("  - create /var/log/scope/\n")
 		fmt.Printf("  - create /var/run/scope/\n")
@@ -212,6 +212,19 @@ func installSystemd(serviceName string, unameMachine string, unameSysname string
 		content := fmt.Sprintf("[Service]\nEnvironment=LD_PRELOAD=%s\nEnvironment=SCOPE_HOME=/etc/scope/%s\n", libraryPath, serviceName)
 		err := ioutil.WriteFile(serviceEnvPath, []byte(content), 0644)
 		util.CheckErrSprintf(err, "error: failed to create override file; %v", err)
+	} else {
+		read, err := ioutil.ReadFile(serviceEnvPath)
+		util.CheckErrSprintf(err, "error: failed to read override file; %v", err)
+		// TODO locate [SERVICE section]
+		if !strings.Contains(string(read), "Environment=LD_PRELOAD=") {
+			content := fmt.Sprintf("Environment=LD_PRELOAD=%s\n", libraryPath)
+			err = ioutil.WriteFile(serviceEnvPath, []byte(content), 0644)
+			util.CheckErrSprintf(err, "error: failed to update override file; %v", err)
+		} else if !strings.Contains(string(read), "Environment=SCOPE_HOME=") {
+			content := fmt.Sprintf("Environment=SCOPE_HOME=/etc/scope/%s\n", serviceName)
+			err = ioutil.WriteFile(serviceEnvPath, []byte(content), 0644)
+			util.CheckErrSprintf(err, "error: failed to update override file; %v", err)
+		}
 	}
 
 	fmt.Printf("\nThe %s service has been updated to run with AppScope.\n", serviceName)
@@ -231,7 +244,7 @@ func installInitd(serviceName string, unameMachine string, unameSysname string, 
 	if !forceFlag {
 		fmt.Printf("\nThis command will make the following changes if not found already:\n")
 		fmt.Printf("  - install libscope.so into /usr/lib/%s-%s-%s/cribl/\n", unameMachine, unameSysname, libcName)
-		fmt.Printf("  - create %s\n", sysconfigFile)
+		fmt.Printf("  - create/update %s\n", sysconfigFile)
 		fmt.Printf("  - create /etc/scope/%s/scope.yml\n", serviceName)
 		fmt.Printf("  - create /var/log/scope/\n")
 		fmt.Printf("  - create /var/run/scope/\n")
@@ -246,10 +259,66 @@ func installInitd(serviceName string, unameMachine string, unameSysname string, 
 		content := fmt.Sprintf("LD_PRELOAD=%s\nSCOPE_HOME=/etc/scope/%s\n", libraryPath, serviceName)
 		err := ioutil.WriteFile(sysconfigFile, []byte(content), 0644)
 		util.CheckErrSprintf(err, "error: failed to create sysconfig file; %v", err)
+	} else {
+		read, err := ioutil.ReadFile(sysconfigFile)
+		util.CheckErrSprintf(err, "error: failed to read sysconfig file; %v", err)
+		if !strings.Contains(string(read), "LD_PRELOAD=") {
+			content := fmt.Sprintf("LD_PRELOAD=%s\n", libraryPath)
+			err = ioutil.WriteFile(sysconfigFile, []byte(content), 0644)
+			util.CheckErrSprintf(err, "error: failed to update sysconfig file; %v", err)
+		} else if !strings.Contains(string(read), "SCOPE_HOME=") {
+			content := fmt.Sprintf("SCOPE_HOME=/etc/scope/%s\n", serviceName)
+			err = ioutil.WriteFile(sysconfigFile, []byte(content), 0644)
+			util.CheckErrSprintf(err, "error: failed to update sysconfig file; %v", err)
+		}
 	}
 
 	fmt.Printf("\nThe %s service has been updated to run with AppScope.\n", serviceName)
 	fmt.Printf("\nPlease review the configs in /etc/scope/%s/scope.yml and check their\npermissions to ensure the scoped service can read them.\n", serviceName)
 	fmt.Printf("\nAlso, please review permissions on /var/log/scope and /var/run/scope to ensure\nthe scoped service can write there.\n")
 	fmt.Printf("\nRestart the service with `service %s restart` so the changes take effect.\n", serviceName)
+}
+
+func installOpenRc(serviceName string, unameMachine string, unameSysname string, libcName string) {
+	initConfigScript := "/etc/conf.d/" + serviceName
+	if !util.CheckFileExists(initConfigScript) {
+		util.ErrAndExit("error: didn't find service script; " + initConfigScript)
+	}
+
+	if !forceFlag {
+		fmt.Printf("\nThis command will make the following changes if not found already:\n")
+		fmt.Printf("  - install libscope.so into /usr/lib/%s-%s-%s/cribl/\n", unameMachine, unameSysname, libcName)
+		fmt.Printf("  - create/modify %s\n", initConfigScript)
+		fmt.Printf("  - create /etc/scope/%s/scope.yml\n", serviceName)
+		fmt.Printf("  - create /var/log/scope/\n")
+		fmt.Printf("  - create /var/run/scope/\n")
+		if !confirm("Ready to proceed?") {
+			util.ErrAndExit("info: canceled")
+		}
+	}
+
+	libraryPath := installScope(serviceName, unameMachine, unameSysname, libcName)
+
+	if !util.CheckFileExists(initConfigScript) {
+		content := fmt.Sprintf("export LD_PRELOAD=%s\nexport SCOPE_HOME=/etc/scope/%s\n", libraryPath, serviceName)
+		err := ioutil.WriteFile(initConfigScript, []byte(content), 0644)
+		util.CheckErrSprintf(err, "error: failed to update sysconfig file; %v", err)
+	} else {
+		read, err := ioutil.ReadFile(initConfigScript)
+		util.CheckErrSprintf(err, "error: failed to read sysconfig file; %v", err)
+		if !strings.Contains(string(read), "export LD_PRELOAD=") {
+			content := fmt.Sprintf("export LD_PRELOAD=%s\n", libraryPath)
+			err = ioutil.WriteFile(initConfigScript, []byte(content), 0644)
+			util.CheckErrSprintf(err, "error: failed to update sysconfig file; %v", err)
+		} else if !strings.Contains(string(read), "export SCOPE_HOME=") {
+			content := fmt.Sprintf("export SCOPE_HOME=/etc/scope/%s\n", serviceName)
+			err = ioutil.WriteFile(initConfigScript, []byte(content), 0644)
+			util.CheckErrSprintf(err, "error: failed to update sysconfig file; %v", err)
+		}
+	}
+
+	fmt.Printf("\nThe %s service has been updated to run with AppScope.\n", serviceName)
+	fmt.Printf("\nPlease review the configs in /etc/scope/%s/scope.yml and check their\npermissions to ensure the scoped service can read them.\n", serviceName)
+	fmt.Printf("\nAlso, please review permissions on /var/log/scope and /var/run/scope to ensure\nthe scoped service can write there.\n")
+	fmt.Printf("\nRestart the service with `rc-service %s restart` so the changes take effect.\n", serviceName)
 }
