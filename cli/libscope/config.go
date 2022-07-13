@@ -122,3 +122,19 @@ type TlsConfig struct {
 	ValidateServer bool   `mapstructure:"validateserver" json:"validateserver" yaml:"validateserver"`
 	CaCertPath     string `mapstructure:"cacertpath" json:"cacertpath" yaml:"cacertpath"`
 }
+
+// FilterConfig represents whole filter configuration
+type FilterConfig struct {
+	AllowProc []AllowProcConfig `mapstructure:"allow_process,omitempty" json:"allow_process,omitempty" yaml:"allow_process"`
+	DenyProc  []DenyProcConfig  `mapstructure:"deny_process,omitempty" json:"deny_process,omitempty" yaml:"deny_process"`
+}
+
+// AllowProcConfig represents a allowed process configuration
+type AllowProcConfig struct {
+	Name string `mapstructure:"name" json:"name" yaml:"name"`
+}
+
+// AllowProcConfig represents a deny process configuration
+type DenyProcConfig struct {
+	Name string `mapstructure:"name" json:"name" yaml:"name"`
+}

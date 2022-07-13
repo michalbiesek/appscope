@@ -13,6 +13,16 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+func (c *Config) SetDefaultFilter() error {
+	c.fc = &libscope.FilterConfig{
+		AllowProc: []libscope.AllowProcConfig{
+			{Name: "all"},
+		},
+		DenyProc: []libscope.DenyProcConfig{},
+	}
+	return nil
+}
+
 // SetDefault sets the default scope configuration as a struct
 func (c *Config) SetDefault() error {
 	if c.WorkDir == "" {
@@ -132,6 +142,20 @@ func (c *Config) ConfigFromFile() error {
 		return err
 	}
 	if err = yaml.Unmarshal(yamlFile, c.sc); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// FilterConfigFromFile loads a filter configuration from a yml file
+func (c *Config) FilterConfigFromFile(fileName string) error {
+
+	yamlFile, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return err
+	}
+	if err = yaml.Unmarshal(yamlFile, &libscope.FilterConfig{}); err != nil {
 		return err
 	}
 

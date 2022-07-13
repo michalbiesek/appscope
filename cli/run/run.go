@@ -33,6 +33,7 @@ type Config struct {
 
 	now func() time.Time
 	sc  *libscope.ScopeConfig
+	fc  *libscope.FilterConfig
 }
 
 // Run executes a scoped command

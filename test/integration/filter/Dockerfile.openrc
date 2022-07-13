@@ -1,0 +1,30 @@
+FROM alpine:3.16
+
+RUN apk add bash nginx openrc
+
+RUN rc-update add nginx default\
+  && mkdir /run/openrc\
+  && touch /run/openrc/softlevel
+
+ENV SCOPE_CRIBL_ENABLE=false
+
+ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
+COPY scope-profile.sh /etc/profile.d/scope.sh
+COPY gdbinit /root/.gdbinit
+
+RUN  mkdir /usr/local/scope && \
+     mkdir /usr/local/scope/bin && \
+     mkdir /usr/local/scope/lib && \
+     ln -s /opt/appscope/bin/linux/$(uname -m)/scope /usr/local/scope/bin/scope && \
+     ln -s /opt/appscope/bin/linux/$(uname -m)/ldscope /usr/local/scope/bin/ldscope && \
+     ln -s /opt/appscope/lib/linux/$(uname -m)/libscope.so /usr/local/scope/lib/libscope.so
+
+COPY filter/scope-test.openrc.sh /usr/local/scope/scope-test
+RUN mkdir /opt/test/
+COPY filter/test_filter.yml /opt/test/test_filter.yml
+
+RUN rc-status
+
+COPY docker-entrypoint.sh /
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["test"]
