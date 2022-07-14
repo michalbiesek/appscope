@@ -5,6 +5,17 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch Go Main Package",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cli/main.go",
+            "env": {},
+            // "args": ["filter", "${workspaceFolder}/test/integration/filter/test_filter.yml"],
+            // "args": [],
+            "showLog": true
+        },
+        {
             "name": "(gdb) curl x86_64 w/preload",
             "type": "cppdbg",
             "request": "launch",
