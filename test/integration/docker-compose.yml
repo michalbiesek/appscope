@@ -183,6 +183,33 @@ services:
       - "9000:9000"
     <<: *scope-common
 
+  filter-initd:
+    image: ghcr.io/criblio/appscope-test-filter-initd:${TAG:?Missing TAG environment variable}
+    build:
+      cache_from:
+        - ghcr.io/criblio/appscope-test-filter-initd:${TAG:?Missing TAG environment variable}
+      context: .
+      dockerfile: ./filter/Dockerfile.initd
+    <<: *scope-common
+
+  filter-systemd:
+    image: ghcr.io/criblio/appscope-test-filter-systemd:${TAG:?Missing TAG environment variable}
+    build:
+      cache_from:
+        - ghcr.io/criblio/appscope-test-filter-systemd:${TAG:?Missing TAG environment variable}
+      context: .
+      dockerfile: ./filter/Dockerfile.systemd
+    <<: *scope-common
+
+  filter-openrc:
+    image: ghcr.io/criblio/appscope-test-filter-openrc:${TAG:?Missing TAG environment variable}
+    build:
+      cache_from:
+        - ghcr.io/criblio/appscope-test-filter-openrc:${TAG:?Missing TAG environment variable}
+      context: .
+      dockerfile: ./filter/Dockerfile.openrc
+    <<: *scope-common
+
   service-initd:
     image: ghcr.io/criblio/appscope-test-service-initd:${TAG:?Missing TAG environment variable}
     build:
