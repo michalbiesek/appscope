@@ -248,7 +248,7 @@ msgStart(proc_id_t *proc, config_t *cfg, which_transport_t who)
         }
     }
 
-    if (!(json_info = cJSON_AddObjectToObjLN(json_root, "info"))) goto err;
+    if (!(json_info = cJSON_AddObjectToObjLN(json_root, "start_msg"))) goto err;
 
     if (!(json_proc = jsonProcessObject(proc))) goto err;
     cJSON_AddItemToObjectCS(json_info, "process", json_proc);
