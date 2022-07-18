@@ -11,7 +11,7 @@
             "mode": "debug",
             "program": "${workspaceFolder}/cli/main.go",
             "env": {},
-            // "args": ["filter", "${workspaceFolder}/test/integration/filter/test_filter.yml"],
+            "args": ["filter", "${workspaceFolder}/test/integration/filter/test_filter.yml"],
             // "args": [],
             "showLog": true
         },
