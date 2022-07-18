@@ -1,6 +1,7 @@
 package run
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -15,57 +16,57 @@ import (
 )
 
 // Attach scopes an existing PID
-func (rc *Config) Attach(args []string) {
+func (rc *Config) Attach(args []string) error {
 	// Validate user has root permissions
 	user, err := user.Current()
 	if err != nil {
-		util.ErrAndExit("Unable to get current user: %v", err)
+		return fmt.Errorf("unable to get current user: %v", err)
 	}
 	if user.Uid != "0" {
-		util.ErrAndExit("You must have administrator privileges to attach to a process")
+		return errors.New("you must have administrator privileges to attach to a process")
 	}
 	// Validate PTRACE capability
 	c, err := capability.NewPid2(0)
 	if err != nil {
-		util.ErrAndExit("Unable to get linux capabilities for current process: %v", err)
+		return fmt.Errorf("unable to get linux capabilities for current process: %v", err)
 	}
 	err = c.Load()
 	if err != nil {
-		util.ErrAndExit("Unable to load linux capabilities: %v", err)
+		return fmt.Errorf("unable to load linux capabilities: %v", err)
 	}
 	if !c.Get(capability.EFFECTIVE, capability.CAP_SYS_PTRACE) {
-		util.ErrAndExit("You must have PTRACE capabilities to attach to a process")
+		return errors.New("you must have PTRACE capabilities to attach to a process")
 	}
 	// Get PID by name if non-numeric, otherwise validate/use args[0]
 	var pid int
 	if !util.IsNumeric(args[0]) {
-		procs := util.ProcessesByName(args[0])
+		procs, _ := util.ProcessesByName(args[0])
 		if len(procs) == 1 {
 			pid = procs[0].Pid
 		} else if len(procs) > 1 {
 			fmt.Println("Found multiple processes matching that name...")
 			pid = choosePid(procs)
 		} else {
-			util.ErrAndExit("No process found matching that name")
+			return errors.New("no process found matching that name")
 		}
 		args[0] = fmt.Sprint(pid)
 	} else {
 		pid, err = strconv.Atoi(args[0])
 		if err != nil {
-			util.ErrAndExit("Invalid PID: %s", err)
+			return fmt.Errorf("invalid PID: %s", err)
 		}
 	}
 	// Check PID exists
 	if !util.PidExists(pid) {
-		util.ErrAndExit("PID does not exist: \"%v\"", pid)
+		return fmt.Errorf("PID does not exist: \"%v\"", pid)
 	}
 	// Check PID is not already being scoped
 	if util.PidScoped(pid) {
-		util.ErrAndExit("Attach failed. This process is already being scoped")
+		return errors.New("Attach failed. This process is already being scoped")
 	}
 	// Create ldscope
 	if err := createLdscope(); err != nil {
-		util.ErrAndExit("error creating ldscope: %v", err)
+		return fmt.Errorf("error creating ldscope: %v", err)
 	}
 	// Normal operational, not passthrough, create directory for this run
 	// Directory contains scope.yml which is configured to output to that
@@ -82,7 +83,7 @@ func (rc *Config) Attach(args []string) {
 	if len(rc.LibraryPath) > 0 {
 		// Validate path exists
 		if !util.CheckDirExists(rc.LibraryPath) {
-			util.ErrAndExit("Library Path does not exist: \"%s\"", rc.LibraryPath)
+			return fmt.Errorf("library Path does not exist: \"%s\"", rc.LibraryPath)
 		}
 		// Prepend "-f" [PATH] to args
 		args = append([]string{"-f", rc.LibraryPath}, args...)
@@ -96,7 +97,7 @@ func (rc *Config) Attach(args []string) {
 	cmd.Env = env
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Run()
+	return cmd.Run()
 }
 
 // choosePid presents a user interface for selecting a PID

@@ -1,6 +1,7 @@
 package util
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -24,18 +25,18 @@ type Process struct {
 type Processes []Process
 
 // ProcessesByName returns an array of processes that match a given name
-func ProcessesByName(name string) Processes {
+func ProcessesByName(name string) (Processes, error) {
 	processes := make([]Process, 0)
 
 	procDir, err := os.Open("/proc")
 	if err != nil {
-		ErrAndExit("Cannot open proc directory")
+		return processes, errors.New("cannot open proc directory")
 	}
 	defer procDir.Close()
 
 	procs, err := procDir.Readdirnames(0)
 	if err != nil {
-		ErrAndExit("Cannot read from proc directory")
+		return processes, errors.New("cannot read from proc directory")
 	}
 
 	i := 1
@@ -48,7 +49,7 @@ func ProcessesByName(name string) Processes {
 		// Convert directory name to integer
 		pid, err := strconv.Atoi(p)
 		if err != nil {
-			ErrAndExit("Error converting process name to integer: %s", err)
+			return processes, fmt.Errorf("error converting process name to integer: %s", err)
 		}
 
 		// Add process if there is a name match
@@ -64,7 +65,7 @@ func ProcessesByName(name string) Processes {
 			i++
 		}
 	}
-	return processes
+	return processes, nil
 }
 
 // ProcessesScoped returns an array of processes that are currently being scoped

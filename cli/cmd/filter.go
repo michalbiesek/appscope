@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -12,9 +10,10 @@ var filterCmd = &cobra.Command{
 	Short:   "Filter a scoped process list",
 	Long:    `Filter a scoped process list.`,
 	Example: `scope filter`,
-	Args:    cobra.NoArgs,
+	Args:    cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Filter command: Lorem ipsum")
+		fileName := args[0]
+		rc.Filter(fileName)
 	},
 }
 
