@@ -91,8 +91,7 @@ func CreateAll(path string) error {
 }
 
 // setupWorkDir sets up a working directory for a given set of args
-func (rc *Config) setupWorkDir(args []string, attach AttachMode) {
-
+func (rc *Config) setupWorkDir(args []string, attach AttachMode) error {
 	// Override to CriblDest if specified
 	if rc.CriblDest != "" {
 		rc.EventsDest = rc.CriblDest
@@ -104,29 +103,36 @@ func (rc *Config) setupWorkDir(args []string, attach AttachMode) {
 
 	// Build or load config
 	if rc.UserConfig == "" {
-		err := rc.configFromRunOpts()
-		util.CheckErrSprintf(err, "%v", err)
+		if err := rc.configFromRunOpts(); err != nil {
+			return err
+		}
 	} else {
 		if attach != AttachEnableOnContainer {
-			err := rc.ConfigFromFile()
-			util.CheckErrSprintf(err, "%v", err)
+			if err := rc.ConfigFromFile(); err != nil {
+				return err
+			}
 		}
 	}
 
 	// Update paths to absolute for file transports
 	if rc.sc.Metric.Transport.TransportType == "file" {
 		newPath, err := filepath.Abs(rc.sc.Metric.Transport.Path)
-		util.CheckErrSprintf(err, "error getting absolute path for %s: %v", rc.sc.Metric.Transport.Path, err)
+		if err != nil {
+			return fmt.Errorf("error getting absolute path for %s: %v", rc.sc.Metric.Transport.Path, err)
+		}
 		rc.sc.Metric.Transport.Path = newPath
 	}
 	if rc.sc.Event.Transport.TransportType == "file" {
 		newPath, err := filepath.Abs(rc.sc.Event.Transport.Path)
-		util.CheckErrSprintf(err, "error getting absolute path for %s: %v", rc.sc.Event.Transport.Path, err)
+		if err != nil {
+			return fmt.Errorf("error getting absolute path for %s: %v", rc.sc.Event.Transport.Path, err)
+		}
 		rc.sc.Event.Transport.Path = newPath
 	}
 
 	// Populate session directory
 	rc.populateWorkDir(args, attach)
+	return nil
 }
 
 // createWorkDir creates a working directory

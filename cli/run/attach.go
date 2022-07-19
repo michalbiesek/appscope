@@ -41,7 +41,7 @@ func (rc *Config) Attach(args []string) error {
 	// Get PID by name if non-numeric, otherwise validate/use args[0]
 	var pid int
 	if !util.IsNumeric(args[0]) {
-		procs := util.ProcessesByName(args[0])
+		procs, _ := util.ProcessesByName(args[0])
 		if len(procs) == 1 {
 			pid = procs[0].Pid
 		} else if len(procs) > 1 {
@@ -112,7 +112,9 @@ func (rc *Config) Attach(args []string) error {
 		env = append(env, "SCOPE_CRIBL_NO_BREAKER=true")
 	}
 	if !rc.Passthrough {
-		rc.setupWorkDir(args, attachMode)
+		if err := rc.setupWorkDir(args, attachMode); err != nil {
+			return fmt.Errorf("Attach failed. Setup workdir failed %v", err)
+		}
 		env = append(env, "SCOPE_CONF_PATH="+filepath.Join(rc.WorkDir, "scope.yml"))
 		log.Info().Bool("passthrough", rc.Passthrough).Strs("args", args).Msg("calling syscall.Exec")
 	}
