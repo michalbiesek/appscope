@@ -47,7 +47,9 @@ func (rc *Config) Run(args []string) {
 		env = append(env, "SCOPE_CRIBL_NO_BREAKER=true")
 	}
 	if !rc.Passthrough {
-		rc.setupWorkDir(args, AttachDisable)
+		if err := rc.setupWorkDir(args, AttachDisable); err != nil {
+			util.ErrAndExit("error setupWorkDir %v", err)
+		}
 		env = append(env, "SCOPE_CONF_PATH="+filepath.Join(rc.WorkDir, "scope.yml"))
 		log.Info().Bool("passthrough", rc.Passthrough).Strs("args", args).Msg("calling syscall.Exec")
 	}

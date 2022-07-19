@@ -223,7 +223,8 @@ func TestSetupWorkDir(t *testing.T) {
 	os.Setenv("SCOPE_TEST", "true")
 	rc := Config{}
 	rc.now = func() time.Time { return time.Unix(0, 0) }
-	rc.setupWorkDir([]string{"/bin/foo"}, AttachDisable)
+	err := rc.setupWorkDir([]string{"/bin/foo"}, AttachDisable)
+	assert.NoError(t, err)
 	wd := fmt.Sprintf("%s_%d_%d_%d", ".foo/history/foo", 1, os.Getpid(), 0)
 	exists := util.CheckFileExists(wd)
 	assert.True(t, exists)
@@ -253,7 +254,8 @@ func TestSetupWorkDirAttachHost(t *testing.T) {
 	os.Setenv("SCOPE_TEST", "true")
 	rc := Config{}
 	rc.now = func() time.Time { return time.Unix(0, 0) }
-	rc.setupWorkDir([]string{"123"}, AttachEnableOnHost)
+	err := rc.setupWorkDir([]string{"123"}, AttachEnableOnHost)
+	assert.NoError(t, err)
 	wd := fmt.Sprintf("%s_%d_%d_%d", "/tmp/123", 1, os.Getpid(), 0)
 	exists := util.CheckFileExists(wd)
 	assert.True(t, exists)
@@ -284,7 +286,8 @@ func TestSetupWorkDirAttachContainer(t *testing.T) {
 	os.Setenv("SCOPE_TEST", "true")
 	rc := Config{}
 	rc.now = func() time.Time { return time.Unix(0, 0) }
-	rc.setupWorkDir([]string{"123"}, AttachEnableOnContainer)
+	err := rc.setupWorkDir([]string{"123"}, AttachEnableOnContainer)
+	assert.NoError(t, err)
 	wd := fmt.Sprintf("%s_%d_%d_%d", "/tmp/123", 1, os.Getpid(), 0)
 	exists := util.CheckFileExists(wd)
 	assert.True(t, exists)

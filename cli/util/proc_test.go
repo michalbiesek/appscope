@@ -15,7 +15,8 @@ import (
 func TestProcessesByName(t *testing.T) {
 	// Current process
 	name := "util.test"
-	result := ProcessesByName(name)
+	result, err := ProcessesByName(name)
+	assert.NoError(t, err)
 	user, _ := user.Current()
 	exp := Processes{
 		Process{
@@ -27,6 +28,17 @@ func TestProcessesByName(t *testing.T) {
 		},
 	}
 	assert.Equal(t, exp, result)
+}
+
+// TestProcessesEmpty
+// Assertions:
+// - The expected process array is empty
+func TestProcessesEmpty(t *testing.T) {
+	// Non-existing process
+	name := "LoremIpsum"
+	result, err := ProcessesByName(name)
+	assert.Empty(t, result)
+	assert.NoError(t, err)
 }
 
 // TestPidUser
@@ -49,7 +61,8 @@ func TestPidUser(t *testing.T) {
 	}
 	username := currentUser.Username
 	pid := os.Getpid()
-	result := PidUser(pid)
+	result, err := PidUser(pid)
+	assert.NoError(t, err)
 	assert.Equal(t, username, result)
 }
 
@@ -70,7 +83,8 @@ func TestPidCommand(t *testing.T) {
 func TestPidCmdline(t *testing.T) {
 	// Current process command
 	pid := os.Getpid()
-	result := PidCmdline(pid)
+	result, err := PidCmdline(pid)
+	assert.NoError(t, err)
 	assert.Equal(t, strings.Join(os.Args[:], " "), result)
 }
 

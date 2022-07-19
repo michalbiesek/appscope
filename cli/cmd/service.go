@@ -17,7 +17,7 @@ var serviceCmd = &cobra.Command{
 		// TODO add handle user parameter
 		user, _ := cmd.Flags().GetString("user")
 		serviceName := args[0]
-		rc.Service(serviceName, user, force)
+		rc.Service(serviceName, user, force, false)
 	},
 }
 

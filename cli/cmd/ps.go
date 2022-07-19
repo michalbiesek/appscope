@@ -27,7 +27,10 @@ var psCmd = &cobra.Command{
 		if err == util.ErrNonRoot {
 			fmt.Println("INFO: Run as root (or via sudo) to see all scoped processes")
 		}
-		procs := util.ProcessesScoped()
+		procs, err := util.ProcessesScoped()
+		if err != nil {
+			util.ErrAndExit("Unable to get get all scoped processes")
+		}
 		util.PrintObj([]util.ObjField{
 			{Name: "ID", Field: "id"},
 			{Name: "Pid", Field: "pid"},

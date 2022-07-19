@@ -30,18 +30,18 @@ var (
 )
 
 // ProcessesByName returns an array of processes that match a given name
-func ProcessesByName(name string) Processes {
+func ProcessesByName(name string) (Processes, error) {
 	processes := make([]Process, 0)
 
 	procDir, err := os.Open("/proc")
 	if err != nil {
-		ErrAndExit("Cannot open proc directory")
+		return processes, errors.New("cannot open proc directory")
 	}
 	defer procDir.Close()
 
 	procs, err := procDir.Readdirnames(0)
 	if err != nil {
-		ErrAndExit("Cannot read from proc directory")
+		return processes, errors.New("cannot read from proc directory")
 	}
 
 	i := 1
@@ -62,33 +62,39 @@ func ProcessesByName(name string) Processes {
 		if err != nil {
 			continue
 		}
+
+		cmdLine, err := PidCmdline(pid)
+		if err != nil {
+			continue
+		}
+
 		if strings.Contains(command, name) {
 			processes = append(processes, Process{
 				ID:      i,
 				Pid:     pid,
 				User:    PidUser(pid),
 				Scoped:  PidScoped(pid),
-				Command: PidCmdline(pid),
+				Command: cmdLine,
 			})
 			i++
 		}
 	}
-	return processes
+	return processes, nil
 }
 
 // ProcessesScoped returns an array of processes that are currently being scoped
-func ProcessesScoped() Processes {
+func ProcessesScoped() (Processes, error) {
 	processes := make([]Process, 0)
 
 	procDir, err := os.Open("/proc")
 	if err != nil {
-		ErrAndExit("Cannot open proc directory")
+		return processes, errors.New("cannot open proc directory")
 	}
 	defer procDir.Close()
 
 	procs, err := procDir.Readdirnames(0)
 	if err != nil {
-		ErrAndExit("Cannot read from proc directory")
+		return processes, errors.New("cannot read from proc directory")
 	}
 
 	i := 1
@@ -101,7 +107,12 @@ func ProcessesScoped() Processes {
 		// Convert directory name to integer
 		pid, err := strconv.Atoi(p)
 		if err != nil {
-			ErrAndExit("Error converting process name to integer: %s", err)
+			continue
+		}
+
+		cmdLine, err := PidCmdline(pid)
+		if err != nil {
+			continue
 		}
 
 		// Add process if is is scoped
@@ -112,12 +123,12 @@ func ProcessesScoped() Processes {
 				Pid:     pid,
 				User:    PidUser(pid),
 				Scoped:  scoped,
-				Command: PidCmdline(pid),
+				Command: cmdLine,
 			})
 			i++
 		}
 	}
-	return processes
+	return processes, nil
 }
 
 // PidUser returns the user owning the process specified by PID
@@ -125,7 +136,7 @@ func PidUser(pid int) string {
 	// Get uid from status
 	pStat, err := linuxproc.ReadProcessStatus(fmt.Sprintf("/proc/%v/status", pid))
 	if err != nil {
-		ErrAndExit("Error getting uid: %v", err)
+		return ""
 	}
 
 	// Lookup username by uid
@@ -212,23 +223,20 @@ func parrentRootIdFromMaps(mapFile string) (int, error) {
 }
 
 // PidCmdline gets the cmdline used to start the process specified by PID
-func PidCmdline(pid int) string {
-	pidPath := fmt.Sprintf("/proc/%v", pid)
+func PidCmdline(pid int) (string, error) {
+	cmdPath := fmt.Sprintf("/proc/%v/cmdline", pid)
 
 	// Get cmdline
-	cmdline, err := linuxproc.ReadProcessCmdline(pidPath + "/cmdline")
+	cmdline, err := linuxproc.ReadProcessCmdline(cmdPath)
 	if err != nil {
-		ErrAndExit("Error getting process cmdline: %v", err)
+		return "", fmt.Errorf("error getting process cmdline: %v", err)
 	}
 
-	return cmdline
+	return cmdline, nil
 }
 
 // PidExists checks if a PID is valid
 func PidExists(pid int) bool {
 	pidPath := fmt.Sprintf("/proc/%v", pid)
-	if CheckDirExists(pidPath) {
-		return true
-	}
-	return false
+	return CheckDirExists(pidPath)
 }

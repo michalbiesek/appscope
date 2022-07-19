@@ -515,6 +515,27 @@ scope service cribl -c tls://in.my-instance.cribl.cloud:10090
 ```
 
 
+### filter
+----
+
+Create scope filter for processes.
+
+#### Usage
+
+`scope filter [flags]`
+
+#### Examples
+
+```
+scope filter example_filter.yml
+```
+
+#### Flags
+
+```
+  -h, --help      Help for filter
+```
+
 ### version
 ----
 
