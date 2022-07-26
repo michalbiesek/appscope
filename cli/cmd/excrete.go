@@ -1,12 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-	"path"
-	"path/filepath"
-
-	"github.com/criblio/scope/run"
 	"github.com/criblio/scope/util"
 	"github.com/spf13/cobra"
 )
@@ -32,21 +26,7 @@ scope extract --metricdest tcp://some.host:8125 --eventdest tcp://other.host:100
 			}
 			outPath = args[0]
 		}
-		newPath, err := filepath.Abs(outPath)
-		util.CheckErrSprintf(err, "cannot resolve absolute path of %s: %v", outPath, err)
-		outPath = newPath
-
-		err = run.CreateAll(outPath)
-		util.CheckErrSprintf(err, "error excreting files: %v", err)
-		if rc.MetricsDest != "" || rc.EventsDest != "" || rc.CriblDest != "" {
-			err = os.Rename(path.Join(outPath, "scope.yml"), path.Join(outPath, "scope_example.yml"))
-			util.CheckErrSprintf(err, "error renaming scope.yml: %v", err)
-			rc.WorkDir = outPath
-			err = rc.WriteScopeConfig(path.Join(outPath, "scope.yml"), 0644)
-			util.CheckErrSprintf(err, "error writing scope.yml: %v", err)
-		}
-		rc.Patch(outPath)
-		fmt.Printf("Successfully extracted to %s.\n", outPath)
+		rc.Extract(outPath)
 	},
 }
 

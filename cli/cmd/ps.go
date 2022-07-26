@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os/user"
 
 	"github.com/criblio/scope/internal"
 	"github.com/criblio/scope/util"
@@ -21,11 +20,11 @@ var psCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		internal.InitConfig()
 		// Nice message for non-adminstrators
-		user, err := user.Current()
-		if err != nil {
-			util.ErrAndExit("Unable to get current user: %v", err)
+		err := util.PermIsUserRoot()
+		if err == util.ErrCurrentUser {
+			util.ErrAndExit("%v", err)
 		}
-		if user.Uid != "0" {
+		if err == util.ErrNonRoot {
 			fmt.Println("INFO: Run as root (or via sudo) to see all scoped processes")
 		}
 		procs := util.ProcessesScoped()

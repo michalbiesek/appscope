@@ -17,6 +17,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type AttachMode int
+
+const (
+	AttachDisable AttachMode = iota
+	AttachEnableOnHost
+	AttachEnableOnContainer
+)
+
 func ldscopePath() string {
 	return filepath.Join(util.ScopeHome(), "ldscope")
 }
@@ -83,7 +91,7 @@ func CreateAll(path string) error {
 }
 
 // setupWorkDir sets up a working directory for a given set of args
-func (rc *Config) setupWorkDir(args []string, attach bool) {
+func (rc *Config) setupWorkDir(args []string, attach AttachMode) {
 
 	// Override to CriblDest if specified
 	if rc.CriblDest != "" {
@@ -99,8 +107,10 @@ func (rc *Config) setupWorkDir(args []string, attach bool) {
 		err := rc.configFromRunOpts()
 		util.CheckErrSprintf(err, "%v", err)
 	} else {
-		err := rc.ConfigFromFile()
-		util.CheckErrSprintf(err, "%v", err)
+		if attach != AttachEnableOnContainer {
+			err := rc.ConfigFromFile()
+			util.CheckErrSprintf(err, "%v", err)
+		}
 	}
 
 	// Update paths to absolute for file transports
@@ -120,9 +130,9 @@ func (rc *Config) setupWorkDir(args []string, attach bool) {
 }
 
 // createWorkDir creates a working directory
-func (rc *Config) createWorkDir(args []string, attach bool) {
+func (rc *Config) createWorkDir(args []string, attach AttachMode) {
 	dirPerms := os.FileMode(0755)
-	if attach {
+	if attach != AttachDisable {
 		dirPerms = 0777
 		oldmask := syscall.Umask(0)
 		defer syscall.Umask(oldmask)
@@ -156,7 +166,7 @@ func (rc *Config) createWorkDir(args []string, attach bool) {
 	}
 
 	// Create Working directory
-	if attach {
+	if attach != AttachDisable {
 		// Validate /tmp exists
 		if !util.CheckDirExists("/tmp") {
 			util.ErrAndExit("/tmp directory does not exist")
@@ -190,9 +200,9 @@ func (rc *Config) createWorkDir(args []string, attach bool) {
 	log.Info().Str("workDir", rc.WorkDir).Msg("created working directory")
 }
 
-func (rc *Config) populateWorkDir(args []string, attach bool) {
+func (rc *Config) populateWorkDir(args []string, attach AttachMode) {
 	filePerms := os.FileMode(0644)
-	if attach {
+	if attach != AttachDisable {
 		filePerms = 0777
 		oldmask := syscall.Umask(0)
 		defer syscall.Umask(oldmask)
@@ -239,12 +249,17 @@ func (rc *Config) populateWorkDir(args []string, attach bool) {
 		err := rc.WriteScopeConfig(scYamlPath, filePerms)
 		util.CheckErrSprintf(err, "%v", err)
 	} else {
-		input, err := ioutil.ReadFile(rc.UserConfig)
-		if err != nil {
-			util.ErrAndExit("cannot read file %s: %v", rc.UserConfig, err)
-		}
-		if err = ioutil.WriteFile(scYamlPath, input, 0644); err != nil {
-			util.ErrAndExit("failed to write file to %s: %v", scYamlPath, err)
+		if attach == AttachEnableOnContainer {
+			err := rc.WriteScopeConfig(scYamlPath, filePerms)
+			util.CheckErrSprintf(err, "%v", err)
+		} else {
+			input, err := ioutil.ReadFile(rc.UserConfig)
+			if err != nil {
+				util.ErrAndExit("cannot read file %s: %v", rc.UserConfig, err)
+			}
+			if err = ioutil.WriteFile(scYamlPath, input, 0644); err != nil {
+				util.ErrAndExit("failed to write file to %s: %v", scYamlPath, err)
+			}
 		}
 	}
 

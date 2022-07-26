@@ -2,12 +2,11 @@ package run
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
-	"syscall"
 	"time"
 
 	"github.com/criblio/scope/libscope"
+	"github.com/criblio/scope/loader"
 	"github.com/criblio/scope/util"
 	"github.com/rs/zerolog/log"
 )
@@ -48,7 +47,7 @@ func (rc *Config) Run(args []string) {
 		env = append(env, "SCOPE_CRIBL_NO_BREAKER=true")
 	}
 	if !rc.Passthrough {
-		rc.setupWorkDir(args, false)
+		rc.setupWorkDir(args, AttachDisable)
 		env = append(env, "SCOPE_CONF_PATH="+filepath.Join(rc.WorkDir, "scope.yml"))
 		log.Info().Bool("passthrough", rc.Passthrough).Strs("args", args).Msg("calling syscall.Exec")
 	}
@@ -60,12 +59,10 @@ func (rc *Config) Run(args []string) {
 		// Prepend "-f" [PATH] to args
 		args = append([]string{"-f", rc.LibraryPath}, args...)
 	}
+
+	ld := loader.ScopeLoader{Path: ldscopePath()}
 	if !rc.Subprocess {
-		syscall.Exec(ldscopePath(), append([]string{"ldscope"}, args...), env)
+		ld.Run(args, env)
 	}
-	cmd := exec.Command(ldscopePath(), args...)
-	cmd.Env = env
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Run()
+	ld.RunSubProc(args, env)
 }

@@ -223,7 +223,7 @@ func TestSetupWorkDir(t *testing.T) {
 	os.Setenv("SCOPE_TEST", "true")
 	rc := Config{}
 	rc.now = func() time.Time { return time.Unix(0, 0) }
-	rc.setupWorkDir([]string{"/bin/foo"}, false)
+	rc.setupWorkDir([]string{"/bin/foo"}, AttachDisable)
 	wd := fmt.Sprintf("%s_%d_%d_%d", ".foo/history/foo", 1, os.Getpid(), 0)
 	exists := util.CheckFileExists(wd)
 	assert.True(t, exists)
@@ -248,12 +248,43 @@ func TestSetupWorkDir(t *testing.T) {
 	os.Unsetenv("SCOPE_HOME")
 }
 
-func TestSetupWorkDirAttach(t *testing.T) {
+func TestSetupWorkDirAttachHost(t *testing.T) {
 	os.Setenv("SCOPE_HOME", ".foo")
 	os.Setenv("SCOPE_TEST", "true")
 	rc := Config{}
 	rc.now = func() time.Time { return time.Unix(0, 0) }
-	rc.setupWorkDir([]string{"123"}, true)
+	rc.setupWorkDir([]string{"123"}, AttachEnableOnHost)
+	wd := fmt.Sprintf("%s_%d_%d_%d", "/tmp/123", 1, os.Getpid(), 0)
+	exists := util.CheckFileExists(wd)
+	assert.True(t, exists)
+
+	argsJSONBytes, err := ioutil.ReadFile(filepath.Join(wd, "args.json"))
+	assert.NoError(t, err)
+	assert.Equal(t, `["123"]`, string(argsJSONBytes))
+
+	expectedYaml := testDefaultScopeConfigYaml(wd, 4)
+
+	scopeYAMLBytes, err := ioutil.ReadFile(filepath.Join(wd, "scope.yml"))
+	assert.NoError(t, err)
+	assert.Equal(t, expectedYaml, string(scopeYAMLBytes))
+
+	cmdDirExists := util.CheckFileExists(filepath.Join(wd, "cmd"))
+	assert.True(t, cmdDirExists)
+
+	payloadsDirExists := util.CheckFileExists(filepath.Join(wd, "payloads"))
+	assert.True(t, payloadsDirExists)
+	os.RemoveAll(wd)
+	os.RemoveAll(".foo")
+	os.Unsetenv("SCOPE_TEST")
+	os.Unsetenv("SCOPE_HOME")
+}
+
+func TestSetupWorkDirAttachContainer(t *testing.T) {
+	os.Setenv("SCOPE_HOME", ".foo")
+	os.Setenv("SCOPE_TEST", "true")
+	rc := Config{}
+	rc.now = func() time.Time { return time.Unix(0, 0) }
+	rc.setupWorkDir([]string{"123"}, AttachEnableOnContainer)
 	wd := fmt.Sprintf("%s_%d_%d_%d", "/tmp/123", 1, os.Getpid(), 0)
 	exists := util.CheckFileExists(wd)
 	assert.True(t, exists)

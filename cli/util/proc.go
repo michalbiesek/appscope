@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	linuxproc "github.com/c9s/goprocinfo/linux"
+	linuxproc "github.com/michalbiesek/goprocinfo/linux"
 )
 
 // Process is a unix process
@@ -147,6 +147,18 @@ func PidScoped(pid int) bool {
 	}
 
 	return false
+}
+
+// Get the PID's list associated with each namespace
+func PidNamespacePids(pid int) ([]int64, error) {
+	pidStatusPath := fmt.Sprintf("/proc/%v/status", pid)
+
+	// Get information about nspid from status
+	pStat, err := linuxproc.ReadProcessStatus(pidStatusPath)
+	if err != nil {
+		return nil, fmt.Errorf("error getting nspid: %v", err)
+	}
+	return pStat.NSpid, nil
 }
 
 // PidCommand gets the command used to start the process specified by PID

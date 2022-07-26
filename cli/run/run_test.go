@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 	case "createWorkDir":
 		internal.InitConfig()
 		rc := Config{}
-		rc.createWorkDir([]string{"foo"}, false)
+		rc.createWorkDir([]string{"foo"}, AttachDisable)
 	case "run":
 		internal.InitConfig()
 		rc := Config{}
