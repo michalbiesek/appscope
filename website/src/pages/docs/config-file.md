@@ -182,7 +182,7 @@ metric:
     #   Override: $SCOPE_METRIC_HTTP
     #
     - type: http
-  
+
     # Metric dns
     #   Type:     string
     #   Values:   dns
@@ -190,7 +190,7 @@ metric:
     #   Override: $SCOPE_METRIC_DNS
     #
     - type: dns
-  
+
     # Metric process
     #   Type:     string
     #   Values:   process
