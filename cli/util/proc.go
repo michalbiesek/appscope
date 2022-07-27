@@ -1,6 +1,8 @@
 package util
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -22,6 +24,10 @@ type Process struct {
 
 // Processes is an array of Process
 type Processes []Process
+
+var (
+	ErrRootIdMap = errors.New("root id not found")
+)
 
 // ProcessesByName returns an array of processes that match a given name
 func ProcessesByName(name string) Processes {
@@ -172,6 +178,36 @@ func PidCommand(pid int) string {
 	}
 
 	return pStat.Name
+}
+
+// GetParentGid retrieve parent root uid for specified PID
+func GetParentGid(pid int) (int, error) {
+	return parrentRootIdFromMaps(fmt.Sprintf("/proc/%v/gid_map", pid))
+}
+
+// GetParentUid retrieve parent root gid for specified PID
+func GetParentUid(pid int) (int, error) {
+	return parrentRootIdFromMaps(fmt.Sprintf("/proc/%v/uid_map", pid))
+}
+
+// rootIdFromMaps retrieve the root id from host namespace present in the mapFile
+func parrentRootIdFromMaps(mapFile string) (int, error) {
+	pidMapFile, err := os.Open(mapFile)
+	if err != nil {
+		return -1, err
+	}
+	defer pidMapFile.Close()
+
+	scanner := bufio.NewScanner(pidMapFile)
+
+	for scanner.Scan() {
+		var idNamespace, idParentNamespace int
+		fmt.Sscanf(scanner.Text(), "%d %d", &idNamespace, &idParentNamespace)
+		if idNamespace == 0 {
+			return idParentNamespace, nil
+		}
+	}
+	return 0, ErrRootIdMap
 }
 
 // PidCmdline gets the cmdline used to start the process specified by PID
