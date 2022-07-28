@@ -66,7 +66,7 @@ func (rc *Config) Attach(args []string) error {
 	}
 	// Check PID is not already being scoped
 	if util.PidScoped(pid) {
-		return fmt.Errorf("attach error %w", ErrAlreadyScoped)
+		return fmt.Errorf("attach error PID: %v %w ", pid, ErrAlreadyScoped)
 	}
 
 	nsPids, err := util.PidNamespacePids(pid)
