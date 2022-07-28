@@ -59,7 +59,8 @@ func TestPidUser(t *testing.T) {
 func TestPidCommand(t *testing.T) {
 	// Current process command
 	pid := os.Getpid()
-	result := PidCommand(pid)
+	result, err := PidCommand(pid)
+	assert.NoError(t, err)
 	assert.Equal(t, "util.test", result)
 }
 

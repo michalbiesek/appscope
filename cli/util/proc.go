@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/user"
 	"strconv"
@@ -26,7 +25,8 @@ type Process struct {
 type Processes []Process
 
 var (
-	ErrRootIdMap = errors.New("root id not found")
+	ErrRootIdMap  = errors.New("root id not found")
+	ErrGetProcCmd = errors.New("error getting process command")
 )
 
 // ProcessesByName returns an array of processes that match a given name
@@ -54,11 +54,14 @@ func ProcessesByName(name string) Processes {
 		// Convert directory name to integer
 		pid, err := strconv.Atoi(p)
 		if err != nil {
-			ErrAndExit("Error converting process name to integer: %s", err)
+			continue
 		}
 
 		// Add process if there is a name match
-		command := PidCommand(pid)
+		command, err := PidCommand(pid)
+		if err != nil {
+			continue
+		}
 		if strings.Contains(command, name) {
 			processes = append(processes, Process{
 				ID:      i,
@@ -138,8 +141,8 @@ func PidUser(pid int) string {
 
 // PidScoped checks if a process specified by PID is being scoped
 func PidScoped(pid int) bool {
-	pidPath := fmt.Sprintf("/proc/%v", pid)
-	pidMapFile, err := ioutil.ReadFile(pidPath + "/maps")
+
+	pidMapFile, err := os.ReadFile(fmt.Sprintf("/proc/%v/maps", pid))
 	if err != nil {
 		return false
 	}
@@ -147,9 +150,12 @@ func PidScoped(pid int) bool {
 	// Look for libscope in map
 	pidMap := string(pidMapFile)
 	if strings.Contains(pidMap, "libscope") {
-		if PidCommand(pid) != "ldscopedyn" {
-			return true
+		command, err := PidCommand(pid)
+		if err != nil {
+			return false
 		}
+
+		return command != "ldscopedyn"
 	}
 
 	return false
@@ -166,14 +172,13 @@ func PidNamespacePids(pid int) ([]int64, error) {
 }
 
 // PidCommand gets the command used to start the process specified by PID
-func PidCommand(pid int) string {
+func PidCommand(pid int) (string, error) {
 	// Get command from status
 	pStat, err := linuxproc.ReadProcessStatus(fmt.Sprintf("/proc/%v/status", pid))
 	if err != nil {
-		ErrAndExit("Error getting process command: %v", err)
+		return "", fmt.Errorf("%v %w", ErrGetProcCmd, err)
 	}
-
-	return pStat.Name
+	return pStat.Name, nil
 }
 
 // GetParentGid retrieve parent root uid for specified PID
