@@ -119,21 +119,21 @@ func ProcessesScoped() Processes {
 
 // PidUser returns the user owning the process specified by PID
 func PidUser(pid int) string {
-	pidPath := fmt.Sprintf("/proc/%v", pid)
-
 	// Get uid from status
-	pStat, err := linuxproc.ReadProcessStatus(pidPath + "/status")
+	pStat, err := linuxproc.ReadProcessStatus(fmt.Sprintf("/proc/%v/status", pid))
 	if err != nil {
 		ErrAndExit("Error getting uid: %v", err)
 	}
 
 	// Lookup username by uid
-	user, err := user.LookupId(fmt.Sprint(pStat.RealUid))
+	u, err := user.LookupId(fmt.Sprint(pStat.RealUid))
 	if err != nil {
-		ErrAndExit("Unable to find user: %v", err)
+		// This can happen if the process is inside LXC container with different
+		// UID mappings
+		return "-"
 	}
 
-	return user.Username
+	return u.Username
 }
 
 // PidScoped checks if a process specified by PID is being scoped
