@@ -20,6 +20,7 @@ var (
 	ErrSetupWorkdir              = errors.New("setup workdir failed")
 	ErrPermission                = errors.New("permission issue")
 	ErrAlreadyScoped             = errors.New("process is already being scoped")
+	ErrInvalidPidChoice          = errors.New("invalid PID choice")
 )
 
 func checkPermissionToAttach() error {
@@ -47,7 +48,7 @@ func (rc *Config) Attach(args []string) error {
 			fmt.Println("Found multiple processes matching that name...")
 			pid, err = choosePid(procs)
 			if err != nil {
-				return errors.New("invalid Selection")
+				return fmt.Errorf("invalid Selection %w", err)
 			}
 		} else {
 			return errors.New("no process found matching that name")
@@ -140,8 +141,8 @@ func choosePid(procs util.Processes) (int, error) {
 	fmt.Scanln(&selection)
 	i, err := strconv.Atoi(selection)
 	i--
-	if err != nil || i < 0 || i > len(procs) {
-		return -1, err
+	if err != nil || i < 0 || i >= len(procs) {
+		return -1, ErrInvalidPidChoice
 	}
 	return procs[i].Pid, nil
 }
