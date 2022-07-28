@@ -76,7 +76,8 @@ func (rc *Config) Attach(args []string) error {
 	env := os.Environ()
 	attachMode := AttachEnableOnHost
 	// Check if the process exists in the different Namespace
-	if len(nsPids) > 1 {
+	namespaceNo := len(nsPids)
+	if namespaceNo == 2 {
 		fmt.Println("WARNING: Session history will be stored in different namespace")
 		// Limit used CPU's when switching namespace
 		runtime.GOMAXPROCS(1)
@@ -90,10 +91,12 @@ func (rc *Config) Attach(args []string) error {
 			return fmt.Errorf("attach error %v %w", ErrSwitchingNamespace, err)
 		}
 		// Last PID
-		args[0] = strconv.FormatInt(nsPids[len(nsPids)-1], 10)
+		args[0] = strconv.FormatInt(nsPids[namespaceNo-1], 10)
 		rc.Subprocess = true
 		attachMode = AttachEnableOnContainer
 		env = append(env, "SCOPE_EXEC_PATH=/root/.scope/ldscope")
+	} else if namespaceNo > 2 {
+		return fmt.Errorf("attach error PID: %v AppScope currently don't support nested namespace", pid)
 	}
 
 	// Create ldscope
