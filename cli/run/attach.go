@@ -73,6 +73,7 @@ func (rc *Config) Attach(args []string) error {
 	if err != nil {
 		return err
 	}
+	env := os.Environ()
 	attachMode := AttachEnableOnHost
 	// Check if the process exists in the different Namespace
 	if len(nsPids) > 1 {
@@ -92,6 +93,7 @@ func (rc *Config) Attach(args []string) error {
 		args[0] = strconv.FormatInt(nsPids[len(nsPids)-1], 10)
 		rc.Subprocess = true
 		attachMode = AttachEnableOnContainer
+		env = append(env, "SCOPE_EXEC_PATH=/root/.scope/ldscope")
 	}
 
 	// Create ldscope
@@ -102,7 +104,7 @@ func (rc *Config) Attach(args []string) error {
 	// Normal operational, not passthrough, create directory for this run
 	// Directory contains scope.yml which is configured to output to that
 	// directory and has a command directory configured in that directory.
-	env := os.Environ()
+
 	if rc.NoBreaker {
 		env = append(env, "SCOPE_CRIBL_NO_BREAKER=true")
 	}
