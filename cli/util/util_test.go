@@ -19,9 +19,10 @@ func TestScopeHome(t *testing.T) {
 	assert.Equal(t, "/foo", ret)
 	os.Unsetenv("SCOPE_HOME")
 
-	os.Setenv("HOME", "/foo2")
+	os.Mkdir("/tmp/foo2/", 0755)
+	os.Setenv("HOME", "/tmp/foo2/")
 	ret = ScopeHome()
-	assert.Equal(t, "/foo2/.scope", ret)
+	assert.Equal(t, "/tmp/foo2/.scope", ret)
 	os.Unsetenv("HOME")
 
 	os.Setenv("TMPDIR", "/foo3")

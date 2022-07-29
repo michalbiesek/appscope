@@ -94,7 +94,7 @@ func (rc *Config) Attach(args []string) error {
 		args[0] = strconv.FormatInt(nsPids[namespaceNo-1], 10)
 		rc.Subprocess = true
 		attachMode = AttachEnableOnContainer
-		env = append(env, "SCOPE_EXEC_PATH=/root/.scope/ldscope")
+		env = append(env, "SCOPE_EXEC_PATH="+filepath.Join(util.ScopeHome(), "ldscope"))
 	} else if namespaceNo > 2 {
 		return fmt.Errorf("attach error PID: %v AppScope currently don't support nested namespace", pid)
 	}
