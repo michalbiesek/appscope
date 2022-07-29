@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
+	"golang.org/x/sys/unix"
 )
 
 type ReadSeekCloser interface {
@@ -51,7 +52,8 @@ func ScopeHome() string {
 		return base
 	}
 	home, match := os.LookupEnv("HOME")
-	if !match {
+
+	if !match || unix.Access(home, unix.W_OK) != nil {
 		home, match = os.LookupEnv("TMPDIR")
 		if !match {
 			home = "/tmp"
