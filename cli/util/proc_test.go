@@ -25,6 +25,7 @@ func TestProcessesByName(t *testing.T) {
 			User:    user.Username,
 			Command: strings.Join(os.Args[:], " "),
 			Scoped:  false,
+			Location: "host",
 		},
 	}
 	assert.Equal(t, exp, result)
