@@ -46,6 +46,7 @@ func ProcessesByName(name string) (Processes, error) {
 	}
 
 	i := 1
+	var userName, location string
 	for _, p := range procs {
 		// Skip non-integers as they are not PIDs
 		if !IsNumeric(p) {
@@ -69,13 +70,27 @@ func ProcessesByName(name string) (Processes, error) {
 			continue
 		}
 
-		location := "Host"
+		nsPids, err := PidNamespacePids(pid)
+		if err != nil {
+			continue
+		}
+
+		if len(nsPids) == 1 {
+			userName, err = PidUser(pid)
+			if err != nil {
+				continue
+			}
+			location = "Host"
+		} else {
+			userName = "-"
+			location = "Container"
+		}
 
 		if strings.Contains(command, name) {
 			processes = append(processes, Process{
 				ID:       i,
 				Pid:      pid,
-				User:     PidUser(pid),
+				User:     userName,
 				Scoped:   PidScoped(pid),
 				Command:  cmdLine,
 				Location: location,
@@ -102,6 +117,7 @@ func ProcessesScoped() (Processes, error) {
 	}
 
 	i := 1
+	var userName, location string
 	for _, p := range procs {
 		// Skip non-integers as they are not PIDs
 		if !IsNumeric(p) {
@@ -119,7 +135,21 @@ func ProcessesScoped() (Processes, error) {
 			continue
 		}
 
-		location := "Host"
+		nsPids, err := PidNamespacePids(pid)
+		if err != nil {
+			continue
+		}
+
+		if len(nsPids) == 1 {
+			userName, err = PidUser(pid)
+			if err != nil {
+				continue
+			}
+			location = "Host"
+		} else {
+			userName = "-"
+			location = "Container"
+		}
 
 		// Add process if is is scoped
 		scoped := PidScoped(pid)
@@ -127,7 +157,7 @@ func ProcessesScoped() (Processes, error) {
 			processes = append(processes, Process{
 				ID:       i,
 				Pid:      pid,
-				User:     PidUser(pid),
+				User:     userName,
 				Scoped:   scoped,
 				Command:  cmdLine,
 				Location: location,
@@ -139,11 +169,11 @@ func ProcessesScoped() (Processes, error) {
 }
 
 // PidUser returns the user owning the process specified by PID
-func PidUser(pid int) string {
+func PidUser(pid int) (string, error) {
 	// Get uid from status
 	pStat, err := linuxproc.ReadProcessStatus(fmt.Sprintf("/proc/%v/status", pid))
 	if err != nil {
-		return ""
+		return "", err
 	}
 
 	// Lookup username by uid
@@ -151,10 +181,10 @@ func PidUser(pid int) string {
 	if err != nil {
 		// This can happen if the process is inside LXC container with different
 		// UID mappings
-		return "-"
+		return "-", nil
 	}
 
-	return u.Username
+	return u.Username, nil
 }
 
 // PidScoped checks if a process specified by PID is being scoped
