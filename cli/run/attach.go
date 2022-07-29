@@ -141,6 +141,7 @@ func choosePid(procs util.Processes) (int, error) {
 		{Name: "Pid", Field: "pid"},
 		{Name: "User", Field: "user"},
 		{Name: "Scoped", Field: "scoped"},
+		{Name: "Location", Field: "location"},
 		{Name: "Command", Field: "command"},
 	}, procs)
 	fmt.Println("Select an ID from the list:")

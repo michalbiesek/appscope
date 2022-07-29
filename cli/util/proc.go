@@ -14,11 +14,12 @@ import (
 
 // Process is a unix process
 type Process struct {
-	ID      int    `json:"id"`
-	Pid     int    `json:"pid"`
-	User    string `json:"user"`
-	Scoped  bool   `json:"scoped"`
-	Command string `json:"command"`
+	ID       int    `json:"id"`
+	Pid      int    `json:"pid"`
+	User     string `json:"user"`
+	Scoped   bool   `json:"scoped"`
+	Command  string `json:"command"`
+	Location string `json:"location"`
 }
 
 // Processes is an array of Process
@@ -68,13 +69,16 @@ func ProcessesByName(name string) (Processes, error) {
 			continue
 		}
 
+		location := "Host"
+
 		if strings.Contains(command, name) {
 			processes = append(processes, Process{
-				ID:      i,
-				Pid:     pid,
-				User:    PidUser(pid),
-				Scoped:  PidScoped(pid),
-				Command: cmdLine,
+				ID:       i,
+				Pid:      pid,
+				User:     PidUser(pid),
+				Scoped:   PidScoped(pid),
+				Command:  cmdLine,
+				Location: location,
 			})
 			i++
 		}
@@ -115,15 +119,18 @@ func ProcessesScoped() (Processes, error) {
 			continue
 		}
 
+		location := "Host"
+
 		// Add process if is is scoped
 		scoped := PidScoped(pid)
 		if scoped {
 			processes = append(processes, Process{
-				ID:      i,
-				Pid:     pid,
-				User:    PidUser(pid),
-				Scoped:  scoped,
-				Command: cmdLine,
+				ID:       i,
+				Pid:      pid,
+				User:     PidUser(pid),
+				Scoped:   scoped,
+				Command:  cmdLine,
+				Location: location,
 			})
 			i++
 		}
@@ -224,10 +231,8 @@ func parrentRootIdFromMaps(mapFile string) (int, error) {
 
 // PidCmdline gets the cmdline used to start the process specified by PID
 func PidCmdline(pid int) (string, error) {
-	cmdPath := fmt.Sprintf("/proc/%v/cmdline", pid)
-
 	// Get cmdline
-	cmdline, err := linuxproc.ReadProcessCmdline(cmdPath)
+	cmdline, err := linuxproc.ReadProcessCmdline(fmt.Sprintf("/proc/%v/cmdline", pid))
 	if err != nil {
 		return "", fmt.Errorf("error getting process cmdline: %v", err)
 	}
