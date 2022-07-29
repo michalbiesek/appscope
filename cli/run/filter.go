@@ -110,23 +110,26 @@ func (rc *Config) Filter(fileName string) error {
 			fmt.Println("Scope Service", allowProcess.Name, "failed", err)
 		}
 		if allowProcess.isAttachInConfig() {
-			// Translate Name to all Process
-			attachProcesses, err := util.ProcessesByName(allowProcess.Name)
-			if err != nil {
-				continue
-			}
-			// TODO Check user attach capabilities
-			for _, attachProc := range attachProcesses {
-				rc.Subprocess = true
-				// TODO set the configuration
-				// if allowProcess.config != nil {
-				// 	rc.UserConfig = allowProcess.config
-				// }
-				if err := rc.Attach([]string{strconv.Itoa(attachProc.Pid)}); err == nil {
-					fmt.Println("Scope Attach", allowProcess.Name, "PID", attachProc.Pid, "successfully performed")
-				} else {
-					fmt.Println("Scope Attach", allowProcess.Name, "failed", err)
+			if err := checkPermissionToAttach(); err != nil {
+				// Translate Name to all Process
+				attachProcesses, err := util.ProcessesByName(allowProcess.Name)
+				if err != nil {
+					continue
 				}
+				for _, attachProc := range attachProcesses {
+					rc.Subprocess = true
+					// TODO set the configuration
+					// if allowProcess.config != nil {
+					// 	rc.UserConfig = allowProcess.config
+					// }
+					if err := rc.Attach([]string{strconv.Itoa(attachProc.Pid)}); err == nil {
+						fmt.Println("Scope Attach", allowProcess.Name, "PID", attachProc.Pid, "successfully performed")
+					} else {
+						fmt.Println("Scope Attach", allowProcess.Name, "failed", err)
+					}
+				}
+			} else {
+				fmt.Println("Attach for process", allowProcess.Name, "skipped:", err)
 			}
 		}
 	}
