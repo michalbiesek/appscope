@@ -200,7 +200,7 @@ main(int argc, char **argv, char **env)
         scope_free(exe_path);
         freeElf(ebuf->buf, ebuf->len);
 
-        scope_printf("Attaching to process %d\n", pid);
+        scope_printf("Attaching to process %d with path %s\n", pid, scopeLibPath);
         int ret = injectScope(pid, scopeLibPath);
 
         // remove the config that `ldscope`
