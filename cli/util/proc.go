@@ -28,6 +28,8 @@ type Processes []Process
 var (
 	ErrRootIdMap  = errors.New("root id not found")
 	ErrGetProcCmd = errors.New("error getting process command")
+	ErrOpenProc   = errors.New("cannot open proc directory")
+	ErrReadProc   = errors.New("cannot read from proc directory")
 )
 
 // ProcessesByName returns an array of processes that match a given name
@@ -36,13 +38,13 @@ func ProcessesByName(name string) (Processes, error) {
 
 	procDir, err := os.Open("/proc")
 	if err != nil {
-		return processes, errors.New("cannot open proc directory")
+		return processes, ErrOpenProc
 	}
 	defer procDir.Close()
 
 	procs, err := procDir.Readdirnames(0)
 	if err != nil {
-		return processes, errors.New("cannot read from proc directory")
+		return processes, ErrReadProc
 	}
 
 	i := 1
@@ -107,13 +109,13 @@ func ProcessesScoped() (Processes, error) {
 
 	procDir, err := os.Open("/proc")
 	if err != nil {
-		return processes, errors.New("cannot open proc directory")
+		return processes, ErrOpenProc
 	}
 	defer procDir.Close()
 
 	procs, err := procDir.Readdirnames(0)
 	if err != nil {
-		return processes, errors.New("cannot read from proc directory")
+		return processes, ErrReadProc
 	}
 
 	i := 1
