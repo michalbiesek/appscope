@@ -14,12 +14,13 @@ import (
 
 // Process is a unix process
 type Process struct {
-	ID        int    `json:"id"`
-	Pid       int    `json:"pid"`
-	User      string `json:"user"`
-	Scoped    bool   `json:"scoped"`
-	Command   string `json:"command"`
-	Namespace string `json:"namespace"`
+	ID          int    `json:"id"`
+	Pid         int    `json:"pid"`
+	User        string `json:"user"`
+	Scoped      bool   `json:"scoped"`
+	Namespace   string `json:"namespace"`
+	ContainerId string `json:"containerid"`
+	Command     string `json:"command"`
 }
 
 // Processes is an array of Process
@@ -50,7 +51,7 @@ func ProcessesByName(name string) (Processes, error) {
 	}
 
 	i := 1
-	var userName, namespace string
+	var userName, namespace, containerId string
 	for _, p := range procs {
 		// Skip non-integers as they are not PIDs
 		if !IsNumeric(p) {
@@ -85,19 +86,21 @@ func ProcessesByName(name string) (Processes, error) {
 				continue
 			}
 			namespace = "Host"
+			containerId = "-"
 		} else {
 			userName = "-"
-			namespace, _ = pidNamespaceId(pid)
+			namespace, containerId = pidNamespaceInfo(pid)
 		}
 
 		if strings.Contains(command, name) {
 			processes = append(processes, Process{
-				ID:        i,
-				Pid:       pid,
-				User:      userName,
-				Scoped:    PidScoped(pid),
-				Namespace: namespace,
-				Command:   cmdLine,
+				ID:          i,
+				Pid:         pid,
+				User:        userName,
+				Scoped:      PidScoped(pid),
+				Namespace:   namespace,
+				ContainerId: containerId,
+				Command:     cmdLine,
 			})
 			i++
 		}
@@ -121,7 +124,7 @@ func ProcessesScoped() (Processes, error) {
 	}
 
 	i := 1
-	var userName, namespace string
+	var userName, namespace, containerId string
 	for _, p := range procs {
 		// Skip non-integers as they are not PIDs
 		if !IsNumeric(p) {
@@ -150,21 +153,23 @@ func ProcessesScoped() (Processes, error) {
 				continue
 			}
 			namespace = "Host"
+			containerId = "-"
 		} else {
 			userName = "-"
-			namespace, _ = pidNamespaceId(pid)
+			namespace, containerId = pidNamespaceInfo(pid)
 		}
 
 		// Add process if is is scoped
 		scoped := PidScoped(pid)
 		if scoped {
 			processes = append(processes, Process{
-				ID:        i,
-				Pid:       pid,
-				User:      userName,
-				Scoped:    scoped,
-				Namespace: namespace,
-				Command:   cmdLine,
+				ID:          i,
+				Pid:         pid,
+				User:        userName,
+				Scoped:      scoped,
+				Namespace:   namespace,
+				ContainerId: containerId,
+				Command:     cmdLine,
 			})
 			i++
 		}
@@ -279,10 +284,11 @@ func PidExists(pid int) bool {
 	return CheckDirExists(fmt.Sprintf("/proc/%v", pid))
 }
 
-func pidNamespaceId(pid int) (string, error) {
+// pidNamespaceInfo get detail information about namespace
+func pidNamespaceInfo(pid int) (string, string) {
 	cgFile, err := os.Open(fmt.Sprintf("/proc/%v/cgroup", pid))
 	if err != nil {
-		return "", ErrOpenProcCgroup
+		return "Unknown Container", "Unknown Id"
 	}
 	scanner := bufio.NewScanner(cgFile)
 	for scanner.Scan() {
@@ -297,14 +303,17 @@ func pidNamespaceId(pid int) (string, error) {
 		if hId == "0" {
 			cgPath := cgEntry[2]
 			if strings.Contains(cgPath, "/docker/") {
-				return "Docker container", nil
+				cgName := strings.TrimPrefix(cgPath, "/docker/")
+				return "Docker", cgName[0:12]
 			}
 			if strings.Contains(cgPath, "/lxc") {
-				return "LXC container", nil
+				cgPath = strings.TrimPrefix(cgPath, "/lxc.payload.")
+				cgName := strings.SplitN(cgPath, "/", 2)[0]
+				return "LXC ", cgName
 			}
 		}
 
 	}
 
-	return "Unknown Container", nil
+	return "Unknown Container", "Unknown Id"
 }

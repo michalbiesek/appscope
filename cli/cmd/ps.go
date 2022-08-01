@@ -36,6 +36,7 @@ var psCmd = &cobra.Command{
 			{Name: "Pid", Field: "pid"},
 			{Name: "User", Field: "user"},
 			{Name: "Namespace", Field: "namespace"},
+			{Name: "Container Id", Field: "containerid"},
 			{Name: "Command", Field: "command"},
 		}, procs)
 	},
