@@ -14,22 +14,24 @@ import (
 
 // Process is a unix process
 type Process struct {
-	ID       int    `json:"id"`
-	Pid      int    `json:"pid"`
-	User     string `json:"user"`
-	Scoped   bool   `json:"scoped"`
-	Command  string `json:"command"`
-	Location string `json:"location"`
+	ID        int    `json:"id"`
+	Pid       int    `json:"pid"`
+	User      string `json:"user"`
+	Scoped    bool   `json:"scoped"`
+	Command   string `json:"command"`
+	Namespace string `json:"namespace"`
 }
 
 // Processes is an array of Process
 type Processes []Process
 
 var (
-	ErrRootIdMap  = errors.New("root id not found")
-	ErrGetProcCmd = errors.New("error getting process command")
-	ErrOpenProc   = errors.New("cannot open proc directory")
-	ErrReadProc   = errors.New("cannot read from proc directory")
+	ErrRootIdMap         = errors.New("root id not found")
+	ErrGetProcCmd        = errors.New("error getting process command")
+	ErrOpenProc          = errors.New("cannot open proc directory")
+	ErrOpenProcMountInfo = errors.New("cannot open proc mount info")
+	ErrOpenProcCgroup    = errors.New("cannot open proc cgroup")
+	ErrReadProc          = errors.New("cannot read from proc directory")
 )
 
 // ProcessesByName returns an array of processes that match a given name
@@ -48,7 +50,7 @@ func ProcessesByName(name string) (Processes, error) {
 	}
 
 	i := 1
-	var userName, location string
+	var userName, namespace string
 	for _, p := range procs {
 		// Skip non-integers as they are not PIDs
 		if !IsNumeric(p) {
@@ -82,20 +84,20 @@ func ProcessesByName(name string) (Processes, error) {
 			if err != nil {
 				continue
 			}
-			location = "Host"
+			namespace = "Host"
 		} else {
 			userName = "-"
-			location = "Container"
+			namespace, _ = pidNamespaceId(pid)
 		}
 
 		if strings.Contains(command, name) {
 			processes = append(processes, Process{
-				ID:       i,
-				Pid:      pid,
-				User:     userName,
-				Scoped:   PidScoped(pid),
-				Command:  cmdLine,
-				Location: location,
+				ID:        i,
+				Pid:       pid,
+				User:      userName,
+				Scoped:    PidScoped(pid),
+				Namespace: namespace,
+				Command:   cmdLine,
 			})
 			i++
 		}
@@ -119,7 +121,7 @@ func ProcessesScoped() (Processes, error) {
 	}
 
 	i := 1
-	var userName, location string
+	var userName, namespace string
 	for _, p := range procs {
 		// Skip non-integers as they are not PIDs
 		if !IsNumeric(p) {
@@ -147,22 +149,22 @@ func ProcessesScoped() (Processes, error) {
 			if err != nil {
 				continue
 			}
-			location = "Host"
+			namespace = "Host"
 		} else {
 			userName = "-"
-			location = "Container"
+			namespace, _ = pidNamespaceId(pid)
 		}
 
 		// Add process if is is scoped
 		scoped := PidScoped(pid)
 		if scoped {
 			processes = append(processes, Process{
-				ID:       i,
-				Pid:      pid,
-				User:     userName,
-				Scoped:   scoped,
-				Command:  cmdLine,
-				Location: location,
+				ID:        i,
+				Pid:       pid,
+				User:      userName,
+				Scoped:    scoped,
+				Namespace: namespace,
+				Command:   cmdLine,
 			})
 			i++
 		}
@@ -274,6 +276,35 @@ func PidCmdline(pid int) (string, error) {
 
 // PidExists checks if a PID is valid
 func PidExists(pid int) bool {
-	pidPath := fmt.Sprintf("/proc/%v", pid)
-	return CheckDirExists(pidPath)
+	return CheckDirExists(fmt.Sprintf("/proc/%v", pid))
+}
+
+func pidNamespaceId(pid int) (string, error) {
+	cgFile, err := os.Open(fmt.Sprintf("/proc/%v/cgroup", pid))
+	if err != nil {
+		return "", ErrOpenProcCgroup
+	}
+	scanner := bufio.NewScanner(cgFile)
+	for scanner.Scan() {
+		// hierarchy-ID:controller-list:cgroup-path
+		// 0::/lxc.payload.ubuntuLcTest/system.slice/memcached.service
+		// 0::/docker/1dfef7109b0c72dd229c6dbf49657177e3134e89321968f0404afdec2d66d7b8
+		cgEntry := strings.Split(scanner.Text(), ":")
+		if len(cgEntry) < 3 {
+			continue
+		}
+		hId := cgEntry[0]
+		if hId == "0" {
+			cgPath := cgEntry[2]
+			if strings.Contains(cgPath, "/docker/") {
+				return "Docker container", nil
+			}
+			if strings.Contains(cgPath, "/lxc") {
+				return "LXC container", nil
+			}
+		}
+
+	}
+
+	return "Unknown Container", nil
 }
