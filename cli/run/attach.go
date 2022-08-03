@@ -81,7 +81,7 @@ func (rc *Config) Attach(args []string) error {
 		fmt.Println("WARNING: Session history will be stored in different namespace")
 		// Limit used CPU's when switching namespace
 		runtime.GOMAXPROCS(1)
-
+		runtime.LockOSThread()
 		// We need to read file from the host
 		if rc.UserConfig != "" {
 			rc.ConfigFromFile()
