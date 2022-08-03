@@ -1,6 +1,9 @@
 package util
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"syscall"
 
 	"golang.org/x/sys/unix"
@@ -8,10 +11,6 @@ import (
 
 // PidSwitchNamespace switch namespace to the process specified by PID
 func NamespaceSwitch(pid int) error {
-	pidFd, err := unix.PidfdOpen(pid, 0)
-	if err != nil {
-		return err
-	}
 	parentGid, err := GetParentGid(pid)
 	if err != nil {
 		return err
@@ -22,8 +21,24 @@ func NamespaceSwitch(pid int) error {
 		return err
 	}
 
-	if err := unix.Setns(pidFd, unix.CLONE_NEWPID|unix.CLONE_NEWNS); err != nil {
+	procNsPath := fmt.Sprintf("/proc/%v/ns/", pid)
+
+	pidFd, err := os.Open(filepath.Join(procNsPath, "pid"))
+	if err != nil {
 		return err
+	}
+
+	mntFd, err := os.Open(filepath.Join(procNsPath, "mnt"))
+	if err != nil {
+		return err
+	}
+
+	if err := unix.Setns(int(pidFd.Fd()), unix.CLONE_NEWPID); err != nil {
+		return fmt.Errorf("namespace PID error %w", err)
+	}
+
+	if err := unix.Setns(int(mntFd.Fd()), unix.CLONE_NEWNS); err != nil {
+		return fmt.Errorf("namespace mount error %w", err)
 	}
 
 	// The state of effective GID and UID is restored in restoreEffectiveIdStateInNamespace
