@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <sys/mman.h>
+#include <sys/syscall.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -47,6 +48,7 @@
 
 #define EXE_TEST_FILE "/bin/cat"
 #define LIBMUSL "musl"
+#define LDSCOPE_IN_CHILD_NS "/tmp/ldscope"
 
 static int g_debug = 0;
 
@@ -457,6 +459,177 @@ patch_library(const char *so_path) {
     scope_free(ldso);
 
     return result;
+}
+
+/*
+ * Check for PID in the child namespace.
+ *
+ * Returns TRUE if specific process contains two namespaces FALSE otherwise.
+ */
+static bool
+get_child_namespace_pid(pid_t pid, pid_t *ns_pid)
+{
+    char path[PATH_MAX];
+    bool status = FALSE;
+    size_t len = 0;
+    char *buf = NULL;
+    int lastNsPid = 0;
+    int nsNum = 0;
+    const char delimiters[] = ": \t";
+
+    if (scope_snprintf(path, sizeof(path), "/proc/%d/status", pid) < 0) return FALSE;
+
+    FILE *fstream = scope_fopen(path, "r");
+    if (fstream == NULL) return FALSE;
+    while (scope_getline(&buf, &len, fstream) != -1) {
+        if (buf && scope_strstr(buf, "NSpid:")) {
+            char *entry, *last;
+
+            entry = strtok_r(buf, delimiters, &last);
+            // Skip NsPid string
+            entry = strtok_r(NULL, delimiters, &last);
+            // Iterate over NsPids values
+            while (entry != NULL) {    
+                lastNsPid = scope_atoi(entry);
+                entry = strtok_r(NULL, delimiters, &last);
+                nsNum++;
+            }
+            if (buf) scope_free(buf);
+            buf = NULL;
+            break;
+        }
+        if (buf) scope_free(buf);
+        buf = NULL;
+        len = 0;
+    }
+
+    // Only single nested namespace
+    if (nsNum == 2) {
+        status = TRUE;
+        *ns_pid = lastNsPid;
+    }
+
+    scope_fclose(fstream);
+
+    return status;
+}
+
+static char*
+getLdscopeMem(size_t *ldscopeSize)
+{
+    // Load ldscope into memory
+    char *ldscopeMem = NULL;
+
+    char ldscopePath[PATH_MAX];
+
+    if (scope_readlink("/proc/self/exe", ldscopePath, sizeof(ldscopePath) - 1) == -1) {
+        scope_perror("readlink(/proc/self/exe) failed");
+        goto closeLdscopeFd;
+    }
+
+    int ldscopeInputFd = scope_open(ldscopePath, O_RDONLY);
+    if (!ldscopeInputFd) {
+        scope_perror("scope_open failed");
+        goto closeLdscopeFd;
+    }
+
+    *ldscopeSize = scope_lseek(ldscopeInputFd, 0, SEEK_END);
+    if (*ldscopeSize == (off_t)-1) {
+        scope_perror("scope_lseek failed");
+        goto closeLdscopeFd;
+    }
+
+    ldscopeMem = scope_mmap(NULL, *ldscopeSize, PROT_READ, MAP_PRIVATE, ldscopeInputFd, 0);
+    if (ldscopeMem == MAP_FAILED) {
+        scope_perror("scope_mmap failed");
+        ldscopeMem = NULL;
+        goto closeLdscopeFd;
+    }
+
+closeLdscopeFd:
+
+    scope_close(ldscopeInputFd);
+
+    return ldscopeMem;
+}
+
+static bool
+saveLdscopeInNamespace(char* ldscopeMem, size_t ldscopeSize)
+{
+    bool status = FALSE;
+
+    int ldscopeDestFd = scope_open(LDSCOPE_IN_CHILD_NS, O_RDWR | O_CREAT, 0771);
+    if (!ldscopeDestFd) {
+        scope_perror("scope_open failed");
+        return status;
+    }
+
+    if (scope_ftruncate(ldscopeDestFd, ldscopeSize) != 0) {
+        goto cleanupDestFd;
+    }
+
+    char* dest = scope_mmap(NULL, ldscopeSize, PROT_READ | PROT_WRITE, MAP_SHARED, ldscopeDestFd, 0);
+    if (dest == MAP_FAILED) {
+        goto cleanupDestFd;
+    }
+
+    scope_memcpy(dest, ldscopeMem, ldscopeSize);
+
+    scope_munmap(dest, ldscopeSize);
+
+    status = TRUE;
+
+cleanupDestFd:
+
+    scope_close(ldscopeDestFd);
+
+    return TRUE;
+}
+
+static bool
+switch_namespace(pid_t hostPid)
+{
+    bool status = FALSE;
+    // Load ldscope into memory
+    size_t ldscopeSize = 0;
+    char *ldscopeMem = getLdscopeMem(&ldscopeSize);
+    if (ldscopeMem == NULL) {
+        return status;
+    }
+
+    /*
+    * Switch namespace
+    * - processs namespace
+    * - mount namespace to copy static loader into a child namespace
+    */
+    char nsPath[PATH_MAX];
+    char *nsType[] = {"pid", "mnt"};
+
+    for (int i = 0; i < (sizeof(nsType)/sizeof(nsType[0])); ++i) {
+        if (scope_snprintf(nsPath, sizeof(nsPath), "/proc/%d/ns/%s", hostPid, nsType[i]) < 0) {
+            scope_perror("scope_snprintf failed");
+            goto cleanupLdscopeMem;
+        }
+        int nsFd = scope_open(nsPath, O_RDONLY);
+        if (!nsFd) {
+            scope_perror("scope_open failed");
+            goto cleanupLdscopeMem;
+        }
+
+        if (scope_setns(nsFd, 0) != 0) {
+            scope_perror("setns failed");
+            goto cleanupLdscopeMem;
+        }
+    }
+
+    // Save static loader in namespace
+    status = saveLdscopeInNamespace(ldscopeMem, ldscopeSize);
+
+cleanupLdscopeMem:
+
+    scope_munmap(ldscopeMem, ldscopeSize);
+
+    return status;
 }
 
 /* 
@@ -976,7 +1149,7 @@ main(int argc, char **argv, char **env)
 {
     char *attachArg = 0;
     char path[PATH_MAX] = {0};
-
+    int pid = -1;
     // process command line
     for (;;) {
         int index = 0;
@@ -1046,6 +1219,74 @@ main(int argc, char **argv, char **env)
         scope_fprintf(scope_stderr, "warning: ignoring EXECUTABLE argument with --attach option\n");
     }
 
+    // perform namespace switch if required
+    if (attachArg) {
+        // must be root
+        if (scope_getuid()) {
+            scope_printf("error: --attach requires root\n");
+            return EXIT_FAILURE;
+        }
+
+        // target process must exist
+        pid = scope_atoi(attachArg);
+        if (pid < 1) {
+            scope_printf("error: invalid --attach PID: %s\n", attachArg);
+            return EXIT_FAILURE;
+        }
+
+        int nsAttachPid = 0;
+        if (get_child_namespace_pid(pid, &nsAttachPid) == TRUE) {
+            if (switch_namespace(pid) == FALSE) {
+                scope_fprintf(scope_stderr, "error: switch_namespace failed\n");
+                return EXIT_FAILURE; 
+            }
+            pid_t child = fork();
+            if (child < 0) {
+                scope_fprintf(scope_stderr, "error: fork() failed\n");
+                return(EXIT_FAILURE);
+            } else if (child == 0) {
+                // child
+                char *nsAttachPidStr = NULL;
+                if (scope_asprintf(&nsAttachPidStr, "%d", nsAttachPid) <= 0) {
+                    scope_perror("error: asprintf() failed\n");
+                    return EXIT_FAILURE;
+                }
+                int execArgc = 0;
+                char **execArgv = scope_calloc(argc + 4, sizeof(char *));
+                if (!execArgv) {
+                    scope_fprintf(scope_stderr, "error: calloc() failed\n");
+                    return EXIT_FAILURE;
+                }
+
+                execArgv[execArgc++] = LDSCOPE_IN_CHILD_NS;
+
+                if (attachArg) {
+                    execArgv[execArgc++] = "-a";
+                    execArgv[execArgc++] = nsAttachPidStr;
+                } else {
+                    while (optind < argc) {
+                        execArgv[execArgc++] = argv[optind++];
+                    }
+                }
+                execve(LDSCOPE_IN_CHILD_NS, execArgv, environ);
+            }
+            // Parent
+            int status;
+            scope_waitpid(pid, &status, 0);
+            if (WIFEXITED(status)) {
+                int exitChildStatus = WEXITSTATUS(status);
+                if (exitChildStatus == 0) {
+                    scope_fprintf(scope_stderr, "Attach to process %d in child process succeeded\n", pid);
+                } else {
+                    scope_fprintf(scope_stderr, "Attach to process %d in child process failed\n", pid);
+                }
+                return exitChildStatus;
+            }
+            scope_fprintf(scope_stderr, "error: attach failed() failed\n");
+            return EXIT_FAILURE;
+        }
+    }
+
     // extract to the library directory
     if (libdirExtractLoader()) {
         scope_fprintf(scope_stderr, "error: failed to extract loader\n");
@@ -1077,18 +1318,7 @@ main(int argc, char **argv, char **env)
 
     // create /dev/shm/scope_${PID}.env when attaching
     if (attachArg) {
-        // must be root
-        if (scope_getuid()) {
-            scope_printf("error: --attach requires root\n");
-            return EXIT_FAILURE;
-        }
 
-        // target process must exist
-        int pid = scope_atoi(attachArg);
-        if (pid < 1) {
-            scope_printf("error: invalid --attach PID: %s\n", attachArg);
-            return EXIT_FAILURE;
-        }
         scope_snprintf(path, sizeof(path), "/proc/%d", pid);
         if (scope_access(path, F_OK)) {
             scope_printf("error: --attach PID not a current process: %d\n", pid);
