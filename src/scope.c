@@ -66,36 +66,6 @@ static struct option options[] = {
     {0, 0, 0, 0}
 };
 
-/*
- * Restore original state of effective UID and effective GID
- * which was possibly switched during attaching to the process
- * from parent namespace to child namespace.
- * This is required to have proper privileges to access procfs
- * in osGetExePath.
- */
-static bool
-restoreEffectiveIdStateInNamespace(void) {
-    uid_t euid = scope_geteuid();
-    uid_t uid = scope_getuid();
-    if (euid != uid) {
-        int err = scope_seteuid(uid);
-        if (err) {
-            scope_perror("scope_seteuid failed");
-            return FALSE;
-        }
-    }
-
-    gid_t egid = scope_getegid();
-    gid_t gid = scope_getgid();
-    if (egid != gid) {
-        int err = scope_setegid(gid);
-        if (err) {
-            scope_perror("scope_setegid failed");
-            return FALSE;
-        }
-    }
-    return TRUE;
-}
 
 int
 main(int argc, char **argv, char **env)
@@ -172,10 +142,6 @@ main(int argc, char **argv, char **env)
         int pid = scope_atoi(attachArg);
         if (pid < 1) {
             scope_fprintf(scope_stderr, "error: invalid PID for --attach\n");
-            return EXIT_FAILURE;
-        }
-
-        if (restoreEffectiveIdStateInNamespace() == FALSE) {
             return EXIT_FAILURE;
         }
 

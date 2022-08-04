@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <sys/mman.h>
+#include <sys/syscall.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -457,6 +458,101 @@ patch_library(const char *so_path) {
     scope_free(ldso);
 
     return result;
+}
+
+static bool
+get_namespace_pid(pid_t pid, pid_t *ns_pid)
+{   
+    char path[PATH_MAX];
+    bool status = FALSE;
+    size_t len = 0;
+    char *buf = NULL;
+    int lastNsPid = 0;
+    int nsNum = 0;
+    const char delimiters[] = ": \t";
+
+    if (scope_snprintf(path, sizeof(path), "/proc/%d/status", pid) < 0) return FALSE;
+
+    FILE *fstream = scope_fopen(path, "r");
+    if (fstream == NULL) return FALSE;
+    while (scope_getline(&buf, &len, fstream) != -1) {
+        if (buf && scope_strstr(buf, "NSpid:")) {
+            char *entry, *last;
+
+            entry = strtok_r(buf, delimiters, &last);
+            // Skip NsPid string
+            entry = strtok_r(NULL, delimiters, &last);
+            // Iterate over NsPids values
+            while (entry != NULL) {    
+                lastNsPid = scope_atoi(entry);
+                entry = strtok_r(NULL, delimiters, &last);
+                nsNum++;
+            }
+            if (buf) scope_free(buf);
+            buf = NULL;
+            break;
+        }
+        if (buf) scope_free(buf);
+        buf = NULL;
+        len = 0;
+    }
+
+    // Only single nested namespace
+    if (nsNum == 2) {
+        status = TRUE;
+        *ns_pid = lastNsPid;
+    }
+
+    scope_fclose(fstream);
+
+    return status;
+}
+
+// #ifndef __NR_pidfd_open
+// #define __NR_pidfd_open 434   /* System call # on most architectures */
+// #endif
+
+// static int
+// pidfd_open(pid_t pid, unsigned int flags)
+// {
+//     return syscall(__NR_pidfd_open, pid, flags);
+// }
+
+static bool
+namespace_switch(pid_t hostPid)
+{
+  int i;
+  char nsPath[PATH_MAX];
+  char *nsType[] = {"pid", "mnt"};
+  const int nsSize = (sizeof(nsType)/sizeof(nsType[0]));
+
+  for (i = 0; i < nsSize; ++i) {
+    if (scope_snprintf(nsPath, sizeof(nsPath), "/proc/%d/ns/%s", hostPid, nsType[i]) < 0) {
+        scope_perror("scope_snprintf failed");
+        return FALSE;
+    }
+    int nsFd = scope_open(nsPath, O_RDONLY);
+    if (!nsFd) {
+        scope_perror("scope_open failed");
+        return FALSE;
+    }
+
+    if (scope_setns(nsFd, 0) != 0) {
+        scope_perror("setns failed");
+        return FALSE;
+    }
+  }
+//   int nsFd = pidfd_open(hostPid, 0);
+//   if (!nsFd) {
+//       scope_perror("pidfd_open failed");
+//       return FALSE;
+//   }
+//   if (scope_setns(nsFd, CLONE_NEWPID | CLONE_NEWNS) != 0) {
+//         scope_perror("setns failed");
+//         return FALSE;
+//   }
+
+  return TRUE;
 }
 
 /* 
@@ -976,7 +1072,8 @@ main(int argc, char **argv, char **env)
 {
     char *attachArg = 0;
     char path[PATH_MAX] = {0};
-
+    int attachPid = -1;
+    bool nsSwitch = FALSE;
     // process command line
     for (;;) {
         int index = 0;
@@ -1046,6 +1143,41 @@ main(int argc, char **argv, char **env)
         scope_fprintf(scope_stderr, "warning: ignoring EXECUTABLE argument with --attach option\n");
     }
 
+        // Check namespace 
+    if (attachArg) {
+        // must be root
+        if (scope_getuid()) {
+            scope_printf("error: --attach requires root\n");
+            return EXIT_FAILURE;
+        }
+
+        // target process must exist
+        attachPid = scope_atoi(attachArg);
+        if (attachPid < 1) {
+            scope_printf("error: invalid --attach PID: %s\n", attachArg);
+            return EXIT_FAILURE;
+        }
+
+        int nsAttachPid = 0;
+        if (get_namespace_pid(attachPid, &nsAttachPid) == TRUE) {
+            if (namespace_switch(attachPid) == TRUE) {
+                attachPid = nsAttachPid;
+                char *nsAttachPidStr = NULL;
+                if (scope_asprintf(&nsAttachPidStr, "%d", attachPid) <= 0) {
+                    scope_perror("asprintf failed");
+                    return EXIT_FAILURE;
+                }
+                attachArg = nsAttachPidStr;
+                nsSwitch = TRUE;
+                // scope_seteuid(0);
+                // scope_setegid(0);
+            } else {
+                scope_fprintf(scope_stderr, "error: namespace_switch failed\n");
+                return EXIT_FAILURE; 
+            }
+        }
+    }
+
     // extract to the library directory
     if (libdirExtractLoader()) {
         scope_fprintf(scope_stderr, "error: failed to extract loader\n");
@@ -1066,7 +1198,7 @@ main(int argc, char **argv, char **env)
     setup_loader(loader);
 
     // set SCOPE_EXEC_PATH to path to `ldscope` if not set already
-    if (getenv("SCOPE_EXEC_PATH") == 0) {
+    if ((getenv("SCOPE_EXEC_PATH") == 0) && (nsSwitch == FALSE)) {
         char execPath[PATH_MAX];
         if (scope_readlink("/proc/self/exe", execPath, sizeof(execPath) - 1) == -1) {
             scope_perror("readlink(/proc/self/exe) failed");
@@ -1077,26 +1209,21 @@ main(int argc, char **argv, char **env)
 
     // create /dev/shm/scope_${PID}.env when attaching
     if (attachArg) {
-        // must be root
-        if (scope_getuid()) {
-            scope_printf("error: --attach requires root\n");
-            return EXIT_FAILURE;
-        }
 
-        // target process must exist
-        int pid = scope_atoi(attachArg);
-        if (pid < 1) {
-            scope_printf("error: invalid --attach PID: %s\n", attachArg);
-            return EXIT_FAILURE;
-        }
-        scope_snprintf(path, sizeof(path), "/proc/%d", pid);
+        // // target process must exist
+        // int pid = scope_atoi(attachArg);
+        // if (pid < 1) {
+        //     scope_printf("error: invalid --attach PID: %s\n", attachArg);
+        //     return EXIT_FAILURE;
+        // }
+        scope_snprintf(path, sizeof(path), "/proc/%d", attachPid);
         if (scope_access(path, F_OK)) {
-            scope_printf("error: --attach PID not a current process: %d\n", pid);
+            scope_printf("error: --attach PID not a current process: %d\n", attachPid);
             return EXIT_FAILURE;
         }
 
         // create .env file for the library to load
-        scope_snprintf(path, sizeof(path), "/scope_attach_%d.env", pid);
+        scope_snprintf(path, sizeof(path), "/scope_attach_%d.env", attachPid);
         int fd = scope_shm_open(path, O_RDWR|O_CREAT, S_IRUSR|S_IRGRP|S_IROTH);
         if (fd == -1) {
             scope_perror("shm_open() failed");

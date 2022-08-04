@@ -9,17 +9,6 @@ osGetProcname(char *pname, size_t len)
     return 0;
 }
 
-bool
-osGetNamespacePid(pid_t pid, pid_t *ns_pid)
-{
-    return FALSE;
-}
-bool
-osSwitchNamespace(pid_t hostPid)
-{
-    return FALSE;
-}
-
 int
 osGetProcMemory(pid_t pid)
 {

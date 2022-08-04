@@ -34,8 +34,6 @@ extern int osGetNumFds(pid_t);
 extern int osGetNumChildProcs(pid_t);
 extern int osInitTSC(platform_time_t *);
 extern int osGetProcMemory(pid_t);
-extern bool osGetNamespacePid(pid_t, pid_t *);
-extern bool osSwitchNamespace(pid_t);
 extern int osIsFilePresent(pid_t, const char *);
 extern int osGetCmdline(pid_t, char **);
 extern bool osThreadInit(void(*handler)(int), unsigned);

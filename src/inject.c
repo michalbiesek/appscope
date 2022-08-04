@@ -220,6 +220,8 @@ inject(pid_t pid, uint64_t dlopenAddr, char *path, int glibc)
         goto detach;
     }
     
+    scope_fprintf(scope_stderr, "ptraceRead pid=%d \n", pid);
+
     // back up the code
     oldcode = (unsigned char *)scope_malloc(INJECTED_CODE_SIZE_LEN);
     if (ptraceRead(pid, freeAddr, oldcode, INJECTED_CODE_SIZE_LEN)) {
