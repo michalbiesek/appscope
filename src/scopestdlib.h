@@ -257,6 +257,7 @@ int           scope_sched_getcpu(void);
 int           scope_rand(void);
 void          scope_srand(unsigned int);
 int           scope_setns(int, int);
+int           scope_pid_fd_open(pid_t, unsigned int);
 
 
 #endif // __SCOPE_STDLIB_H__

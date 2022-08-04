@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../contrib/build/musl/obj/include/bits/syscall.h"
 
 
 // Internal standard library references
@@ -1200,4 +1201,10 @@ int
 scope_setns(int fd, int nstype)
 {
     return scopelibc_setns(fd, nstype);
+}
+
+int
+scope_pid_fd_open(pid_t pid, unsigned int flags)
+{
+    return scopelibc_syscall(__NR_pidfd_open, pid, flags);
 }
