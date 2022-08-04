@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../contrib/build/musl/obj/include/bits/syscall.h"
 
 
 // Internal standard library references
@@ -1171,3 +1172,8 @@ scope_srand(unsigned int seed)
     scopelibc_srand(seed);
 }
 
+int
+scope_pid_fd_open(pid_t pid, unsigned int flags)
+{
+    return scopelibc_syscall(__NR_pidfd_open, pid, flags);
+}
