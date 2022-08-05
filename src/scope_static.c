@@ -586,6 +586,75 @@ cleanupDestFd:
     return TRUE;
 }
 
+static int
+get_parent_euid(pid_t hostPid)
+{
+    int id = 0;
+    char idPath[PATH_MAX];
+    char buffer[4096];
+    FILE *fd;
+
+    if (scope_snprintf(idPath, sizeof(idPath), "/proc/%d/uid_map", hostPid) < 0) {
+        scope_perror("scope_snprintf failed");
+        return id;
+    }
+    if ((fd = scope_fopen(idPath, "r")) == NULL) {
+        scope_perror("fopen(/proc/PID/uid_map) failed");
+        return id;
+    }
+    while(scope_fgets(buffer, sizeof(buffer), fd)) {
+        const char delimiters[] = " \t";
+        char *last;
+
+        int idNs = scope_atoi(strtok_r(buffer, delimiters, &last));
+        int idParent = scope_atoi(strtok_r(NULL, delimiters, &last)); 
+        if (idNs == 0) {
+            if (idNs != idParent) {
+                id = idParent;
+            }
+            break;
+        }
+    }
+    scope_fclose(fd);
+
+    return id;
+}
+
+static int
+get_parent_egid(pid_t hostPid)
+{
+    int id = 0;
+    char idPath[PATH_MAX];
+    char buffer[4096];
+    FILE *fd;
+
+    if (scope_snprintf(idPath, sizeof(idPath), "/proc/%d/gid_map", hostPid) < 0) {
+        scope_perror("scope_snprintf failed");
+        return id;
+    }
+    if ((fd = scope_fopen(idPath, "r")) == NULL) {
+        scope_perror("fopen(/proc/PID/gid_map) failed");
+        return id;
+    }
+    while(scope_fgets(buffer, sizeof(buffer), fd)) {
+        const char delimiters[] = " \t";
+        char *last;
+
+        int idNs = scope_atoi(strtok_r(buffer, delimiters, &last));
+        int idParent = scope_atoi(strtok_r(NULL, delimiters, &last)); 
+        if (idNs == 0) {
+            if (idNs != idParent) {
+                id = idParent;
+            }
+            break;
+        }
+    }
+    scope_fclose(fd);
+
+    return id;
+}
+
+
 static bool
 switch_namespace(pid_t hostPid)
 {
@@ -596,6 +665,12 @@ switch_namespace(pid_t hostPid)
     if (ldscopeMem == NULL) {
         return status;
     }
+
+    /*
+    * Get information about User/Group Id mappings
+    */
+    int parentUid = get_parent_euid(hostPid);
+    int parentGid = get_parent_egid(hostPid);
 
     /*
     * Switch namespace
@@ -621,6 +696,25 @@ switch_namespace(pid_t hostPid)
             goto cleanupLdscopeMem;
         }
     }
+
+    /*
+    * Change effective User/Group id for right file ownership in
+    * child namespace
+    */
+
+    if (parentUid != 0) {
+        if (scope_seteuid(parentUid) != 0) {
+            scope_perror("scope_seteuid failed");
+            goto cleanupLdscopeMem;
+        }
+    }
+
+    // if (parentGid != 0) {
+    //     if (scope_setegid(parentGid) != 0) {
+    //         scope_perror("scope_setegid failed");
+    //         goto cleanupLdscopeMem;
+    //     }
+    // }
 
     // Save static loader in namespace
     status = saveLdscopeInNamespace(ldscopeMem, ldscopeSize);
