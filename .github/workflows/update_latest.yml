@@ -1,0 +1,54 @@
+#
+# AppScope - Update Latest Workflow
+#
+# Update what is returned by https://cdn.cribl.io/dl/scope/latest
+# And update the "latest" tag on https://hub.docker.com/r/cribl/scope/tags
+#
+# based on:
+#   https://levelup.gitconnected.com/how-to-manually-trigger-a-github-actions-workflow-4712542f1960
+# instructions for use:
+#   https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow
+#
+name: Update Latest
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: New Latest Version (example value "1.1.2")
+        default: ""
+        required: true
+jobs:
+  update-latest:
+    name: Update Latest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update dl/scope/latest
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     AWS_REGION: ${{ secrets.AWS_REGION }}
+      #     CF_DISTRIBUTION_ID: ${{ secrets.CF_DISTRIBUTION_ID }}
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "::group::Updating https://cdn.cribl.io/dl/scope/latest to ${{ github.event.inputs.version }}"
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "Empty ${{ github.event.inputs.version }}"
+          else 
+            echo "Non empty ${{ github.event.inputs.version }}"
+          fi
+          echo "::endgroup::"
+
+  container-image-latest:
+    name: Build Container Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      - name: Test print
+        run: |
+          echo "::group::Updating Test print"
+          echo "Version v${{ github.event.inputs.version }}"
+          echo "::endgroup::"
