@@ -36,43 +36,24 @@ type allowProcConfig struct {
 	Config   libscope.ScopeConfig `mapstructure:"config" json:"config" yaml:"config"`
 }
 
-// StartData represents the input Parameter
-type StartData struct {
-	fileName string
-	data     []byte
-}
+func getConfigFromStdin() (startConfig, error) {
 
-func newStartData(fileName string) *StartData {
-	stData := &StartData{}
-	if fileName != "" {
-		stData.fileName = fileName
-	}
-	return stData
-}
-
-func (st *StartData) getConfig() (startConfig, error) {
 	var startCfg startConfig
 	var err error
 
-	if st.fileName != "" {
-		st.data, err = os.ReadFile(st.fileName)
-	} else {
-		st.data, err = io.ReadAll(os.Stdin)
-	}
+	data, err := io.ReadAll(os.Stdin)
 
 	if err != nil {
 		return startCfg, err
 	}
 
-	err = yaml.Unmarshal(st.data, &startCfg)
+	err = yaml.Unmarshal(data, &startCfg)
 
 	return startCfg, err
 }
 
-func (rc *Config) Start(fileName string) error {
-	start := newStartData(fileName)
-
-	startCfg, err := start.getConfig()
+func (rc *Config) Start() error {
+	startCfg, err := getConfigFromStdin()
 	if err != nil {
 		return err
 	}
