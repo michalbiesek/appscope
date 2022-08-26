@@ -40,7 +40,7 @@ echo "    Command Line Options Test"
 echo "================================="
 
 run ./bin/linux/${ARCH}/ldscope
-outputs "error: missing --attach/--setupns option or EXECUTABLE"
+outputs "error: missing --attach/--configure option or EXECUTABLE"
 outputs "Cribl AppScope"
 returns 1
 
