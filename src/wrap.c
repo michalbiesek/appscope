@@ -501,7 +501,7 @@ dynConfig(void)
     scope_snprintf(path, sizeof(path), "%s/%s.%d", g_cmddir, DYN_CONFIG_PREFIX, g_proc.pid);
 
     // Is there a command file for this pid
-    if (osIsFilePresent(g_proc.pid, path) == -1) return 0;
+    if (osIsFilePresent(path) == -1) return 0;
 
     // Have we already processed this file?
     now = fileModTime(path);
