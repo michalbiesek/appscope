@@ -588,7 +588,8 @@ main(int argc, char **argv, char **env)
                 libdirSetBase(optarg);
                 break;
             case 'p':
-                return loaderOpPatchLibrary(optarg);
+                return (loaderOpPatchLibrary(optarg) == PATCH_SUCCESS) ? EXIT_SUCCESS : EXIT_FAILURE;
+                break;
             case ':':
                 // options missing their value end up here
                 switch (optopt) {
