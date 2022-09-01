@@ -20,6 +20,7 @@
 #include "libdir.h"
 #include "loaderop.h"
 #include "ns.h"
+#include "setup.h"
 
 /* 
  * This avoids a segfault when code using shm_open() is compiled statically.
@@ -500,18 +501,19 @@ showUsage(char *prog)
       "\n"
       "usage: %s [OPTIONS] [--] EXECUTABLE [ARGS...]\n"
       "       %s [OPTIONS] --attach PID\n"
-      "       %s [OPTIONS] --configure PID\n"
-      "       %s [OPTIONS] --service NAME\n"
+      "       %s [OPTIONS] --configure FILTER_PATH --namespace PID\n"
+      "       %s [OPTIONS] --service SERVICE --namespace PID\n"
       "\n"
       "options:\n"
-      "  -u, --usage           display this info\n"
-      "  -h, --help [SECTION]  display all or the specified help section\n"
-      "  -l, --libbasedir DIR  specify parent for the library directory (default: /tmp)\n"
-      "  -f DIR                alias for \"-l DIR\" for backward compatibility\n"
-      "  -a, --attach PID      attach to the specified process ID\n"
-      "  -c, --configure PID   configure namespace for specified process ID\n"
-      "  -s, --service NAME    setup specified service NAME \n"
-      "  -p, --patch SO_FILE   patch specified libscope.so \n"
+      "  -u, --usage                  display this info\n"
+      "  -h, --help [SECTION]         display all or the specified help section\n"
+      "  -l, --libbasedir DIR         specify parent for the library directory (default: /tmp)\n"
+      "  -f DIR                       alias for \"-l DIR\" for backward compatibility\n"
+      "  -a, --attach PID             attach to the specified process ID\n"
+      "  -c, --configure FILTER_PATH  configure namespace with FILTER_PATH for specified proces PID\n"
+      "  -s, --service SERVICE        setup specified service NAME\n"
+      "  -n  --namespace PID          perform service/configure operation on specified container PID"
+      "  -p, --patch SO_FILE          patch specified libscope.so\n"
       "\n"
       "Help sections are OVERVIEW, CONFIGURATION, METRICS, EVENTS, and PROTOCOLS.\n"
       "\n"
@@ -532,6 +534,7 @@ static struct option opts[] = {
     { "usage",      no_argument,          0, 'u'},
     { "help",       optional_argument,    0, 'h' },
     { "attach",     required_argument,    0, 'a' },
+    { "namespace",  required_argument,    0, 'n' },
     { "configure",  required_argument,    0, 'c' },
     { "service",    required_argument,    0, 's' },
     { "libbasedir", required_argument,    0, 'l' },
@@ -543,8 +546,9 @@ int
 main(int argc, char **argv, char **env)
 {
     char *attachArg = NULL;
-    char *configureArg = NULL;
-    char *serviceArg = NULL;
+    char *configFilterPath = NULL;
+    char *serviceName = NULL;
+    char *nsPidArg = NULL; 
     char path[PATH_MAX] = {0};
     int pid = -1;
     // process command line
@@ -576,11 +580,14 @@ main(int argc, char **argv, char **env)
             case 'a':
                 attachArg = optarg;
                 break;
+            case 'n':
+                nsPidArg = optarg;
+                break;
             case 'c':
-                configureArg = optarg;
+                configFilterPath = optarg;
                 break;
             case 's':
-                serviceArg = optarg;
+                serviceName = optarg;
                 break;
             case 'f':
                 // accept -f as alias for -l for BC
@@ -611,15 +618,16 @@ main(int argc, char **argv, char **env)
         }
     }
 
-    // either --attach, --configure or a command are required
-    if (!attachArg && !configureArg && !serviceArg && optind >= argc) {
-        scope_fprintf(scope_stderr, "error: missing --attach/--configure option or EXECUTABLE argument\n");
+    // either --attach/--configure/--service or a command are required
+    if (!attachArg && !configFilterPath && !serviceName && optind >= argc) {
+        scope_fprintf(scope_stderr, "error: missing --attach/--configure/--service option or EXECUTABLE argument\n");
         showUsage(scope_basename(argv[0]));
         return EXIT_FAILURE;
     }
 
-    if (attachArg && configureArg) {
-        scope_fprintf(scope_stderr, "error:  --attach and --configure cannot be used together\n");
+    // TODO FIX THIS check if at least two pointers are defined
+    if (attachArg && configFilterPath) {
+        scope_fprintf(scope_stderr, "error: --attach --configure --service cannot be used together\n");
         showUsage(scope_basename(argv[0]));
         return EXIT_FAILURE;
     }
@@ -627,57 +635,81 @@ main(int argc, char **argv, char **env)
     if (optind < argc) {
         if (attachArg) {
             scope_fprintf(scope_stderr, "warning: ignoring EXECUTABLE argument with --attach option\n");
-        } else if (configureArg) {
+        } else if (configFilterPath) {
             scope_fprintf(scope_stderr, "warning: ignoring EXECUTABLE argument with --configure option\n");
-        } else if (serviceArg) {
-            scope_fprintf(scope_stderr, "warning: ignoring EXECUTABLE argument with --configure option\n");
+        } else if (serviceName) {
+            scope_fprintf(scope_stderr, "warning: ignoring EXECUTABLE argument with --service option\n");
         }
     }
 
-    if (serviceArg) {
+    if (serviceName) {
         // must be root
         if (scope_getuid()) {
-            scope_printf("error: --configure requires root\n");
+            scope_printf("error: --service requires root\n");
             return EXIT_FAILURE;
         }
+
         pid_t pid = -1;
-        if (configureArg) {
-            pid = scope_atoi(configureArg);
+        if (nsPidArg) {
+            pid = scope_atoi(nsPidArg);
             if (pid < 1) {
-                scope_printf("error: invalid --configure PID: %s\n", configureArg);
+                scope_fprintf(scope_stderr, "error: invalid --namespace PID: %s\n", nsPidArg);
                 return EXIT_FAILURE;
             }
         }
-    
-        pid_t nsAttachPid = 0;
 
-        if (nsIsPidInChildNs(pid, &nsAttachPid) == TRUE) {
-            return nsService(pid, serviceArg);
+        if (pid == -1) {
+            // Service on Host
+            return setupService(serviceName);
+        } else {
+            // Service on Container
+            pid_t nsAttachPid = 0;
+            if (nsIsPidInChildNs(pid, &nsAttachPid) == TRUE) {
+                return nsService(pid, serviceName);
+            }
         }
-        // Unexpected for my current use case
         return EXIT_FAILURE;
     }
 
-    if (configureArg) {
+    if (configFilterPath) {
+        int status = EXIT_FAILURE;
         // must be root
         if (scope_getuid()) {
             scope_printf("error: --configure requires root\n");
             return EXIT_FAILURE;
         }
 
-        // target process must exist
-        pid = scope_atoi(configureArg);
-        if (pid < 1) {
-            scope_printf("error: invalid --configure PID: %s\n", configureArg);
+        pid_t pid = -1;
+        if (nsPidArg) {
+            pid = scope_atoi(nsPidArg);
+            if (pid < 1) {
+                scope_fprintf(scope_stderr, "error: invalid --namespace PID: %s\n", nsPidArg);
+                return EXIT_FAILURE;
+            }
+        }
+
+        size_t configFilterSize = 0;
+        void *confgFilterMem = setupLoadFileIntoMem(&configFilterSize, configFilterPath);
+        if (confgFilterMem == NULL) {
+            scope_fprintf(scope_stderr, "error: Load filter file into memory %s\n", configFilterPath);
             return EXIT_FAILURE;
         }
 
-        pid_t nsAttachPid = 0;
-
-        if (nsIsPidInChildNs(pid, &nsAttachPid) == TRUE) {
-            return nsConfigure(pid);
+        if (pid == -1) {
+            // Configure on Host
+            status = setupConfigure(confgFilterMem, configFilterSize, FALSE);
+        } else {
+            // Configure on Container
+            pid_t nsAttachPid = 0;
+            if (nsIsPidInChildNs(pid, &nsAttachPid) == TRUE) {
+                status = nsConfigure(pid, confgFilterMem, configFilterSize);
+            }
         }
-        return EXIT_FAILURE;
+        if (confgFilterMem) {
+            scope_munmap(confgFilterMem, configFilterSize);
+        }
+
+        return status;
     }
 
     // perform namespace switch if required
