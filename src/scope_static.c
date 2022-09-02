@@ -510,9 +510,9 @@ showUsage(char *prog)
       "  -l, --libbasedir DIR         specify parent for the library directory (default: /tmp)\n"
       "  -f DIR                       alias for \"-l DIR\" for backward compatibility\n"
       "  -a, --attach PID             attach to the specified process ID\n"
-      "  -c, --configure FILTER_PATH  configure namespace with FILTER_PATH for specified proces PID\n"
+      "  -c, --configure FILTER_PATH  configure scope environment with FILTER_PATH\n"
       "  -s, --service SERVICE        setup specified service NAME\n"
-      "  -n  --namespace PID          perform service/configure operation on specified container PID"
+      "  -n  --namespace PID          perform service/configure operation on specified container PID\n"
       "  -p, --patch SO_FILE          patch specified libscope.so\n"
       "\n"
       "Help sections are OVERVIEW, CONFIGURATION, METRICS, EVENTS, and PROTOCOLS.\n"
@@ -562,7 +562,7 @@ main(int argc, char **argv, char **env)
         // The initial `:` lets us handle options with optional values like
         // `-h` and `-h SECTION`.
         //
-        int opt = getopt_long(argc, argv, "+:uh:a:l:f:p:c:s:", opts, &index);
+        int opt = getopt_long(argc, argv, "+:uh:a:l:f:p:c:s:n:", opts, &index);
         if (opt == -1) {
             break;
         }
@@ -625,9 +625,15 @@ main(int argc, char **argv, char **env)
         return EXIT_FAILURE;
     }
 
-    // TODO FIX THIS check if at least two pointers are defined
-    if (attachArg && configFilterPath) {
-        scope_fprintf(scope_stderr, "error: --attach --configure --service cannot be used together\n");
+    if (nsPidArg && ((configFilterPath == NULL) && (serviceName == NULL))) {
+        scope_fprintf(scope_stderr, "error: --namespace option required --configure or --service option\n");
+        showUsage(scope_basename(argv[0]));
+        return EXIT_FAILURE;
+    }
+
+    if ((attachArg && (configFilterPath || serviceName)) ||
+        (configFilterPath && serviceName)) {
+        scope_fprintf(scope_stderr, "error: --attach/--configure/--service cannot be used together\n");
         showUsage(scope_basename(argv[0]));
         return EXIT_FAILURE;
     }
