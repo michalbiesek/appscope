@@ -74,7 +74,7 @@ func (rc *Config) Attach(args []string) error {
 		return errPidMissing
 	}
 	// Check PID is not already being scoped
-	if util.PidScoped(pid) {
+	if util.PidScopeState(pid) == util.Scoped {
 		return errAlreadyScope
 	}
 	// Create ldscope
@@ -115,7 +115,7 @@ func choosePid(procs util.Processes) (int, error) {
 		{Name: "ID", Field: "id"},
 		{Name: "Pid", Field: "pid"},
 		{Name: "User", Field: "user"},
-		{Name: "Scoped", Field: "scoped"},
+		{Name: "State", Field: "scoped"},
 		{Name: "Command", Field: "command"},
 	}, procs)
 	fmt.Println("Select an ID from the list:")

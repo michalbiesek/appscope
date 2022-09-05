@@ -20,11 +20,11 @@ func TestProcessesByName(t *testing.T) {
 	user, _ := user.Current()
 	exp := Processes{
 		Process{
-			ID:      1,
-			Pid:     os.Getpid(),
-			User:    user.Username,
-			Command: strings.Join(os.Args[:], " "),
-			Scoped:  false,
+			ID:          1,
+			Pid:         os.Getpid(),
+			User:        user.Username,
+			Command:     strings.Join(os.Args[:], " "),
+			ScopeStatus: Unscoped,
 		},
 	}
 	assert.Equal(t, exp, result)
