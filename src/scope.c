@@ -117,14 +117,13 @@ attachCmd(pid_t pid, const char *on_off)
 
     scope_snprintf(cmd, sizeof(cmd), "SCOPE_CMD_ATTACH=%s", on_off);
     if (scope_write(fd, cmd, scope_strlen(cmd)) <= 0) {
+        scope_close(fd);
         return EXIT_FAILURE;
     }
 
-    if (scope_fchmod(fd, S_IRWXU|S_IRWXG|S_IRWXO) == -1) {
+    if (scope_fchmod(fd, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) == -1) {
         scope_perror("fchmod() failed");
     }
-
-
     if (scope_fchown(fd, 1000, 1000) == -1) {
         scope_perror("fchown() failed");
     }
