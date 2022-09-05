@@ -74,7 +74,7 @@ func (rc *Config) Attach(args []string) error {
 		return errPidMissing
 	}
 	// Check PID is not already being scoped
-	if util.PidScoped(pid) {
+	if util.PidScoped(pid).Attached() {
 		return errAlreadyScope
 	}
 	// Create ldscope

@@ -12,13 +12,34 @@ import (
 	linuxproc "github.com/c9s/goprocinfo/linux"
 )
 
+type ScopeState int
+
+const (
+	Unscoped ScopeState = iota
+	Attached
+	Deatached
+	Unknown
+)
+
+func (ss ScopeState) String() string {
+	return []string{"Unscoped", "Attached", "Deatached", "Unknown"}[ss]
+}
+
+func (ss ScopeState) Attached() bool {
+	return (ss == Attached)
+}
+
+func (ss ScopeState) Scoped() bool {
+	return (ss == Attached || ss == Deatached)
+}
+
 // Process is a unix process
 type Process struct {
-	ID      int    `json:"id"`
-	Pid     int    `json:"pid"`
-	User    string `json:"user"`
-	Scoped  bool   `json:"scoped"`
-	Command string `json:"command"`
+	ID          int        `json:"id"`
+	Pid         int        `json:"pid"`
+	User        string     `json:"user"`
+	ScopeStatus ScopeState `json:"scoped"`
+	Command     string     `json:"command"`
 }
 
 // Processes is an array of Process
@@ -78,11 +99,11 @@ func ProcessesByName(name string) (Processes, error) {
 
 		if strings.Contains(command, name) {
 			processes = append(processes, Process{
-				ID:      i,
-				Pid:     pid,
-				User:    userName,
-				Scoped:  PidScoped(pid),
-				Command: cmdLine,
+				ID:          i,
+				Pid:         pid,
+				User:        userName,
+				ScopeStatus: PidScoped(pid),
+				Command:     cmdLine,
 			})
 			i++
 		}
@@ -130,14 +151,14 @@ func ProcessesScoped() (Processes, error) {
 		}
 
 		// Add process if is is scoped
-		scoped := PidScoped(pid)
-		if scoped {
+		scopeState := PidScoped(pid)
+		if scopeState.Scoped() {
 			processes = append(processes, Process{
-				ID:      i,
-				Pid:     pid,
-				User:    userName,
-				Scoped:  scoped,
-				Command: cmdLine,
+				ID:          i,
+				Pid:         pid,
+				User:        userName,
+				ScopeStatus: scopeState,
+				Command:     cmdLine,
 			})
 			i++
 		}
@@ -163,11 +184,11 @@ func PidUser(pid int) (string, error) {
 	return user.Username, nil
 }
 
-// PidScoped checks if a process specified by PID is being scoped
-func PidScoped(pid int) bool {
+// PidScoped check scope state of a process specified by PID
+func PidScoped(pid int) ScopeState {
 	pidMapFile, err := ioutil.ReadFile(fmt.Sprintf("/proc/%v/maps", pid))
 	if err != nil {
-		return false
+		return Unknown
 	}
 
 	// Look for libscope in map
@@ -175,12 +196,18 @@ func PidScoped(pid int) bool {
 	if strings.Contains(pidMap, "libscope") {
 		command, err := PidCommand(pid)
 		if err != nil {
-			return false
+			return Unknown
 		}
-		return command != "ldscopedyn"
+		if command == "ldscopedyn" {
+			return Unscoped
+		}
+		if strings.Contains(pidMap, "scope_detach_state") {
+			return Deatached
+		}
+		return Attached
 	}
 
-	return false
+	return Unscoped
 }
 
 // PidCommand gets the command used to start the process specified by PID

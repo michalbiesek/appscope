@@ -377,10 +377,71 @@ unHookAll(struct dl_phdr_info *info, size_t size, void *data)
     return FALSE;
 }
 
+/*
+ * Set the information about attach/detach state.
+ * To distingiush the attach/detach state for detach state we keep
+ * additional dummy mapping for the file which we create and unlink.
+ * Example:
+ * 7fa2b4734000-7fa2b4735000 rw-s 00000000 103:07 23856559  /tmp/scope_detach_state.2142471 (deleted)
+ * 
+ * It returns the status of operation.
+ */
+static bool
+setDetachState(bool detach)
+{
+    static void *detachState = NULL;
+    const size_t fileSize = 4096;
+    char path[PATH_MAX] = {0};
+    bool res = FALSE;
+
+    if (detach == FALSE) {
+        // For switch to attach state we remove dummy mapping if present
+        if (detachState != NULL ) {
+            scope_munmap(detachState, fileSize);
+        }
+        detachState = NULL;
+        return TRUE;
+    } else if (detachState != NULL ) {
+        // For switch to detach state we are done if mapping is present
+        return TRUE;
+    }
+
+    if (scope_snprintf(path, sizeof(path), "/tmp/scope_detach_state.%d", g_proc.pid) < 0) {
+        return res;
+    }
+    
+    int outFd = scope_open(path, O_RDWR | O_CREAT, 0664);
+    if (outFd == -1)  {
+        return res;
+    }
+
+    if (scope_ftruncate(outFd, fileSize) != 0) {
+        goto close_file;
+    }
+
+    void* dest = scope_mmap(NULL, fileSize, PROT_READ | PROT_WRITE, MAP_SHARED, outFd, 0);
+    if (dest == MAP_FAILED) {
+        goto close_file;
+    }
+
+    detachState = dest;
+
+    res = TRUE;
+
+close_file:
+    scope_close(outFd);
+    if (scope_unlink(path) != 0 ) {
+        return FALSE;
+    }
+    return res;
+}
+
 bool
 cmdDetach(void)
 {
     if (!g_cfg.funcs_attached) return TRUE;
+
+    setDetachState(TRUE);
 
     scopeLog(CFG_LOG_DEBUG, "%s:%d", __FUNCTION__, __LINE__);
     dl_iterate_phdr(unHookAll, NULL);
@@ -392,6 +453,8 @@ bool
 cmdAttach(void)
 {
     if (g_cfg.funcs_attached) return TRUE;
+
+    setDetachState(FALSE);
 
     bool filter = TRUE;
     scopeLog(CFG_LOG_DEBUG, "%s:%d", __FUNCTION__, __LINE__);
@@ -1674,6 +1737,7 @@ init(void)
     }
 
     osInitJavaAgent();
+    setDetachState(FALSE);
 
 }
 
