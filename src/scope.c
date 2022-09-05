@@ -124,8 +124,15 @@ attachCmd(pid_t pid, const char *on_off)
     if (scope_fchmod(fd, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) == -1) {
         scope_perror("fchmod() failed");
     }
-    if (scope_fchown(fd, 1000, 1000) == -1) {
-        scope_perror("fchown() failed");
+    if (scope_getuid() == 0 ) {
+        /*
+        * Below represents steps to handle an odd corener case;
+        * A process is scoped. Then, a detach command is executed
+        * as root. The original process can't remove the file. Ugh.
+        */
+        if (scope_fchown(fd, 1000, 1000) == -1) {
+            scope_perror("fchown() failed");
+        }
     }
 
     scope_close(fd);
