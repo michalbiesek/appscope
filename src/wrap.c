@@ -638,6 +638,7 @@ dynConfig(void)
 
     scope_snprintf(userpath, sizeof(userpath), "%s/%s.%d", g_cmddir, DYN_CONFIG_PREFIX, g_proc.pid);
     scope_snprintf(clipath, sizeof(clipath), "%s/%s.%d", DYN_CONFIG_CLI_DIR, DYN_CONFIG_CLI_PREFIX, g_proc.pid);
+    scopeLogError("dynconfig started userpath %s clipath", userpath, clipath);
 
     // Is there a command file for this pid
     if (osIsFilePresent(g_proc.pid, userpath) != -1) {
@@ -652,7 +653,10 @@ dynConfig(void)
     now = fileModTime(path);
     if (now == modtime) {
         // Been there, try to remove the file and we're done
-        scope_unlink(path);
+        int res = scope_unlink(path);
+        if (res != 0) {
+            scopeLogError("unlink failed %s", path);
+        }
         return 0;
     }
 
@@ -668,7 +672,9 @@ dynConfig(void)
     doConfig(g_staticfg);
 
     scope_fclose(fs);
-    scope_unlink(path);
+    int res2 = scope_unlink(path);
+    if (res2 != 0)
+        scopeLogError("unlink2 failed %s", path);
     return 0;
 }
 
