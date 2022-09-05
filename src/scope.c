@@ -111,61 +111,23 @@ attachCmd(pid_t pid, const char *on_off)
 
     fd = scope_open(path, O_RDWR|O_CREAT);
     if (fd == -1) {
-        scope_perror("open() of dynamic config file");
-        return EXIT_FAILURE;
-    }
-
-    /*
-     * Ensuring that the process being operated on can remove
-     * the dyn config file being created here.
-     * In the case where a root user executes the command,
-     * we need to close and then chmod in order to apply this.
-     */
-    scope_close(fd);
-
-    if (scope_chmod(path, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) == -1) {
-        scope_perror("chmod");
-        return EXIT_FAILURE;
-    }
-
-    /*
-     * Below represents steps to handle an odd corener case;
-     * A process is scoped. Then, a detach command is executed
-     * as root. The original process can't remove the file. Ugh.
-     */
-    if (scope_getuid() == 0) {
-        char *sauid, *sagid, *eptr;
-        uid_t auid, agid;
-
-        if (((sauid = getenv("SUDO_UID"))) &&
-            ((sagid = getenv("SUDO_GID")))) {
-            auid = scope_strtol(sauid, &eptr, 10);
-            if (scope_errno || auid <= 0 || auid > INT_MAX) {
-                scope_perror("strtol on UID");
-                return EXIT_FAILURE;
-            }
-
-            agid = scope_strtol(sagid, &eptr, 10);
-            if (scope_errno || agid <= 0 || agid > INT_MAX) {
-                scope_perror("strtol on GID");
-                return EXIT_FAILURE;
-            }
-        }
-
-        if (scope_chown(path, auid, agid) == -1) {
-            scope_perror("chown");
-            return EXIT_FAILURE;
-        }
-    }
-
-    fd = scope_open(path, O_RDWR);
-    if (fd == -1) {
-        scope_perror("open() of dynamic config file");
+        scope_perror("open() of dynamic config file first one");
         return EXIT_FAILURE;
     }
 
     scope_snprintf(cmd, sizeof(cmd), "SCOPE_CMD_ATTACH=%s", on_off);
-    if (scope_write(fd, cmd, scope_strlen(cmd)) <= 0) return EXIT_FAILURE;
+    if (scope_write(fd, cmd, scope_strlen(cmd)) <= 0) {
+        return EXIT_FAILURE;
+    }
+
+    if (scope_fchmod(fd, S_IRWXU|S_IRWXG|S_IRWXO) == -1) {
+        scope_perror("fchmod() failed");
+    }
+
+
+    if (scope_fchown(fd, 1000, 1000) == -1) {
+        scope_perror("fchown() failed");
+    }
 
     scope_close(fd);
     return EXIT_SUCCESS;
