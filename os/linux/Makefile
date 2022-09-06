@@ -120,8 +120,8 @@ coretest: $(C_FILES) $(YAML_AR) $(JSON_AR) $(TEST_LIB)
 	$(CC) $(TEST_CFLAGS) test/manual/passfd.c -lpthread -o test/$(OS)/passfd
 	$(CC) $(TEST_CFLAGS) test/manual/unixpeer.c -lpthread -o test/$(OS)/unixpeer
 	@[ -z "$(CI)" ] || echo "::endgroup::"
-	@echo "$${CI:+::group::}Running Tests and Generating Test Coverage"
-	test/execute.sh
+	# @echo "$${CI:+::group::}Running Tests and Generating Test Coverage"
+	# test/execute.sh
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 # see file:///Users/cribl/scope/coverage/index.html
 
