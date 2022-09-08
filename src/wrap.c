@@ -25,6 +25,7 @@
 #include "com.h"
 #include "dbg.h"
 #include "dns.h"
+#include "filter.h"
 #include "fn.h"
 #include "httpagg.h"
 #include "os.h"
@@ -1192,13 +1193,6 @@ static ssize_t internal_recvfrom(int, void *, size_t, int, struct sockaddr *, so
 static size_t __stdio_write(struct MUSL_IO_FILE *, const unsigned char *, size_t);
 static long wrap_scope_syscall(long, ...);
 
-static bool
-filterProc(const char *proc)
-{
-    // does this process pass the the allow filter?
-    return TRUE;
-}
-
 static int 
 findLibscopePath(struct dl_phdr_info *info, size_t size, void *data)
 {
@@ -1330,13 +1324,13 @@ initHook(int attachedFlag)
     if (full_path) scope_free(full_path);
     if (ebuf) freeElf(ebuf->buf, ebuf->len);
 
+    filter = filterVerifyProc(g_proc.cmd, "/tmp/scope_filter.yml");
+
     if (attachedFlag) {
         // responding to the inject command
         hookInject();
-        filter = TRUE;
     } else {
         // GOT hooking all interposed funcs
-        filter = filterProc(full_path);
         dl_iterate_phdr(hookAll, &filter);
         hookMain(filter);
     }
