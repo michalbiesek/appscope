@@ -1,0 +1,100 @@
+#! /bin/bash
+
+DEBUG=0  # set this to 1 to capture the EVT_FILE for each test
+
+FAILED_TEST_LIST=""
+FAILED_TEST_COUNT=0
+
+starttest(){
+    CURRENT_TEST=$1
+    echo "==============================================="
+    echo "             Testing $CURRENT_TEST             "
+    echo "==============================================="
+    ERR=0
+}
+
+evaltest(){
+    echo "             Evaluating $CURRENT_TEST"
+}
+
+endtest(){
+    if [ $ERR -eq "0" ]; then
+        RESULT=PASSED
+    else
+        RESULT=FAILED
+        FAILED_TEST_LIST+=$CURRENT_TEST
+        FAILED_TEST_LIST+=" "
+        FAILED_TEST_COUNT=$(($FAILED_TEST_COUNT + 1))
+    fi
+
+    echo "*************** $CURRENT_TEST $RESULT ***************"
+    echo ""
+    echo ""
+
+    # copy the EVT_FILE to help with debugging
+    if (( $DEBUG )) || [ $RESULT == "FAILED" ]; then
+        cp -f $EVT_FILE $EVT_FILE.$CURRENT_TEST
+    fi
+
+    rm -f $EVT_FILE
+}
+
+#
+# scope start
+#
+
+starttest scope_start
+
+# Star processses
+memcached -u root &
+redis-server &
+nginx &
+
+scope start < /opt/test-runner/scope_filter.1.yml
+
+sleep 5
+
+# check if filter file is in known location
+if [ ! -f /tmp/scope_filter.yml ]; then
+    fail "missing /tmp/scope_filter.yml"
+fi
+
+# compare the filter file
+cmp -s /tmp/scope_filter.yml /opt/test-runner/scope_filter.1.yml
+if [ $? -ne "0" ]; then
+    fail "mismatch /tmp/scope_filter.yml and scope_filter.1.yml"
+fi
+
+# check if libscope.so is in known location
+if [ ! -f /tmp/libscope.so ]; then
+    fail "missing /tmp/libscope.so"
+fi
+
+# check if etc/profile.d was updated
+if [ ! -f /etc/profile.d/scope.sh ]; then
+    fail "missing /etc/profile.d/scope.sh"
+fi
+
+# check the content of etc/profile.d/scope.sh
+grep "export LD_PRELOAD=/tmp/libscope.so /etc/profile.d/scope.sh"
+if [ $? -ne "0" ]; then
+    fail "missing export LD_PRELOAD in /etc/profile.d/scope.sh"
+fi
+
+endtest
+
+
+if (( $FAILED_TEST_COUNT == 0 )); then
+    echo ""
+    echo ""
+    echo "*************** ALL TESTS PASSED ***************"
+else
+    echo "*************** SOME TESTS FAILED ***************"
+    echo "Failed tests: $FAILED_TEST_LIST"
+    echo "Refer to these files for more info:"
+    for FAILED_TEST in $FAILED_TEST_LIST; do
+        echo "  $EVT_FILE.$FAILED_TEST"
+    done
+fi
+
+exit ${FAILED_TEST_COUNT}
