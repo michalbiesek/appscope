@@ -91,22 +91,22 @@ func ProcessesByName(name string, partialMatch bool) (Processes, error) {
 		if partialMatch {
 			if strings.Contains(command, name) {
 				processes = append(processes, Process{
-					ID:      i,
-					Pid:     pid,
-					User:    userName,
-					Scoped:  PidScoped(pid),
-					Command: cmdLine,
+					ID:          i,
+					Pid:         pid,
+					User:        userName,
+					ScopeStatus: PidScopeState(pid),
+					Command:     cmdLine,
 				})
 				i++
 			}
 		} else {
 			if command == name {
 				processes = append(processes, Process{
-					ID:      i,
-					Pid:     pid,
-					User:    userName,
-					Scoped:  PidScoped(pid),
-					Command: cmdLine,
+					ID:          i,
+					Pid:         pid,
+					User:        userName,
+					ScopeStatus: PidScopeState(pid),
+					Command:     cmdLine,
 				})
 				i++
 			}

@@ -1337,7 +1337,7 @@ initHook(int attachedFlag, bool scopedFlag)
     }
 
     // Set information about library state
-    if (filter) {
+    if (scopedFlag) {
         libstateScoped();
     } else {
         libstateLoaded(g_proc.pid);
