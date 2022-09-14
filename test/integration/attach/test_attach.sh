@@ -87,6 +87,7 @@ starttest Python3
 python3 -m http.server 2> /dev/null &
 sleep 1
 ldscope --attach `pidof python3`
+ERR+=$?
 curl http://localhost:8000
 sleep 1
 evaltest
@@ -99,6 +100,25 @@ ERR+=$?
 
 grep -q http.resp $EVT_FILE > /dev/null
 ERR+=$?
+
+# Detach
+ldscope --detach `pidof python3`
+ERR+=$?
+# Ensure the detach is completed
+sleep 5
+EVE_FILE_SIZE_DETACH=”$(stat -c %s $EVT_FILE)
+sleep 5
+curl http://localhost:8000
+sleep 1
+if(($EVE_FILE_SIZE_DETACH !=`stat -c %s $EVT_FILE"`));then
+  echo "Process was not detached"
+  ERR+=1
+fi
+
+# Reattach
+ldscope --attach `pidof python3`
+ERR+=$?
+sleep 5
 
 kill -9 `pidof python3` > /dev/null
 

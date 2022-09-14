@@ -64,3 +64,7 @@ func runCmdFlags(cmd *cobra.Command, rc *run.Config) {
 	cmd.Flags().StringVarP(&rc.UserConfig, "userconfig", "u", "", "Run ldscope with a user specified config file; overrides all other settings.")
 	metricAndEventDestFlags(cmd, rc)
 }
+
+func detachCmdFlags(cmd *cobra.Command, rc *run.Config) {
+	cmd.Flags().BoolVar(&rc.Passthrough, "passthrough", false, "Runs ldscope with current environment & no config.")
+}
