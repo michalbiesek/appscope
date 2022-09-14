@@ -12,31 +12,38 @@ type ScopeLoader struct {
 	Path string
 }
 
+// ConfigureHost configures scope environment on host with filter specified by filterFilePath
 func (sL *ScopeLoader) ConfigureHost(filterFilePath string) (string, error) {
 	return sL.RunSubProc([]string{"--configure", filterFilePath}, os.Environ())
 }
 
+// ConfigureContainer configures scope environment on container described by cpid with filter specified by filterFilePath
 func (sL *ScopeLoader) ConfigureContainer(filterFilePath string, cpid int) (string, error) {
 	return sL.RunSubProc([]string{"--configure", filterFilePath, "--namespace", strconv.Itoa(cpid)}, os.Environ())
 }
 
+// ServiceHost setup service on host
 func (sL *ScopeLoader) ServiceHost(serviceName string) (string, error) {
 	return sL.RunSubProc([]string{"--service", serviceName}, os.Environ())
 }
 
+// ServiceContainer setup service on container described by cpid
 func (sL *ScopeLoader) ServiceContainer(serviceName string, cpid int) (string, error) {
 	return sL.RunSubProc([]string{"--service", serviceName, "--namespace", strconv.Itoa(cpid)}, os.Environ())
 }
 
+// Patch patch specified libscope.so library
 func (sL *ScopeLoader) Patch(libraryPath string) (string, error) {
 	return sL.RunSubProc([]string{"--patch", libraryPath}, os.Environ())
 }
 
+// Run transforms the calling process into a ldscope operation
 func (sL *ScopeLoader) Run(args []string, env []string) error {
 	args = append([]string{"ldscope"}, args...)
 	return syscall.Exec(sL.Path, args, env)
 }
 
+// RunSubProc runs a ldscope as a seperate process
 func (sL *ScopeLoader) RunSubProc(args []string, env []string) (string, error) {
 	cmd := exec.Command(sL.Path, args...)
 	cmd.Env = env
@@ -44,11 +51,13 @@ func (sL *ScopeLoader) RunSubProc(args []string, env []string) (string, error) {
 	return string(stdoutStderr[:]), err
 }
 
+// Attach transforms the calling process into a ldscope attach operation
 func (sL *ScopeLoader) Attach(args []string, env []string) error {
 	args = append([]string{"--attach"}, args...)
 	return sL.Run(args, env)
 }
 
+// AttachSubProc runs a ldscope attach as a seperate process
 func (sL *ScopeLoader) AttachSubProc(args []string, env []string) (string, error) {
 	args = append([]string{"--attach"}, args...)
 	return sL.RunSubProc(args, env)
