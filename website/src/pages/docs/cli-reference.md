@@ -518,7 +518,14 @@ scope service cribl -c tls://in.my-instance.cribl.cloud:10090
 ### start
 ---
 
-Start a scoped process list.
+Perform a scope start operation based on the filter input.
+
+Following actions will be performed:
+- extraction of the libscope.so to /tmp/libscope.so on the host and on the containers
+- extraction of the filter inptu to /tmp/scope_fitler.yml on the host and on the containers
+- setup etc/profile script to use LD_PRELOAD=/tmp/libscope.so on the host and on the containers
+- setup the services which meet the allow list conditions on the host and on the containers
+- attach to the processes which meet the allow list conditions on the host and on the containers
 
 #### Usage
 
@@ -527,14 +534,14 @@ Start a scoped process list.
 #### Examples
 
 ```
-scope start < example_filter.yml
+scope start -f < example_filter.yml
 cat example_filter.json | scope start
 ```
 
 #### Flags
 
 ```
-  -h, --help                  Help for start
+  -h, --help    help for start
 ```
 
 ### version
