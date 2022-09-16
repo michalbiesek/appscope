@@ -1,8 +1,32 @@
 package cmd
 
 import (
+	"bufio"
+	"os"
+
 	"github.com/spf13/cobra"
 )
+
+// getStartData reads data from Stdin
+func getStartData() []byte {
+	var startData []byte
+	stdinFs, err := os.Stdin.Stat()
+
+	if err != nil {
+		return startData
+	}
+
+	// Verify size of data for mode other than a pipe
+	if stdinFs.Size() == 0 && stdinFs.Mode()&os.ModeNamedPipe == 0 {
+		return startData
+	}
+
+	stdInScanner := bufio.NewScanner(os.Stdin)
+	for stdInScanner.Scan() {
+		startData = append(startData, stdInScanner.Bytes()...)
+	}
+	return startData
+}
 
 // startCmd represents the start command
 var startCmd = &cobra.Command{
@@ -22,7 +46,8 @@ Following actions will be performed:
 	`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return rc.Start()
+		startData := getStartData()
+		return rc.Start(startData)
 	},
 }
 

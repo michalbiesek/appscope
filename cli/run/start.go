@@ -3,7 +3,6 @@ package run
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -38,21 +37,19 @@ type allowProcConfig struct {
 // return status from start operation
 var startErr error
 
-// Retrieve and unmarshall configuration passed in stdin.
-// It returns the status of operation.
-func getConfigFromStdin() (startConfig, []byte, error) {
+var (
+	errMissingData = errors.New("missing filter data")
+)
+
+// startConfigfromData loads a start configuration from data
+// It returns the configuration.
+func startConfigfromData(dataIn []byte) (startConfig, error) {
 
 	var startCfg startConfig
 
-	data, err := io.ReadAll(os.Stdin)
+	err := yaml.Unmarshal(dataIn, &startCfg)
 
-	if err != nil {
-		return startCfg, data, err
-	}
-
-	err = yaml.Unmarshal(data, &startCfg)
-
-	return startCfg, data, err
+	return startCfg, err
 }
 
 // startAttachSingleProcess attach to the the specific process identifed by pid with configuration pass in cfgData.
@@ -305,8 +302,16 @@ func startSetupContainer(allowProcs []allowProcConfig) error {
 
 // Start runs start command responsible for setup host and container env
 // It returns the status of operation.
-func (rc *Config) Start() error {
+func (rc *Config) Start(cfgData []byte) error {
 	rc.setupWorkDir([]string{"start"}, true)
+
+	if len(cfgData) == 0 {
+		startErr = errMissingData
+		log.Error().
+			Err(startErr).
+			Msg("Missing filter data.")
+		return startErr
+	}
 
 	// Validate user has root permissions
 	if err := util.UserVerifyRootPerm(); err != nil {
@@ -318,7 +323,7 @@ func (rc *Config) Start() error {
 	}
 
 	// Retrieve input data
-	startCfg, startcfgData, err := getConfigFromStdin()
+	startCfg, err := startConfigfromData(cfgData)
 	if err != nil {
 		log.Error().
 			Err(err).
@@ -336,7 +341,7 @@ func (rc *Config) Start() error {
 	}
 
 	// Configure Host
-	startConfigureHost(startcfgData)
+	startConfigureHost(cfgData)
 
 	// Setup Containers
 	startSetupContainer(startCfg.AllowProc)
