@@ -32,7 +32,7 @@ type procConfig struct {
 type allowProcConfig struct {
 	Procname string               `mapstructure:"procname,omitempty" json:"procname,omitempty" yaml:"procname,omitempty"`
 	Arg      string               `mapstructure:"arg,omitempty" json:"arg,omitempty" yaml:"arg,omitempty"`
-	Config   libscope.ScopeConfig `mapstructure:"config" json:"config" yaml:"config"`
+	Config   libscope.ScopeConfig `mapstructure:"config,omitempty" json:"config,omitempty" yaml:"config,omitempty"`
 }
 
 // return status from start operation
