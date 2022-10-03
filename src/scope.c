@@ -102,11 +102,27 @@ attach(pid_t pid, char *scopeLibPath)
 static int
 attachCmd(pid_t pid, bool attach)
 {
+    const int attachAttempt = 500000;
     int fd;
     char path[PATH_MAX];
 
     scope_snprintf(path, sizeof(path), "%s/%s.%d",
                    DYN_CONFIG_CLI_DIR, DYN_CONFIG_CLI_PREFIX, pid);
+
+
+    /*
+     * If the dynamic config file for cli already exists we wait
+     * to be consumed by library. In this way we avoid EPERM in
+     * create a dynamic config file below. This can happened in case
+     * existing file is sealed during parsing by the library.
+     */
+    for (int i = 0; i <= attachAttempt; ++i) {
+        if (osIsFilePresent(path) == -1) {
+            break;
+        }
+        struct timespec ts = {.tv_sec = 0, .tv_nsec = 10000}; // 10 us
+        sigSafeNanosleep(&ts);
+    }
 
     fd = scope_open(path, O_WRONLY|O_CREAT);
     if (fd == -1) {
