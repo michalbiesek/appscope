@@ -3161,7 +3161,7 @@ cfgFilterStatus(const char *procName, const char *procCmdLine, char *filterPath,
 {
     bool dupd = FALSE;
 
-    if ((procName == NULL) || (cfg == NULL)) {
+    if ((procName == NULL) || (procCmdLine == NULL) || (cfg == NULL)) {
         DBG(NULL);
         return FILTER_ERROR;
     }
