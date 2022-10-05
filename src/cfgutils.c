@@ -3151,21 +3151,33 @@ cleanup_filter_file:
     return status;
 }
 
+const char *
+cfgFilterPath(void) {
+
+    /*
+    * Look for a filter file in default locations
+    */
+    if (scope_access(DEFAULT_SCOPE_FILTER_LOC1, R_OK) == 0) {
+        return DEFAULT_SCOPE_FILTER_LOC1;
+    } else if (scope_access(DEFAULT_SCOPE_FILTER_LOC2, R_OK) == 0) {
+        return DEFAULT_SCOPE_FILTER_LOC2;
+    }
+
+    return NULL;
+}
 
 /*
  * Verify against filter file if specifc process command should be scoped.
- *
  */
 filter_status_t
-cfgFilterStatus(const char *procName, const char *procCmdLine, char *filterPath, config_t *cfg)
-{
+cfgFilterStatus(const char *procName, const char *procCmdLine, const char *filterPath, config_t *cfg) {
     if ((procName == NULL) || (procCmdLine == NULL) || (cfg == NULL)) {
         DBG(NULL);
         return FILTER_ERROR;
     }
 
     /*
-    * If the filter file is missing (NULL) we scope every process
+    *  If the filter file is missing (NULL) we scope every process
     */
     if (filterPath == NULL) {
         return FILTER_SCOPED;

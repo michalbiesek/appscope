@@ -1633,7 +1633,7 @@ init(void)
     initTime();
 
     /*
-    * We scoped(instrument) our code in following cases:
+    * We scope application in following cases:
     * - when we are attaching
     * - when the filter file is not exists
     * - when process is found on the allow list
@@ -1646,18 +1646,7 @@ init(void)
         scopedFlag = TRUE;
     } else {
         cfg = cfgCreateDefault();
-        char *filterPath = NULL;
-
-        /*
-        * Look for a filter file in default locations
-        */
-        if (scope_access(DEFAULT_SCOPE_FILTER_LOC1, R_OK) == 0) {
-            filterPath = DEFAULT_SCOPE_FILTER_LOC1;
-        } else if (scope_access(DEFAULT_SCOPE_FILTER_LOC2, R_OK) == 0) {
-            filterPath = DEFAULT_SCOPE_FILTER_LOC2;
-        }
-
-        filter_status_t res = cfgFilterStatus(g_proc.procname, g_proc.cmd, filterPath, cfg);
+        filter_status_t res = cfgFilterStatus(g_proc.procname, g_proc.cmd, cfgFilterPath(), cfg);
         switch (res) {
             case FILTER_SCOPED:
                 scopedFlag = TRUE;
