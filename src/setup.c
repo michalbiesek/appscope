@@ -525,7 +525,7 @@ closeFd:
  /*
  * Configure the environment
  * - setup /etc/profile file
- * - extract memory to filter file /usr/lib/appscope/scope_filter
+ * - extract memory to filter file /usr/lib/appscope/scope_filter or /tmp/scope_filter
  * - extract libscope.so to /usr/lib/appscope/libscope.so 
  * - patch the library
  * Returns status of operation 0 in case of success, other value otherwise
