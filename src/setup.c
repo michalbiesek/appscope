@@ -9,20 +9,25 @@
 
 #define BUFSIZE (4096)
 
+// TODO version
 #define SCOPE_EXEC_PATH "/usr/lib/appscope" 
 
 #define OPENRC_DIR "/etc/rc.conf"
 #define SYSTEMD_DIR "/etc/systemd"
 #define INITD_DIR "/etc/init.d"
 
+// TODO version
 #define SETUP_SERVICE "LD_PRELOAD=/usr/lib/appscope/libscope.so"
 
+// TODO version
 #define SYSTEMD_CFG "[Service]\nEnvironment=LD_PRELOAD=/usr/lib/appscope/libscope.so\n"
 #define SYSTEMD_CFG_LEN (sizeof(SYSTEMD_CFG) - 1)
 
+// TODO version
 #define INITD_CFG "LD_PRELOAD=/usr/lib/appscope/libscope.so\n"
 #define INITD_CFG_LEN (sizeof(INITD_CFG) - 1)
 
+// TODO version
 #define OPENRC_CFG "export LD_PRELOAD=/usr/lib/appscope/libscope.so\n"
 #define OPENRC_CFG_LEN (sizeof(OPENRC_CFG) - 1)
 
@@ -32,8 +37,10 @@
  * further cleaning like reverse return logic in libdirExists
  */
 
-#define LIBSCOPE_LOC "/usr/lib/appscope/libscope.so"
+
 #define FILTER_LOC "/usr/lib/appscope/scope_filter"
+// TODO version
+#define LIBSCOPE_LOC "/usr/lib/appscope/libscope.so"
 #define PROFILE_SETUP "export LD_PRELOAD=\"/usr/lib/appscope/libscope.so $LD_PRELOAD\"\n"
 #define PROFILE_SETUP_LEN (sizeof(PROFILE_SETUP)-1)
 
