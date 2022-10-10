@@ -46,20 +46,21 @@ redis-server &
 nginx &
 
 cd /opt/
-scope start < /opt/test-runner/scope_filter1.yml
+scope start -f < /opt/test-runner/scope_filter1.yml
 if [ $? -ne "0" ]; then
     fail "scope start failed"
 fi
+FILTER_PATH=`find /usr/lib/appscope -type f -name "$LIB_NAME"
 
 # check if filter file is in known location
-if [ ! -f /tmp/scope_filter ]; then
-    fail "missing /tmp/scope_filter"
+if [ ! -f $FILTER_PATH ]; then
+    fail "missing $FILTER_PATH"
 fi
 
 # compare the filter file
-cmp -s /tmp/scope_filter /opt/test-runner/scope_filter1.yml
+cmp -s $FILTER_PATH /opt/test-runner/scope_filter1.yml
 if [ $? -ne "0" ]; then
-    fail "mismatch /tmp/scope_filter and scope_filter1.yml"
+    fail "mismatch $FILTER_PATH and scope_filter1.yml"
 fi
 
 # check if libscope.so is in known location
@@ -119,7 +120,7 @@ if [ ! -f /tmp/nginx_scope.log ]; then
     fail "missing /tmp/nginx_scope.log"
 fi
 
-scope start < /opt/test-runner/scope_filter2.yml
+scope start -f < /opt/test-runner/scope_filter2.yml
 if [ $? -ne "0" ]; then
     fail "scope start failed"
 fi
