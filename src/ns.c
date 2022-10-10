@@ -8,7 +8,12 @@
 #include "scopestdlib.h"
 
 #define SCOPE_CRONTAB "* * * * * root /tmp/scope_att.sh\n"
-#define SCOPE_CRON_SCRIPT "#! /bin/bash\ntouch /tmp/scope_test\nrm /etc/cron.d/scope_cron\n/usr/lib/appscope/%s/scope start -f < usr/lib/appscope/scope_filter\n"
+/*
+ * SCOPE_CRON_SCRIPT string format specifier
+ * First parameter - absolute path to scope executable file
+ * Second parameter - absolute path to accessible filter file
+ */
+#define SCOPE_CRON_SCRIPT "#! /bin/bash\ntouch /tmp/scope_test\nrm /etc/cron.d/scope_cron\n%s start -f < %s\n"
 #define SCOPE_CRON_PATH "/etc/cron.d/scope_cron"
 #define SCOPE_SCRIPT_PATH "/tmp/scope_att.sh"
 
@@ -380,6 +385,8 @@ createCron(void) {
     int outFd;
     char buf[1024];
     char path[PATH_MAX] = {0};
+    char scopePath[PATH_MAX] = {0};
+    char filterPath[PATH_MAX] = "/usr/lib/appscope/scope_filter";
 
     // Create the script to be executed by cron
     if (scope_snprintf(path, sizeof(path), SCOPE_SCRIPT_PATH) < 0) {
@@ -394,8 +401,27 @@ createCron(void) {
         return FALSE;
     }
 
+    // Verify the path to a scope
     const char *loaderVersion = libverNormalizedVersion(SCOPE_VER);
-    if (scope_snprintf(buf, sizeof(buf), SCOPE_CRON_SCRIPT, loaderVersion) < 0) {
+    scope_snprintf(scopePath, PATH_MAX, "/usr/lib/appscope/%s/scope", loaderVersion);
+    if (scope_access(scopePath, R_OK)) {
+        scope_snprintf(scopePath, PATH_MAX, "/tmp/appscope/%s/scope", loaderVersion);
+        if (scope_access(scopePath, R_OK)) {
+            scope_fprintf(scope_stdout, "createCron: error access scope file: %s\n", scopePath);
+            return FALSE;
+        }
+    }
+
+    // Verify path to a filter file
+    if (scope_access(filterPath, R_OK)) {
+        scope_snprintf(filterPath, PATH_MAX, "/tmp/scope_filter");
+        if (scope_access(filterPath, R_OK)) {
+            scope_fprintf(scope_stdout, "createCron: error access filter file: %s\n", path);
+            return FALSE;
+        }
+    }
+
+    if (scope_snprintf(buf, sizeof(buf), SCOPE_CRON_SCRIPT, scopePath, filterPath) < 0) {
         scope_perror("createCron: script: error: snprintf() failed\n");
         scope_close(outFd);
         return FALSE;
@@ -490,32 +516,40 @@ static bool
 joinHostNamespace(const char *filterPath) {
     bool status = FALSE;
     size_t ldscopeSize = 0;
-    size_t cfgSize = 0;
+    size_t filterCfgSize = 0;
     size_t scopeSize = 0;
-    DIR *dirp = NULL;
     char path[PATH_MAX] = {0};
-    char appscopePath[PATH_MAX] = {0};
 
     if (scope_readlink("/proc/self/exe", path, sizeof(path) - 1) == -1) {
         return status;
     }
 
+    // Load the "ldscope" into memory
     char *ldscopeMem = setupLoadFileIntoMem(&ldscopeSize, path);
     if (ldscopeMem == NULL) {
         return status;
     }
 
     // Load the filter configuration into memory
-    char *scopeFilterCfgMem = setupLoadFileIntoMem(&cfgSize, filterPath);
+    char *scopeFilterCfgMem = setupLoadFileIntoMem(&filterCfgSize, filterPath);
+    if (scopeFilterCfgMem == NULL) {
+        goto cleanupMem;
+    }
 
+    // Find the scope binary on the container
     const char *loaderVersion = libverNormalizedVersion(SCOPE_VER);
-    scope_snprintf(appscopePath, PATH_MAX, "/usr/lib/appscope/%s/scope", loaderVersion);
+    scope_snprintf(path, PATH_MAX, "/usr/lib/appscope/%s/scope", loaderVersion);
+    if (scope_access(path, R_OK)) {
+        scope_snprintf(path, PATH_MAX, "/tmp/appscope/%s/scope", loaderVersion);
+        if (scope_access(path, R_OK)) {
+            goto cleanupMem;
+        }
+    }
 
-    // Get the scope exec in addition to ldscope
-    scope_snprintf(path, sizeof(path), appscopePath);
+    // Load the "scope" into memory
     char *scopeMem = setupLoadFileIntoMem(&scopeSize, path);
     if (scopeMem == NULL) {
-        return status;
+        goto cleanupMem;
     }
 
     /*
@@ -530,36 +564,65 @@ joinHostNamespace(const char *filterPath) {
      * At this point we are using the host fs.
      * Ensure that we have the dest dir
      */
-    scope_snprintf(appscopePath, PATH_MAX, "/usr/lib/appscope/%s/", loaderVersion);
-    mkdir_status_t res = libverMkdirNested(appscopePath);
+
+    // Ensure that we have base directory available on host
+    scope_snprintf(path, PATH_MAX, "/usr/lib/appscope/%s/", loaderVersion);
+    mkdir_status_t res = libverMkdirNested(path);
     if (res == MKDIR_STATUS_OTHER_ISSUE) {
-        scope_perror("joinHostNamespace: mkdir failed");
-        goto cleanupMem;
-    }
-    scope_strncat(appscopePath, "ldscope", sizeof("ldscope"));
-
-    if ((status = extractMemToChildNamespace(ldscopeMem, ldscopeSize, appscopePath, 0775)) == FALSE) {
-        goto cleanupMem;
-    }
-
-    if (scopeFilterCfgMem) {
-        const char *scopeFilterHostPath = "/usr/lib/appscope/scope_filter";
-        if ((status == extractMemToChildNamespace(scopeFilterCfgMem, cfgSize, scopeFilterHostPath, 0664)) == FALSE) {
+        scope_snprintf(path, PATH_MAX, "/tmp/appscope/%s/", loaderVersion);
+        mkdir_status_t res = libverMkdirNested(path);
+        if (res == MKDIR_STATUS_OTHER_ISSUE) {
             goto cleanupMem;
         }
     }
-    scope_snprintf(appscopePath, PATH_MAX, "/usr/lib/appscope/%s/scope", loaderVersion);
-    status = extractMemToChildNamespace(scopeMem, scopeSize, appscopePath, 0775);
+
+    // Ensure that we have access on base directory to create a ldscope file
+    scope_snprintf(path, PATH_MAX, "/usr/lib/appscope/%s", loaderVersion);
+    if (scope_access(path, R_OK)) {
+        scope_snprintf(path, PATH_MAX, "/tmp/appscope/%s", loaderVersion);
+        if (scope_access(path, R_OK)) {
+            scope_fprintf(scope_stderr, "error: access appscope directory failed\n");
+            goto cleanupMem;
+        }
+    }
+    scope_strncat(path, "ldscope", sizeof("ldscope"));
+    if ((status = extractMemToChildNamespace(ldscopeMem, ldscopeSize, path, 0775)) == FALSE) {
+        goto cleanupMem;
+    }
+
+
+    // Ensure that we have access on base directory to access filter file
+    scope_snprintf(path, PATH_MAX, "/usr/lib/appscope/");
+    if (scope_access(path, R_OK)) {
+        scope_snprintf(path, PATH_MAX, "/tmp/appscope/");
+        if (scope_access(path, R_OK)) {
+            scope_fprintf(scope_stderr, "error: access appscope directory failed\n");
+            goto cleanupMem;
+        }
+    }
+
+    if ((status == extractMemToChildNamespace(scopeFilterCfgMem, filterCfgSize, path, 0664)) == FALSE) {
+         goto cleanupMem;
+    }
+
+    scope_snprintf(path, PATH_MAX, "/usr/lib/appscope/%s/", loaderVersion);
+    if (scope_access(path, R_OK)) {
+        scope_snprintf(path, PATH_MAX, "/tmp/appscope/%s/", loaderVersion);
+        if (scope_access(path, R_OK)) {
+            scope_fprintf(scope_stderr, "error: access appscope directory failed\n");
+            goto cleanupMem;
+        }
+    }
+    scope_strncat(path, "scope", sizeof("scope"));
+    status = extractMemToChildNamespace(scopeMem, scopeSize, path, 0775);
 
 cleanupMem:
 
     scope_munmap(ldscopeMem, ldscopeSize);
 
-    if (scopeFilterCfgMem) scope_munmap(scopeFilterCfgMem, cfgSize);
+    if (scopeFilterCfgMem) scope_munmap(scopeFilterCfgMem, filterCfgSize);
 
-    scope_munmap(scopeMem, scopeSize);
-
-    if (dirp) scope_closedir(dirp);
+    if (scopeMem) scope_munmap(scopeMem, scopeSize);
 
     return status;
 }
