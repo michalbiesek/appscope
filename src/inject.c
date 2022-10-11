@@ -284,7 +284,7 @@ inject(pid_t pid, remote_cmd_t cmd, uint64_t remAddr, char *path, int glibc)
             ret = EXIT_SUCCESS;
             //printf("Appscope library injected at %p\n", (void*)RET_REG);
         } else {
-            scope_fprintf(scope_stderr, "error: %s: remote function failed\n", __FUNCTION__);
+            scope_fprintf(scope_stderr, "error: %s: remote function failed pid: %d path: %s\n", __FUNCTION__, pid, path);
         }
 
     } else {
