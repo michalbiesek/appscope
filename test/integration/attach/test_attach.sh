@@ -6,7 +6,10 @@ FAILED_TEST_LIST=""
 FAILED_TEST_COUNT=0
 
 EVT_FILE="/opt/test-runner/logs/events.log"
+TEMP_OUTPUT_FILE="/opt/test-runner/temp_output"
+DUMMY_FILTER_FILE="/opt/test-runner/dummy_filter"
 touch $EVT_FILE
+touch $TEMP_OUTPUT_FILE
 
 starttest(){
     CURRENT_TEST=$1
@@ -59,13 +62,79 @@ wait_for_proc_start(){
 }
 
 #
+# Detach unscoped process (library is not loaded)
+# 
+starttest detachNotScopedProcessLibNotLoaded
+
+top -b -d 1 > /dev/null &
+TOP_PID=`pidof top`
+ldscope --detach $TOP_PID 2> $TEMP_OUTPUT_FILE
+if [ $? -eq 0 ]; then
+    ERR+=1
+fi
+
+grep "error: pid $TOP_PID has never been attached" $TEMP_OUTPUT_FILE > /dev/null
+if [ $? -ne 0 ]; then
+    ERR+=1
+fi
+kill -9 $TOP_PID
+
+endtest
+
+#
+# Detach unscoped process (library is loaded)
+# 
+
+starttest detachNotScopedProcessLibLoaded
+
+SCOPE_FILTER=$DUMMY_FILTER_FILE ldscope top -b -d 1 > /dev/null &
+sleep 1
+TOP_PID=`pidof top`
+
+THREAD_NO=`ls /proc/$TOP_PID/task | wc -l`
+if [ $THREAD_NO -ne 1 ]; then
+    echo "Error: Reporting thread is running in loaded & unscoped state"
+    ERR+=1
+fi
+
+ldscope --detach $TOP_PID > $TEMP_OUTPUT_FILE
+if [ $? -eq 0 ]; then
+    ERR+=1
+fi
+
+# TODO this should be improved later when we will be able to see the state
+# And do not create a file
+grep "Detaching from pid $TOP_PID" $TEMP_OUTPUT_FILE > /dev/null
+if [ $? -ne 0 ]; then
+    ERR+=1
+fi
+
+ldscope --attach $TOP_PID > $TEMP_OUTPUT_FILE
+grep "Reattaching to pid $TOP_PID" $TEMP_OUTPUT_FILE > /dev/null
+if [ $? -ne 0 ]; then
+    ERR+=1
+fi
+
+sleep 1
+THREAD_NO=`ls /proc/$TOP_PID/task | wc -l`
+if [ $THREAD_NO -ne 2 ]; then
+    echo "Error: Reporting thread is not running after attach"
+    ERR+=1
+fi
+
+kill -9 $TOP_PID
+
+endtest
+
+#
 # Top
 #
 starttest Top
 
 top -b -d 1 > /dev/null &
 sleep 1
-ldscope --attach `pidof top`
+TOP_PID=`pidof top`
+ldscope --attach $TOP_PID
 sleep 1
 evaltest
 
@@ -75,7 +144,21 @@ ERR+=$?
 grep '"proc":"top"' $EVT_FILE | grep fs.close > /dev/null
 ERR+=$?
 
-kill -9 `pidof top`
+ldscope --detach $TOP_PID
+if [ $? -eq 0 ]; then
+    ERR+=1
+fi
+sleep 5
+# Check file size
+
+ldscope --attach $TOP_PID
+sleep 5
+
+
+# Check file size
+
+
+kill -9 $TOP_PID
 
 endtest
 
