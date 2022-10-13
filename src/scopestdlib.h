@@ -124,6 +124,7 @@ int            scope_puts(const char *);
 int            scope_setvbuf(FILE *, char *, int, size_t);
 int            scope_fflush(FILE *);
 char*          scope_dirname(char *);
+int            scope_dirfd(DIR *);
 DIR*           scope_opendir(const char *);
 struct dirent* scope_readdir(DIR *);
 int            scope_closedir(DIR *);
@@ -156,6 +157,7 @@ void           scope_setbuf(FILE *, char *);
 // String handling operations
 char*              scope_realpath(const char *, char *);
 ssize_t            scope_readlink(const char *, char *, size_t);
+ssize_t            scope_readlinkat(int, const char *, char *, size_t);
 char*              scope_strdup(const char *);
 int                scope_vasprintf(char **, const char *, va_list);
 size_t             scope_strftime(char *, size_t, const char *, const struct tm *);

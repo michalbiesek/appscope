@@ -894,38 +894,32 @@ int
 osFindFd(pid_t pid, const char *fname)
 {
     int fd = -1;
+    int dirFd;
     DIR *dirp;
-    char *cwd;
     struct dirent *entry;
-    char buf[PATH_MAX], link[256];
-
-    if ((cwd = getcwd(NULL, 0)) == NULL) {
-        DBG(NULL);
-        return -1;
-    }
+    char buf[PATH_MAX], linkName[256];
 
     scope_snprintf(buf, sizeof(buf), "/proc/%d/fd", pid);
 
-    if (chdir(buf) == -1) {
-        free(cwd);
+    if ((dirp = scope_opendir(buf)) == NULL) {
         DBG(NULL);
         return -1;
     }
 
-    if ((dirp = scope_opendir(buf)) == NULL) {
-        free(cwd);
+    if ((dirFd = scope_dirfd(dirp)) == -1) {
         DBG(NULL);
+        scope_closedir(dirp);
         return -1;
     }
 
     while ((entry = scope_readdir(dirp)) != NULL) {
         if (entry->d_type != DT_DIR) {
-                if (scope_readlink(entry->d_name, link, sizeof(link)) == -1) {
+                if (scope_readlinkat(dirFd, entry->d_name, linkName, sizeof(linkName)) == -1) {
                 scopeLogError("%s: can't get path to %s", __FUNCTION__, entry->d_name);
                 break;
             }
 
-            if (scope_strstr(link, fname)) {
+            if (scope_strstr(linkName, fname)) {
                 fd = scope_strtol(entry->d_name, NULL, 0);
                 if ((fd == LONG_MIN) || (fd == LONG_MAX) || (fd == 0)) fd = -1;
                 break;
@@ -933,8 +927,6 @@ osFindFd(pid_t pid, const char *fname)
         }
     }
 
-    chdir(cwd);
     scope_closedir(dirp);
-    free(cwd);
     return fd;
 }

@@ -48,6 +48,7 @@ extern int            scopelibc_puts(const char*);
 extern int            scopelibc_setvbuf(FILE *, char *, int, size_t);
 extern int            scopelibc_fflush(FILE *);
 extern char*          scopelibc_dirname(char *);
+extern int            scopelibc_dirfd(DIR *);
 extern DIR*           scopelibc_opendir(const char *);
 extern struct dirent* scopelibc_readdir(DIR *);
 extern int            scopelibc_closedir(DIR *);
@@ -80,6 +81,7 @@ extern void           scopelibc_setbuf(FILE *, char *);
 // String handling operations
 extern char*               scopelibc_realpath(const char *, char *);
 extern ssize_t             scopelibc_readlink(const char *, char *, size_t);
+extern ssize_t             scopelibc_readlinkat(int, const char *, char *, size_t);
 extern char*               scopelibc_strdup(const char *);
 extern int                 scopelibc_vasprintf(char **, const char *, va_list);
 extern size_t              scopelibc_strftime(char *, size_t, const char *, const struct tm *);
@@ -409,6 +411,11 @@ scope_dirname(char *path) {
     return scopelibc_dirname(path);
 }
 
+int
+scope_dirfd(DIR *dirp) {
+    return scopelibc_dirfd(dirp);
+}
+
 DIR*
 scope_opendir(const char *name) {
     return scopelibc_opendir(name);
@@ -578,6 +585,11 @@ scope_realpath(const char *restrict path, char *restrict resolved_path) {
 ssize_t
 scope_readlink(const char *restrict pathname, char *restrict buf, size_t bufsiz) {
     return scopelibc_readlink(pathname, buf, bufsiz);
+}
+
+ssize_t
+scope_readlinkat(int fd, const char *restrict path, char *restrict buf, size_t bufsiz) {
+    return scope_readlinkat(fd, path, buf, bufsiz);
 }
 
 char*
