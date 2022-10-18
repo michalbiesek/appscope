@@ -226,29 +226,15 @@ attachCmd(pid_t pid, bool attach)
             scope_printf("Reattaching to pid %d\n", pid);
         }
 
-        for (i = 0; environ[i]; i++) {
+       /*
+        * Besides SCOPE_CMD_ATTACH append env variables
+        */
+        for (i = 0; environ[i]; ++i) {
             if ((scope_strlen(environ[i]) > 6) && scope_strncmp(environ[i], "SCOPE_", 6) == 0) {
                 scope_dprintf(fd, "%s\n", environ[i]);
             }
         }
 
-        /*
-         * Reload the configuration during first attach & reattach if we want to apply
-         * config from a file &/or env vars
-         */
-        char *scopeConfReload = getenv("SCOPE_CONF_RELOAD");
-        scope_memset(buf, 0, PATH_MAX);
-        if (scopeConfReload) {
-            scope_snprintf(buf, sizeof(buf), "SCOPE_CONF_RELOAD=%s\n", scopeConfReload);
-        } else {
-            scope_snprintf(buf, sizeof(buf), "SCOPE_CONF_RELOAD=TRUE\n");
-        }
-
-        if (scope_write(fd, buf, scope_strlen(buf)) <= 0) {
-            scope_perror("scope_write() failed");
-            scope_close(fd);
-            return EXIT_FAILURE;
-        }
     } else {
         scope_printf("Detaching from pid %d\n", pid);
     }
