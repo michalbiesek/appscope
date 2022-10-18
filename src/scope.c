@@ -227,26 +227,12 @@ attachCmd(pid_t pid, bool attach)
         }
 
        /*
-        * Reload the configuration during first attach & reattach if we want to apply
-        * config from a file &/or env vars
-        */
-        char *scopeConfReload = getenv("SCOPE_CONF_RELOAD");
-        if (!scopeConfReload) {
-            scope_dprintf(fd, "SCOPE_CONF_RELOAD=TRUE\n");
-        }
-       /*
         * Besides SCOPE_CMD_ATTACH append env variables
         */
         for (i = 0; environ[i]; ++i) {
-            size_t envLen = scope_strlen(environ[i]);
-            if ((envLen > 6) &&
-               (scope_strncmp(environ[i], "SCOPE_", 6) == 0) &&
-               (scope_strncmp(environ[i], "SCOPE_CONF_RELOAD", 6) != 0)) {
+            if ((scope_strlen(environ[i]) > 6) && scope_strncmp(environ[i], "SCOPE_", 6) == 0) {
                 scope_dprintf(fd, "%s\n", environ[i]);
             }
-        }
-        if (scopeConfReload) {
-            scope_dprintf(fd, "SCOPE_CONF_RELOAD=%s\n", scopeConfReload);
         }
 
     } else {
