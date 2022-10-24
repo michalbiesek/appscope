@@ -252,6 +252,11 @@ scope_execve(const char *pathname, char *const argv[], char *const envp[]) {
     return execve(pathname, argv, envp);
 }
 
+pid_t
+scope_fork(void) {
+    return fork();
+}
+
 // Internal library operations
 
 void

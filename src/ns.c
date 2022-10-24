@@ -322,7 +322,7 @@ nsForkAndExec(pid_t parentPid, pid_t nsPid, char attachType)
         return EXIT_FAILURE; 
     }
 
-    pid_t child = fork();
+    pid_t child = scope_fork();
     if (child < 0) {
         scope_fprintf(scope_stderr, "error: fork() failed\n");
         return EXIT_FAILURE;

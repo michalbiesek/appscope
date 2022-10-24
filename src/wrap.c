@@ -4556,7 +4556,7 @@ vsyslog(int priority, const char *format, va_list ap)
 }
 
 EXPORTOFF pid_t
-fork()
+fork(void)
 {
     pid_t rc;
 

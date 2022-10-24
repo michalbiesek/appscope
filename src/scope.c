@@ -469,9 +469,9 @@ main(int argc, char **argv, char **env)
             goto err;
         }
         
-        pid = fork();
+        pid = scope_fork();
         if (pid == -1) {
-            perror("fork");
+            perror("scope_fork");
             goto err;
         } else if (pid > 0) {
             int status;
