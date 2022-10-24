@@ -247,6 +247,11 @@ scope_unsetenv(const char *name) {
     return unsetenv(name);
 }
 
+int
+scope_execve(const char *pathname, char *const argv[], char *const envp[]) {
+    return execve(pathname, argv, envp);
+}
+
 // Internal library operations
 
 void

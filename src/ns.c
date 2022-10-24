@@ -359,7 +359,7 @@ nsForkAndExec(pid_t parentPid, pid_t nsPid, char attachType)
         execArgv[execArgc++] = childOp;
         execArgv[execArgc++] = nsAttachPidStr;
 
-        return execve(loaderInChildPath, execArgv, environ);
+        return scope_execve(loaderInChildPath, execArgv, environ);
     }
     // Parent
     int status;

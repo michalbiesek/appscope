@@ -440,7 +440,7 @@ main(int argc, char **argv, char **env)
 #if defined(__aarch64__)
     // We don't support go on ARM right now.
     // make sure it runs as if we were never here.
-    execve(argv[optind], &argv[optind], environ);
+    scope_execve(argv[optind], &argv[optind], environ);
 #endif
 
         if (scope_setenv("SCOPE_APP_TYPE", "go", 1) == -1) {
@@ -483,8 +483,8 @@ main(int argc, char **argv, char **env)
             if (WIFEXITED(status)) exit(WEXITSTATUS(status));
             exit(EXIT_FAILURE);
         } else {
-            execve(inferior_command, &argv[optind], environ);
-            perror("execve");
+            scope_execve(inferior_command, &argv[optind], environ);
+            perror("scope_execve");
             goto err;
         }
     }
@@ -497,7 +497,7 @@ main(int argc, char **argv, char **env)
     // Static executable path
     if (scope_getenv("LD_PRELOAD") != NULL) {
         scope_unsetenv("LD_PRELOAD");
-        execve(argv[0], argv, environ);
+        scope_execve(argv[0], argv, environ);
     }
 
     program_invocation_short_name = scope_basename(argv[1]);
@@ -507,7 +507,7 @@ main(int argc, char **argv, char **env)
         // and any other static native apps...
         // Start here when we support more static binaries
         // than go.
-        execve(argv[optind], &argv[optind], environ);
+        scope_execve(argv[optind], &argv[optind], environ);
     }
 
     if ((handle = dlopen(scopeLibPath, RTLD_LAZY)) == NULL) {
@@ -527,7 +527,7 @@ main(int argc, char **argv, char **env)
      * Was wondering if we should free the mapped elf image.
      * But, since we exec on failure to load, it doesn't matter.
      */
-    execve(argv[optind], &argv[optind], environ);
+    scope_execve(argv[optind], &argv[optind], environ);
 
 err:
     if (ebuf) scope_free(ebuf);

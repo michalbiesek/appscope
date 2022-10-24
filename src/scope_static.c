@@ -899,9 +899,9 @@ main(int argc, char **argv, char **env)
         return EXIT_FAILURE;
     }
 
-    execve(libdirGetPath(LOADER_FILE), execArgv, environ);
+    scope_execve(libdirGetPath(LOADER_FILE), execArgv, environ);
 
     scope_free(execArgv);
-    scope_perror("execve failed");
+    scope_perror("scope_execve failed");
     return EXIT_FAILURE;
 }
