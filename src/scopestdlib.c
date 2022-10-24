@@ -184,8 +184,6 @@ extern int           scopelibc_dlclose(void *);
 extern void*         scopelibc_dlsym(void *, const char *);
 extern long          scopelibc_ptrace(int, pid_t, void *, void *);
 extern pid_t         scopelibc_waitpid(pid_t, int *, int);
-extern char*         scopelibc_getenv(const char *);
-extern int           scopelibc_setenv(const char *, const char *, int);
 extern struct lconv* scopelibc_localeconv(void);
 extern int           scopelibc_shm_open(const char *, int, mode_t);
 extern int           scopelibc_shm_unlink(const char *);
@@ -230,6 +228,23 @@ SCOPE_DlIteratePhdr(int (*callback) (struct dl_phdr_info *info, size_t size, voi
     // We cannot use dl_iterate_phdr since it uses TLS
     // To retrieve information about go symbols we need to implement own
     return (!scopeGetGoAppStateStatic()) ? dl_iterate_phdr(callback, data) : 0;
+}
+
+// External library operations
+
+char*
+scope_getenv(const char *name) {
+    return getenv(name);
+}
+
+int
+scope_setenv(const char *name, const char *value, int overwrite) {
+    return setenv(name, value, overwrite);
+}
+
+int
+scope_unsetenv(const char *name) {
+    return unsetenv(name);
 }
 
 // Internal library operations
@@ -1059,16 +1074,6 @@ scope_waitpid(pid_t pid, int *status, int options) {
     return scopelibc_waitpid(pid, status, options);
 }
 
-char*
-scope_getenv(const char *name) {
-    return scopelibc_getenv(name);
-}
-
-int
-scope_setenv(const char *name, const char *value, int overwrite) {
-    return scopelibc_setenv(name, value, overwrite);
-}
-
 struct lconv *
 scope_localeconv(void) {
     return scopelibc_localeconv();
@@ -1165,8 +1170,7 @@ scope_ftruncate(int fildes, off_t length) {
 }
 
 int
-scope___snprintf_chk(char *str, size_t maxlen, int flag, size_t slen, const char * format, ...)
-{
+scope___snprintf_chk(char *str, size_t maxlen, int flag, size_t slen, const char * format, ...) {
     int ret;
     va_list ap;
     va_start(ap, format);
@@ -1176,20 +1180,17 @@ scope___snprintf_chk(char *str, size_t maxlen, int flag, size_t slen, const char
 }
 
 int
-scope___vfprintf_chk(FILE *fp, int flag, const char *format, va_list ap)
-{
+scope___vfprintf_chk(FILE *fp, int flag, const char *format, va_list ap) {
     return scope_vfprintf(fp, format, ap);
 }
 
 int
-scope___vsnprintf_chk(char *s, size_t maxlen, int flag, size_t slen, const char *format, va_list args)
-{
+scope___vsnprintf_chk(char *s, size_t maxlen, int flag, size_t slen, const char *format, va_list args) {
     return scope_vsnprintf(s, slen, format, args);
 }
 
 int
-scope__iso99_sscanf(const char *restrict s, const char *restrict fmt, ...)
-{
+scope__iso99_sscanf(const char *restrict s, const char *restrict fmt, ...) {
     int ret;
     va_list ap;
     va_start(ap, fmt);
@@ -1199,32 +1200,27 @@ scope__iso99_sscanf(const char *restrict s, const char *restrict fmt, ...)
 }
 
 unsigned short **
-scope___ctype_b_loc (void)
-{
+scope___ctype_b_loc (void) {
     return scopelibc___ctype_b_loc();
 }
 
 int32_t **
-scope___ctype_tolower_loc(void)
-{
+scope___ctype_tolower_loc(void) {
     return scopelibc___ctype_tolower_loc();
 }
 
 int
-scope_rand(void)
-{
+scope_rand(void) {
     return scopelibc_rand();
 }
 
 void
-scope_srand(unsigned int seed)
-{
+scope_srand(unsigned int seed) {
     scopelibc_srand(seed);
 }
 
 int
-scope_setns(int fd, int nstype)
-{
+scope_setns(int fd, int nstype) {
     return scopelibc_setns(fd, nstype);
 }
 

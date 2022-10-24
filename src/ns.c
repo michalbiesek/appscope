@@ -105,7 +105,7 @@ joinChildNamespace(pid_t hostPid) {
     }
 
     // Configuration is optional
-    char *scopeCfgMem = setupLoadFileIntoMem(&cfgSize, getenv("SCOPE_CONF_PATH"));
+    char *scopeCfgMem = setupLoadFileIntoMem(&cfgSize, scope_getenv("SCOPE_CONF_PATH"));
 
     /*
     * Reassociate current process to the "child namespace"
@@ -148,7 +148,7 @@ joinChildNamespace(pid_t hostPid) {
         scope_snprintf(scopeCfgPath, sizeof(scopeCfgPath), "/tmp/scope%d.yml", hostPid);
         status = extractMemToFile(scopeCfgMem, cfgSize, scopeCfgPath, 0664, TRUE);
         // replace the SCOPE_CONF_PATH with namespace path
-        setenv("SCOPE_CONF_PATH", scopeCfgPath, 1);
+        scope_setenv("SCOPE_CONF_PATH", scopeCfgPath, 1);
     }   
 
 cleanupMem:
@@ -473,7 +473,7 @@ setHostNamespace(const char *ns) {
     char nsPath[PATH_MAX] = {0};
 
     // $CRIBL_EDGE_FS_ROOT else /hostfs
-    if ((nsPp = getenv("CRIBL_EDGE_FS_ROOT"))) {
+    if ((nsPp = scope_getenv("CRIBL_EDGE_FS_ROOT"))) {
         scope_strncpy(nsPath, nsPp, sizeof(nsPath));
     } else {
         scope_strncpy(nsPath, "/hostfs", sizeof("/hostfs"));
@@ -531,7 +531,7 @@ joinHostNamespace(void) {
     }
 
     // First try to use env variable
-    char *envFilterVal = getenv("SCOPE_FILTER");
+    char *envFilterVal = scope_getenv("SCOPE_FILTER");
     if (envFilterVal) {
         /*
         * If filter env was defined and wasn't disable 

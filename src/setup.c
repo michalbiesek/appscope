@@ -438,7 +438,7 @@ setupProfile(const char *libscopePath, const char *loaderVersion) {
      * requires libscope specifics that we don't want here.
      * Should fix that.
      */
-    if (getenv("SCOPE_START_NOPROFILE")) {
+    if (scope_getenv("SCOPE_START_NOPROFILE")) {
         return TRUE;
     }
 
@@ -563,7 +563,7 @@ setupConfigure(void *filterFileMem, size_t filterSize) {
      * A profile will not be configured with a dev version value.
      * Force a profile update if the env var is present.
      */
-    if (getenv("SCOPE_START_FORCE_PROFILE")) isDevVersion = FALSE;
+    if (scope_getenv("SCOPE_START_FORCE_PROFILE")) isDevVersion = FALSE;
 
     scope_snprintf(path, PATH_MAX, "/usr/lib/appscope/%s/", loaderVersion);
     mkdir_status_t res = libdirCreateDirIfMissing(path, mode);

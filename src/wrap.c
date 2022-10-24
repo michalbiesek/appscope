@@ -777,7 +777,7 @@ threadInit()
 {
     // for debugging... if SCOPE_NO_SIGNAL is defined, then don't create
     // a signal handler, nor a timer to send a signal.
-    if (getenv("SCOPE_NO_SIGNAL")) return;
+    if (scope_getenv("SCOPE_NO_SIGNAL")) return;
     if (!g_ctl) return;
 
     if (osThreadInit(threadNow, g_thread.interval) == FALSE) {
@@ -979,7 +979,7 @@ handleExit(void)
     struct timespec ts = {.tv_sec = 1, .tv_nsec = 0}; // 1 s
 
     char *wait;
-    if ((wait = getenv("SCOPE_CONNECT_TIMEOUT_SECS")) != NULL) {
+    if ((wait = scope_getenv("SCOPE_CONNECT_TIMEOUT_SECS")) != NULL) {
         // wait for a connection to be established 
         // before we emit data
         int wait_time;
@@ -1665,7 +1665,7 @@ init(void)
     } else {
         cfg = cfgCreateDefault();
         // First try to use env variable
-        char *envFilterVal = getenv("SCOPE_FILTER");
+        char *envFilterVal = scope_getenv("SCOPE_FILTER");
         filter_status_t res = FILTER_SCOPED;
         if (envFilterVal) {
             /*
@@ -2752,11 +2752,11 @@ getLdscopeExec(const char *pathname)
      * Note: the isgo check is strictly for Go dynamic execs.
      * In this case we use ldscope only to force the use of HTTP 1.1.
      */
-    if (getenv("LD_PRELOAD") && (isstat == FALSE) && (isgo == FALSE)) {
+    if (scope_getenv("LD_PRELOAD") && (isstat == FALSE) && (isgo == FALSE)) {
         return NULL;
     }
 
-    scopexec = getenv("SCOPE_EXEC_PATH");
+    scopexec = scope_getenv("SCOPE_EXEC_PATH");
     if (((scopexec = getpath(scopexec)) == NULL) &&
         ((scopexec = getpath("ldscope")) == NULL)) {
 

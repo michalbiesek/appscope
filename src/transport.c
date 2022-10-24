@@ -991,7 +991,7 @@ edgePath(void){
 
     // 2) If CRIBL_HOME is defined and can be accessed,
     //    return $CRIBL_HOME/state/appscope.sock
-    const char *cribl_home = getenv("CRIBL_HOME");
+    const char *cribl_home = scope_getenv("CRIBL_HOME");
     if (cribl_home) {
         char *new_path = NULL;
         if (scope_asprintf(&new_path, "%s/%s", cribl_home, "state/appscope.sock") > 0) {

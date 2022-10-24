@@ -261,6 +261,7 @@ long          scope_ptrace(int, pid_t, void *, void *);
 pid_t         scope_waitpid(pid_t, int *, int);
 char*         scope_getenv(const char *);
 int           scope_setenv(const char *, const char *, int);
+int           scope_unsetenv(const char *);
 struct lconv* scope_localeconv(void);
 int           scope_shm_open(const char *, int, mode_t);
 int           scope_shm_unlink(const char *);

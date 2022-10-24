@@ -819,13 +819,13 @@ main(int argc, char **argv, char **env)
     loaderOpSetupLoader(loader);
 
     // set SCOPE_EXEC_PATH to path to `ldscope` if not set already
-    if (getenv("SCOPE_EXEC_PATH") == 0) {
+    if (scope_getenv("SCOPE_EXEC_PATH") == 0) {
         char execPath[PATH_MAX];
         if (scope_readlink("/proc/self/exe", execPath, sizeof(execPath) - 1) == -1) {
             scope_perror("readlink(/proc/self/exe) failed");
             return EXIT_FAILURE;
         }
-        setenv("SCOPE_EXEC_PATH", execPath, 0);
+        scope_setenv("SCOPE_EXEC_PATH", execPath, 0);
     }
 
     if (attachArg) {
@@ -886,8 +886,8 @@ main(int argc, char **argv, char **env)
     execArgv[execArgc++] = NULL;
 
     // pass SCOPE_LIB_PATH in environment
-    if (setenv("SCOPE_LIB_PATH", libdirGetPath(LIBRARY_FILE), 1)) {
-        scope_perror("setenv(SCOPE_LIB_PATH) failed");
+    if (scope_setenv("SCOPE_LIB_PATH", libdirGetPath(LIBRARY_FILE), 1)) {
+        perror("scope_setenv(SCOPE_LIB_PATH) failed");
         return EXIT_FAILURE;
     }
 

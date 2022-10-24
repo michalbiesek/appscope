@@ -44,7 +44,7 @@ int
 checkEnv(char *env, char *val)
 {
     char *estr;
-    if (((estr = getenv(env)) != NULL) &&
+    if (((estr = scope_getenv(env)) != NULL) &&
        (scope_strncmp(estr, val, scope_strlen(estr)) == 0)) {
         return TRUE;
     }
@@ -146,7 +146,7 @@ getpath(const char *cmd)
     }
 
     // try to resolve the cmd from PATH env variable
-    char *path_env_ptr = getenv("PATH");
+    char *path_env_ptr = scope_getenv("PATH");
     if (!path_env_ptr) goto out;
     path_env = scope_strdup(path_env_ptr); // create a copy for strtok below
     if (!path_env) goto out;

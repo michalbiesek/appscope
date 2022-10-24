@@ -237,7 +237,7 @@ attachCmd(pid_t pid, bool attach)
         * which was set by cfgProcessEnvironment in second step.
         * TODO: Handle the file and env variables
         */
-        char *scopeConfReload = getenv("SCOPE_CONF_RELOAD");
+        char *scopeConfReload = scope_getenv("SCOPE_CONF_RELOAD");
         if (!scopeConfReload) {
             scope_dprintf(fd, "SCOPE_CONF_RELOAD=TRUE\n");
         } else {
@@ -362,7 +362,7 @@ main(int argc, char **argv, char **env)
     }
 
     // SCOPE_LIB_PATH environment variable is required
-    scopeLibPath = getenv("SCOPE_LIB_PATH");
+    scopeLibPath = scope_getenv("SCOPE_LIB_PATH");
     if (!scopeLibPath) {
         scope_fprintf(scope_stderr, "error: SCOPE_LIB_PATH must be set to point to libscope.so\n");
         return EXIT_FAILURE;
@@ -443,14 +443,14 @@ main(int argc, char **argv, char **env)
     execve(argv[optind], &argv[optind], environ);
 #endif
 
-        if (setenv("SCOPE_APP_TYPE", "go", 1) == -1) {
-            perror("setenv");
+        if (scope_setenv("SCOPE_APP_TYPE", "go", 1) == -1) {
+            perror("scope_setenv SCOPE_APP_TYPE");
             goto err;
         }
 
     } else {
-        if (setenv("SCOPE_APP_TYPE", "native", 1) == -1) {
-            perror("setenv");
+        if (scope_setenv("SCOPE_APP_TYPE", "native", 1) == -1) {
+            perror("scope_setenv SCOPE_APP_TYPE");
             goto err;
         }
     }
@@ -459,13 +459,13 @@ main(int argc, char **argv, char **env)
         // Dynamic executable path
         if (ebuf) freeElf(ebuf->buf, ebuf->len);
 
-        if (setenv("LD_PRELOAD", scopeLibPath, 0) == -1) {
-            perror("setenv");
+        if (scope_setenv("LD_PRELOAD", scopeLibPath, 0) == -1) {
+            perror("scope_setenv LD_PRELOAD");
             goto err;
         }
 
-        if (setenv("SCOPE_EXEC_TYPE", "dynamic", 1) == -1) {
-            perror("setenv");
+        if (scope_setenv("SCOPE_EXEC_TYPE", "dynamic", 1) == -1) {
+            perror("scope_setenv SCOPE_EXEC_TYPE");
             goto err;
         }
         
@@ -489,14 +489,14 @@ main(int argc, char **argv, char **env)
         }
     }
 
-    if (setenv("SCOPE_EXEC_TYPE", "static", 1) == -1) {
-        perror("setenv");
+    if (scope_setenv("SCOPE_EXEC_TYPE", "static", 1) == -1) {
+        perror("scope_setenv SCOPE_EXEC_TYPE");
         goto err;
     }
 
     // Static executable path
-    if (getenv("LD_PRELOAD") != NULL) {
-        unsetenv("LD_PRELOAD");
+    if (scope_getenv("LD_PRELOAD") != NULL) {
+        scope_unsetenv("LD_PRELOAD");
         execve(argv[0], argv, environ);
     }
 

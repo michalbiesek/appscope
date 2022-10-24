@@ -760,7 +760,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved)
 // This overrides a weak definition in src/linux/os.c
 void
 initJavaAgent() {
-    char *var = getenv("LD_PRELOAD");
+    char *var = scope_getenv("LD_PRELOAD");
     if (var != NULL) {
         /*
         set JAVA_TOOL_OPTIONS so that JVM can load libscope.so as a java agent
@@ -772,7 +772,7 @@ initJavaAgent() {
         char *buf;
         size_t bufsize = scope_strlen(opt) + 1;
 
-        char *env = getenv("JAVA_TOOL_OPTIONS");
+        char *env = scope_getenv("JAVA_TOOL_OPTIONS");
         if (env != NULL) {
             if (scope_strstr(env, opt) != NULL) {
                 //agentpath is already set, do nothing

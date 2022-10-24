@@ -42,7 +42,7 @@ initMetricCapture(void)
 
     size_t buf_size = DEFAULT_CBUF_SIZE;
     char *qlen_str;
-    if ((qlen_str = getenv("SCOPE_QUEUE_LENGTH")) != NULL) {
+    if ((qlen_str = scope_getenv("SCOPE_QUEUE_LENGTH")) != NULL) {
         unsigned long qlen;
         scope_errno = 0;
         qlen = scope_strtoul(qlen_str, NULL, 10);

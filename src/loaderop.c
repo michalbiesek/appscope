@@ -16,12 +16,12 @@ static int g_debug = 0;
 static void
 setEnvVariable(char *env, char *value)
 {
-    char *cur_val = getenv(env);
+    char *cur_val = scope_getenv(env);
 
     // If env is not set
     if (!cur_val) {
-        if (setenv(env, value, 1)) {
-            perror("setEnvVariable:setenv");
+        if (scope_setenv(env, value, 1)) {
+            perror("setEnvVariable:setenv cur_val");
         }
         return;
     }
@@ -34,8 +34,8 @@ setEnvVariable(char *env, char *value)
     }
 
     if (g_debug) scope_printf("%s:%d %s to %s\n", __FUNCTION__, __LINE__, env, new_val);
-    if (setenv(env, new_val, 1)) {
-        perror("setEnvVariable:setenv");
+    if (scope_setenv(env, new_val, 1)) {
+        perror("setEnvVariable:setenv new_val");
     }
 
     if (new_val) scope_free(new_val);
