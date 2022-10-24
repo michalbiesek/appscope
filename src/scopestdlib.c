@@ -257,6 +257,11 @@ scope_fork(void) {
     return fork();
 }
 
+void
+scope_exit(int status) {
+    exit(status);
+}
+
 // Internal library operations
 
 void

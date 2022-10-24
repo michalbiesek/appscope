@@ -1010,7 +1010,7 @@ return_addr(assembly_fn fn)
     }
 
     scopeLogError("FATAL ERROR: no return addr");
-    exit(-1);
+    scope_exit(-1);
 }
 
 static uint32_t
@@ -1021,7 +1021,7 @@ frame_size(assembly_fn fn)
     }
 
     scopeLogWarn("WARN: no frame size");
-    exit(-1);
+    scope_exit(-1);
 }
 
 /*

@@ -3663,7 +3663,7 @@ _exit(int status)
     if (g_fn._exit) {
         g_fn._exit(status);
     } else {
-        exit(status);
+        scope_exit(status);
     }
     __builtin_unreachable();
 }

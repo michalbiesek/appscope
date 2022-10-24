@@ -430,7 +430,7 @@ main(int argc, char **argv, char **env)
     char *inferior_command = getpath(argv[optind]);
     if (!inferior_command) {
         scope_fprintf(scope_stderr,"%s could not find or execute command `%s`.  Exiting.\n", argv[0], argv[optind]);
-        exit(EXIT_FAILURE);
+        scope_exit(EXIT_FAILURE);
     }
 
     ebuf = getElf(inferior_command);
@@ -480,8 +480,8 @@ main(int argc, char **argv, char **env)
                 ret = scope_waitpid(pid, &status, 0);
             } while (ret == -1 && scope_errno == EINTR);
 
-            if (WIFEXITED(status)) exit(WEXITSTATUS(status));
-            exit(EXIT_FAILURE);
+            if (WIFEXITED(status)) scope_exit(WEXITSTATUS(status));
+            scope_exit(EXIT_FAILURE);
         } else {
             scope_execve(inferior_command, &argv[optind], environ);
             perror("scope_execve");
@@ -531,5 +531,5 @@ main(int argc, char **argv, char **env)
 
 err:
     if (ebuf) scope_free(ebuf);
-    exit(EXIT_FAILURE);
+    scope_exit(EXIT_FAILURE);
 }
