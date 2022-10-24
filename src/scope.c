@@ -477,8 +477,8 @@ main(int argc, char **argv, char **env)
             int status;
             int ret;
             do {
-                ret = waitpid(pid, &status, 0);
-            } while (ret == -1 && errno == EINTR);
+                ret = scope_waitpid(pid, &status, 0);
+            } while (ret == -1 && scope_errno == EINTR);
 
             if (WIFEXITED(status)) exit(WEXITSTATUS(status));
             exit(EXIT_FAILURE);
