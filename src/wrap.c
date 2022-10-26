@@ -3713,10 +3713,6 @@ setns(int fd, int nstype)
 
     int rc = g_fn.setns(fd, nstype);
 
-    if ((rc == 0) && (nstype == 0 || nstype == CLONE_NEWNET || nstype == CLONE_NEWNS)) {
-        doReset();
-    }
-
     return rc;
 }
 
