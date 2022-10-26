@@ -3697,26 +3697,6 @@ setrlimit(__rlimit_resource_t resource, const struct rlimit *rlim)
 }
 
 EXPORTOFF int
-unshare(int flags)
-{
-    WRAP_CHECK(unshare, -1);
-
-    int rc = g_fn.unshare(flags);
-
-    return rc;
-}
-
-EXPORTOFF int
-setns(int fd, int nstype)
-{
-    WRAP_CHECK(setns, -1);
-
-    int rc = g_fn.setns(fd, nstype);
-
-    return rc;
-}
-
-EXPORTOFF int
 close(int fd)
 {
     WRAP_CHECK(close, -1);
@@ -5629,8 +5609,6 @@ static got_list_t inject_hook_list[] = {
     {"__fdelt_chk", __fdelt_chk, &g_fn.__fdelt_chk},
     {"__register_atfork", __register_atfork, &g_fn.__register_atfork},
     {"setrlimit", setrlimit, &g_fn.setrlimit},
-    {"unshare", unshare, &g_fn.unshare},
-    {"setns", setns, &g_fn.setns},
     {"SSL_ImportFD", SSL_ImportFD, &g_fn.SSL_ImportFD},
     {NULL, NULL, NULL}
 };
