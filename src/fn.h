@@ -250,6 +250,8 @@ typedef struct {
     int (*closedir)(DIR *);
     struct dirent *(*readdir)(DIR *);
     int (*setrlimit)(__rlimit_resource_t, const struct rlimit *);
+    int (*unshare)(int);
+    int (*setns)(int, int);
 #endif // __linux__
 
 #if defined(__linux__) && defined(__STATX__)
