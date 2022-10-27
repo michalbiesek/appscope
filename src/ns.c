@@ -1,8 +1,7 @@
 #define _GNU_SOURCE
-#include <fcntl.h>
-#include <stdlib.h>
 
 #include "ns.h"
+#include "nsinfo.h"
 #include "libver.h"
 #include "libdir.h"
 #include "setup.h"
@@ -83,85 +82,6 @@ setNamespace(pid_t pid, const char *ns) {
     scope_close(nsFd);
 
     return TRUE;
-}
-
-
-/* Return root uid inside the namespace for specified pid.
- *
- * Return root uid
- */
-uid_t
-nsGetRootUid(pid_t hostPid) {
-    uid_t uid = 0;
-    char uidPath[PATH_MAX] = {0};
-    char buffer[4096] = {0};
-    FILE *fd;
-
-    if (scope_snprintf(uidPath, sizeof(uidPath), "/proc/%d/uid_map", hostPid) < 0) {
-        scope_perror("scope_snprintf uid_map failed");
-        return uid;
-    }
-    if ((fd = scope_fopen(uidPath, "r")) == NULL) {
-        scope_perror("fopen(/proc/<PID>/uid_map) failed");
-        return uid;
-    }
-
-    while (scope_fgets(buffer, sizeof(buffer), fd)) {
-        const char delimiters[] = " \t";
-        char *last;
-
-        char *entry = scope_strtok_r(buffer, delimiters, &last);
-        uid_t uidInsideNs = scope_atoi(entry);
-
-        entry = scope_strtok_r(NULL, delimiters, &last);
-        uid_t uidOutsideNs = scope_atoi(entry);
-        if ((uidInsideNs == 0) && (uidInsideNs != uidOutsideNs)) {
-            uid = uidOutsideNs;
-            break;
-        }
-    }
-    scope_fclose(fd);
-
-    return uid;
-}
-
-/* Return root gid inside the namespace for specified pid.
- *
- * Return root gid
- */
-gid_t
-nsGetRootGid(pid_t hostPid) {
-    gid_t gid = 0;
-    char gidPath[PATH_MAX] = {0};
-    char buffer[4096] = {0};
-    FILE *fd;
-
-    if (scope_snprintf(gidPath, sizeof(gidPath), "/proc/%d/gid_map", hostPid) < 0) {
-        scope_perror("scope_snprintf gid_map failed");
-        return gid;
-    }
-    if ((fd = scope_fopen(gidPath, "r")) == NULL) {
-        scope_perror("fopen(/proc/<PID>/gid_map) failed");
-        return gid;
-    }
-
-    while (scope_fgets(buffer, sizeof(buffer), fd)) {
-        const char delimiters[] = " \t";
-        char *last;
-
-        char *entry = scope_strtok_r(buffer, delimiters, &last);
-        gid_t gidInsideNs = scope_atoi(entry);
-
-        entry = scope_strtok_r(NULL, delimiters, &last);
-        gid_t gidOutsideNs = scope_atoi(entry);
-        if ((gidInsideNs == 0) && (gidInsideNs != gidOutsideNs)) {
-            gid = gidOutsideNs;
-            break;
-        }
-    }
-    scope_fclose(fd);
-
-    return gid;
 }
 
 /*
