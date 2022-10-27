@@ -23,8 +23,7 @@ extractMemToFile(char *inputMem, size_t inputSize, const char *outFile, mode_t o
     bool status = FALSE;
     int outFd;
 
-    if (!scope_access(outFile, R_OK) && !overwrite)
-    {
+    if (!scope_access(outFile, R_OK) && !overwrite) {
         return TRUE;
     }
 
@@ -50,6 +49,8 @@ extractMemToFile(char *inputMem, size_t inputSize, const char *outFile, mode_t o
 
 cleanupDestFd:
 
+    scope_fchmod(outFd, outPermFlag);
+
     scope_close(outFd);
 
     return status;
@@ -65,25 +66,108 @@ setNamespace(pid_t pid, const char *ns) {
     char nsPath[PATH_MAX] = {0};
     int nsFd;
     if (scope_snprintf(nsPath, sizeof(nsPath), "/proc/%d/ns/%s", pid, ns) < 0) {
-        scope_perror("scope_snprintf failed");
+        scope_perror("setNamespace: scope_snprintf failed");
         return FALSE;
     }
 
     if ((nsFd = scope_open(nsPath, O_RDONLY)) == -1) {
-        scope_perror("scope_open failed");
+        scope_perror("setNamespace: scope_open failed");
         return FALSE;
     }
 
     if (scope_setns(nsFd, 0) != 0) {
-        scope_perror("setns failed");
+        scope_perror("setNamespace: setns failed");
         return FALSE;
     }
+
+    scope_close(nsFd);
 
     return TRUE;
 }
 
+
+/* Return root uid inside the namespace for specified pid.
+ *
+ * Return root uid
+ */
+uid_t
+nsGetRootUid(pid_t hostPid) {
+    uid_t uid = 0;
+    char uidPath[PATH_MAX] = {0};
+    char buffer[4096] = {0};
+    FILE *fd;
+
+    if (scope_snprintf(uidPath, sizeof(uidPath), "/proc/%d/uid_map", hostPid) < 0) {
+        scope_perror("scope_snprintf uid_map failed");
+        return uid;
+    }
+    if ((fd = scope_fopen(uidPath, "r")) == NULL) {
+        scope_perror("fopen(/proc/<PID>/uid_map) failed");
+        return uid;
+    }
+
+    while (scope_fgets(buffer, sizeof(buffer), fd)) {
+        const char delimiters[] = " \t";
+        char *last;
+
+        char *entry = scope_strtok_r(buffer, delimiters, &last);
+        uid_t uidInsideNs = scope_atoi(entry);
+
+        entry = scope_strtok_r(NULL, delimiters, &last);
+        uid_t uidOutsideNs = scope_atoi(entry);
+        if ((uidInsideNs == 0) && (uidInsideNs != uidOutsideNs)) {
+            uid = uidOutsideNs;
+            break;
+        }
+    }
+    scope_fclose(fd);
+
+    return uid;
+}
+
+/* Return root gid inside the namespace for specified pid.
+ *
+ * Return root gid
+ */
+gid_t
+nsGetRootGid(pid_t hostPid) {
+    gid_t gid = 0;
+    char gidPath[PATH_MAX] = {0};
+    char buffer[4096] = {0};
+    FILE *fd;
+
+    if (scope_snprintf(gidPath, sizeof(gidPath), "/proc/%d/gid_map", hostPid) < 0) {
+        scope_perror("scope_snprintf gid_map failed");
+        return gid;
+    }
+    if ((fd = scope_fopen(gidPath, "r")) == NULL) {
+        scope_perror("fopen(/proc/<PID>/gid_map) failed");
+        return gid;
+    }
+
+    while (scope_fgets(buffer, sizeof(buffer), fd)) {
+        const char delimiters[] = " \t";
+        char *last;
+
+        char *entry = scope_strtok_r(buffer, delimiters, &last);
+        gid_t gidInsideNs = scope_atoi(entry);
+
+        entry = scope_strtok_r(NULL, delimiters, &last);
+        gid_t gidOutsideNs = scope_atoi(entry);
+        if ((gidInsideNs == 0) && (gidInsideNs != gidOutsideNs)) {
+            gid = gidOutsideNs;
+            break;
+        }
+    }
+    scope_fclose(fd);
+
+    return gid;
+}
+
 /*
- * Joins the child PID (optionally) and mount namespace (mandatory).
+ * Joins the namespaces:
+ * - child PID (optionally)
+ * - mount namespace (mandatory).
  *
  * Returns TRUE if operation was success, FALSE otherwise.
  */
@@ -94,6 +178,9 @@ joinChildNamespace(pid_t hostPid, bool joinPidNs) {
     size_t cfgSize = 0;
 
     char path[PATH_MAX] = {0};
+
+    uid_t nsUid = nsGetRootUid(hostPid);
+    gid_t nsGid = nsGetRootGid(hostPid);
 
     if (scope_readlink("/proc/self/exe", path, sizeof(path) - 1) == -1) {
         return status;
@@ -128,11 +215,11 @@ joinChildNamespace(pid_t hostPid, bool joinPidNs) {
 
     scope_memset(path, 0, PATH_MAX);
     scope_snprintf(path, PATH_MAX, "/usr/lib/appscope/%s/", loaderVersion);
-    mkdir_status_t res = libdirCreateDirIfMissing(path, 0755);
+    mkdir_status_t res = libdirCreateDirIfMissing(path, 0755, nsUid, nsGid);
     if ((res > MKDIR_STATUS_EXISTS) || (isDevVersion)) {
         scope_memset(path, 0, PATH_MAX);
         scope_snprintf(path, PATH_MAX, "/tmp/appscope/%s/", loaderVersion);
-        mkdir_status_t res = libdirCreateDirIfMissing(path, 0777);
+        mkdir_status_t res = libdirCreateDirIfMissing(path, 0777, nsUid, nsGid);
         if (res > MKDIR_STATUS_EXISTS) {
             goto cleanupMem;
         }
@@ -141,6 +228,7 @@ joinChildNamespace(pid_t hostPid, bool joinPidNs) {
     scope_strncat(path, "ldscope", sizeof("ldscope"));
 
     status = extractMemToFile(ldscopeMem, ldscopeSize, path, 0775, isDevVersion);
+    scope_chown(path, nsUid, nsGid);
 
     if (scopeCfgMem) {
         char scopeCfgPath[PATH_MAX] = {0};
@@ -148,6 +236,7 @@ joinChildNamespace(pid_t hostPid, bool joinPidNs) {
         // extract scope.yml configuration
         scope_snprintf(scopeCfgPath, sizeof(scopeCfgPath), "/tmp/scope%d.yml", hostPid);
         status = extractMemToFile(scopeCfgMem, cfgSize, scopeCfgPath, 0664, TRUE);
+        scope_chown(scopeCfgPath, nsUid, nsGid);
         // replace the SCOPE_CONF_PATH with namespace path
         setenv("SCOPE_CONF_PATH", scopeCfgPath, 1);
     }   
@@ -257,13 +346,16 @@ nsIsPidInChildNs(pid_t pid, pid_t *nsPid) {
  * Returns status of operation SERVICE_STATUS_SUCCESS in case of success, other values in case of failure
  */
 service_status_t
-nsService(pid_t pid, const char *serviceName) {
+nsService(pid_t hostPid, const char *serviceName) {
 
-    if (setNamespace(pid, "mnt") == FALSE) {
+    uid_t nsUid = nsGetRootUid(hostPid);
+    gid_t nsGid = nsGetRootGid(hostPid);
+
+    if (setNamespace(hostPid, "mnt") == FALSE) {
         return SERVICE_STATUS_ERROR_OTHER;
     }
 
-    return setupService(serviceName);
+    return setupService(serviceName, nsUid, nsGid);
 }
 
  
@@ -275,12 +367,15 @@ nsService(pid_t pid, const char *serviceName) {
  */
 int
 nsConfigure(pid_t pid, void *scopeCfgFilterMem, size_t filterFileSize) {
+    uid_t nsUid = nsGetRootUid(pid);
+    gid_t nsGid = nsGetRootGid(pid);
+
     if (setNamespace(pid, "mnt") == FALSE) {
         scope_fprintf(scope_stderr, "setNamespace mnt failed\n");
         return EXIT_FAILURE;
     }
 
-    if (setupConfigure(scopeCfgFilterMem, filterFileSize)) {
+    if (setupConfigure(scopeCfgFilterMem, filterFileSize, nsUid, nsGid)) {
         scope_fprintf(scope_stderr, "setup child namespace failed\n");
         return EXIT_FAILURE;
     }
@@ -346,7 +441,7 @@ nsForkAndExec(pid_t parentPid, pid_t nsPid, char attachType)
         scope_fprintf(scope_stderr, "error: PID: %d has never been attached\n", parentPid);
         return EXIT_FAILURE; 
     }
-     /*
+    /*
     * TODO In case of Reattach/Detach - when libLoaded = TRUE
     * We only need the mount namespace to /dev/shm but currently ldscopedyn
     * also check the pid namespace
@@ -420,7 +515,7 @@ nsForkAndExec(pid_t parentPid, pid_t nsPid, char attachType)
  * run the start command in the context of the host. It should run once and
  * then clean up after itself.
  *
- * This should be called after the fs namespace has been switched.
+ * This should be called after the mnt namespace has been switched.
  */
 static bool
 createCron(const char *scopePath, const char* filterPath) {
@@ -531,7 +626,8 @@ setHostNamespace(const char *ns) {
         return FALSE;
     }
 
-    // TODO: should we close here?
+    scope_close(nsFd);
+
     return TRUE;
 }
 
@@ -626,11 +722,11 @@ joinHostNamespace(void) {
      */
     scope_memset(path, 0, PATH_MAX);
     scope_snprintf(path, PATH_MAX, "/usr/lib/appscope/%s/", loaderVersion);
-    mkdir_status_t res = libdirCreateDirIfMissing(path, 0755);
+    mkdir_status_t res = libdirCreateDirIfMissing(path, 0755, scope_getuid(), scope_getgid());
     if ((res > MKDIR_STATUS_EXISTS) || (isDevVersion)) {
         scope_memset(path, 0, PATH_MAX);
         scope_snprintf(path, PATH_MAX, "/tmp/appscope/%s/", loaderVersion);
-        mkdir_status_t res = libdirCreateDirIfMissing(path, 0777);
+        mkdir_status_t res = libdirCreateDirIfMissing(path, 0777, scope_getuid(), scope_getgid());
         if (res > MKDIR_STATUS_EXISTS) {
             goto cleanupMem;
         }
