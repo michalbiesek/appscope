@@ -113,18 +113,17 @@ nsInfoIsPidInSameMntNs(pid_t pid) {
 }
 
 /*
- * Check if the specified process contains second nested PID namespaces. 
+ * Check if the specified process contains nested PID namespaces. 
  *
- * Returns TRUE if specific process contains two PID namespaces with
- * second PID namespace in nspid argument, FALSE otherwise.
+ * Returns TRUE if specific process contains netsted PID namespaces with
+ * last PID namespace in nspid argument, FALSE otherwise.
  */
 bool
-nsInfoIsPidGotSecondPidNs(pid_t pid, pid_t *nsPid) {
-    const int validNsDepth = 2;
+nsInfoIsPidGotNestedPidNs(pid_t pid, pid_t *nsPid) {
     char path[PATH_MAX] = {0};
     char buffer[4096];
     bool status = FALSE;
-    int lastNsPid = 0;
+    int lastNsPid = -1;
     int nsDepth = 0;
 
     if (scope_snprintf(path, sizeof(path), "/proc/%d/status", pid) < 0) {
@@ -155,11 +154,7 @@ nsInfoIsPidGotSecondPidNs(pid_t pid, pid_t *nsPid) {
         }
     }
 
-    /*
-    * TODO: we currently tested nesting depth 
-    * equals validNsDepth, check more depth level
-    */
-    if (nsDepth == validNsDepth) {
+    if (nsDepth > 1) {
         status = TRUE;
         *nsPid = lastNsPid;
     }
