@@ -701,10 +701,12 @@ main(int argc, char **argv, char **env)
     }
 
     if (serviceName) {
+        // we finish execution ldscope process (service operation) in this if statement no matter what 
+        int status = EXIT_FAILURE;
         // must be root
         if (uid) {
             scope_printf("error: --service requires root\n");
-            return EXIT_FAILURE;
+            return status;
         }
 
         pid_t pid = -1;
@@ -712,30 +714,31 @@ main(int argc, char **argv, char **env)
             pid = scope_atoi(nsPidArg);
             if (pid < 1) {
                 scope_fprintf(scope_stderr, "error: invalid --namespace PID: %s\n", nsPidArg);
-                return EXIT_FAILURE;
+                return status;
             }
         }
 
         if (pid == -1) {
             // Service on Host
-            return setupService(serviceName, uid, gid);
+            status = setupService(serviceName, uid, gid);
         } else {
             // Service on Container
             pid_t nsContainerPid = 0;
             if ((nsInfoIsPidGotSecondPidNs(pid, &nsContainerPid) == TRUE) ||
                 (nsInfoIsPidInSameMntNs(pid) == FALSE)) {
-                return nsService(pid, serviceName);
+                status = nsService(pid, serviceName);
             }
         }
-        return EXIT_FAILURE;
+        return status;
     }
 
     if (configFilterPath) {
+        // we finish execution ldscope process (configure operation) in this if statement no matter what 
         int status = EXIT_FAILURE;
         // must be root
         if (uid) {
             scope_printf("error: --configure requires root\n");
-            return EXIT_FAILURE;
+            return status;
         }
 
         pid_t pid = -1;
@@ -743,7 +746,7 @@ main(int argc, char **argv, char **env)
             pid = scope_atoi(nsPidArg);
             if (pid < 1) {
                 scope_fprintf(scope_stderr, "error: invalid --namespace PID: %s\n", nsPidArg);
-                return EXIT_FAILURE;
+                return status;
             }
         }
 
@@ -751,7 +754,7 @@ main(int argc, char **argv, char **env)
         void *confgFilterMem = setupLoadFileIntoMem(&configFilterSize, configFilterPath);
         if (confgFilterMem == NULL) {
             scope_fprintf(scope_stderr, "error: Load filter file into memory %s\n", configFilterPath);
-            return EXIT_FAILURE;
+            return status;
         }
 
         if (pid == -1) {
@@ -768,7 +771,6 @@ main(int argc, char **argv, char **env)
         if (confgFilterMem) {
             scope_munmap(confgFilterMem, configFilterSize);
         }
-
         return status;
     }
 
