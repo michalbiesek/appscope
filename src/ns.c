@@ -283,7 +283,7 @@ nsForkAndExec(pid_t parentPid, pid_t nsPid, char attachType)
     */
 
     if (joinChildNamespace(parentPid, parentPid != nsPid) == FALSE) {
-        scope_fprintf(scope_stderr, "error: join_namespace failed\n");
+        scope_fprintf(scope_stderr, "error: joinChildNamespace failed\n");
         return EXIT_FAILURE; 
     }
 
