@@ -58,7 +58,7 @@ func getContainersPids() []int {
 		}
 	}
 	if dockerPids != nil {
-		cPids = append(cPids, dockerPids)
+		cPids = append(cPids, dockerPids...)
 	}
 
 	lxcPids, err := util.GetLXCPids()
@@ -74,7 +74,7 @@ func getContainersPids() []int {
 		}
 	}
 	if lxcPids != nil {
-		cPids = append(cPids, lxcPids)
+		cPids = append(cPids, lxcPids...)
 	}
 
 	return cPids
