@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
+#include "nsinfo.h"
 #include "loaderop.h"
 #include "libdir.h"
 #include "libver.h"
@@ -437,7 +438,7 @@ setupService(const char *serviceName, uid_t uid, gid_t gid) {
  * Returns status of operation TRUE in case of success, FALSE otherwise
  */
 static bool
-setupProfile(const char *libscopePath, const char *loaderVersion, uid_t uid, gid_t gid) {
+setupProfile(const char *libscopePath, const char *loaderVersion, uid_t nsUid, gid_t nsGid) {
 
     /*
      * If the env var is set to anything, return.
@@ -450,10 +451,8 @@ setupProfile(const char *libscopePath, const char *loaderVersion, uid_t uid, gid
     }
 
     char buf[PATH_MAX] = {0};
-    int fd = scope_open("/etc/profile.d/scope.sh", O_CREAT | O_RDWR | O_TRUNC, 0644);
-
+    int fd = nsInfoOpenWithMode("/etc/profile.d/scope.sh", O_CREAT | O_RDWR | O_TRUNC, 0644, nsUid, nsGid, scope_getuid(), scope_getgid());
     if (fd < 0) {
-        scope_perror("scope_fopen failed");
         return FALSE;
     }
 
@@ -469,7 +468,7 @@ setupProfile(const char *libscopePath, const char *loaderVersion, uid_t uid, gid
         return FALSE;
     }
 
-    scope_chown("/etc/profile.d/scope.sh", uid, gid);
+    scope_chown("/etc/profile.d/scope.sh", nsUid, nsGid);
 
     return TRUE;
 }
@@ -480,12 +479,11 @@ setupProfile(const char *libscopePath, const char *loaderVersion, uid_t uid, gid
  * Returns status of operation TRUE in case of success, FALSE otherwise
  */
 static bool
-setupExtractFilterFile(void *filterFileMem, size_t filterSize, const char *outputFilterPath, uid_t uid, gid_t gid) {
+setupExtractFilterFile(void *filterFileMem, size_t filterSize, const char *outputFilterPath, uid_t nsUid, gid_t nsGid) {
     int filterFd;
     bool status = FALSE;
 
-    if ((filterFd = scope_open(outputFilterPath, O_RDWR | O_CREAT, 0664)) == -1) {
-        scope_perror("scope_open failed");
+    if ((filterFd = nsInfoOpenWithMode(outputFilterPath, O_RDWR | O_CREAT, 0664, nsUid, nsGid, scope_getuid(), scope_getgid())) == -1) {
         return status;
     }
 
@@ -506,7 +504,7 @@ cleanupDestFd:
 
     scope_close(filterFd);
 
-    scope_chown(outputFilterPath, uid, gid);
+    scope_chown(outputFilterPath, nsUid, nsGid);
 
     return status;
 }

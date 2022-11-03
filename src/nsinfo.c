@@ -168,3 +168,74 @@ nsInfoIsPidGotSecondPidNs(pid_t pid, pid_t *nsPid) {
 
     return status;
 }
+
+int
+nsInfoShmOpen(const char *name, int oflag, mode_t mode, uid_t nsUid, gid_t nsGid, uid_t restoreUid, gid_t restoreGid) {
+    scope_setegid(nsGid);
+    scope_seteuid(nsUid);
+
+    int fd = scope_shm_open(name, oflag, mode);
+    if (fd == -1 ) {
+        scope_perror("nsInfoShmOpen() failed");
+    }
+
+    scope_seteuid(restoreUid);
+    scope_setegid(restoreGid);
+    return fd;
+}
+
+int
+nsInfoOpen(const char *pathname, int flags, uid_t nsUid, gid_t nsGid, uid_t restoreUid, gid_t restoreGid) {
+    /*
+     * We need to change effective UID and GID since access to /dev/shm can
+     * be limited on mount layer for different namespace e.g. LXC container.
+     */
+    scope_setegid(nsGid);
+    scope_seteuid(nsUid);
+
+    /*
+     * /dev/shm can be mounted as filesystem with owner and group set it
+     * we need to switch ourselves for creation part
+    */
+    int fd = scope_open(pathname, flags);
+    if (fd == -1) {
+        scope_perror("nsInfoOpen() failed");
+    }
+
+    /*
+     * Restore original GID and UID.
+     */
+    scope_seteuid(restoreUid);
+    scope_setegid(restoreGid);
+    return fd;
+}
+
+int
+nsInfoOpenWithMode(const char *pathname, int flags, mode_t mode, uid_t nsUid, gid_t nsGid, uid_t restoreUid, gid_t restoreGid) {
+
+    scope_setegid(nsGid);
+    scope_seteuid(nsUid);
+
+    int fd = scope_open(pathname, flags, mode);
+    if (fd == -1) {
+        scope_perror("nsInfoOpenWithMode() failed");
+    }
+
+    scope_seteuid(restoreUid);
+    scope_setegid(restoreGid);
+    return fd;
+}
+
+int nsInfoMkdir(const char *pathname, mode_t mode, uid_t nsUid, gid_t nsGid, uid_t restoreUid, gid_t restoreGid) {
+    scope_setegid(nsGid);
+    scope_seteuid(nsUid);
+
+    int res = scope_mkdir(pathname, mode);
+    if (res) {
+        scope_perror("nsInfoMkdir() failed");
+    }
+
+    scope_seteuid(restoreUid);
+    scope_setegid(restoreGid);
+    return res;
+}

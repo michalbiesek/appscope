@@ -860,20 +860,13 @@ main(int argc, char **argv, char **env)
 
     // create /dev/shm/scope_${PID}.env when attaching
     if (attachArg && (attachType == 'a')) {
-        scope_setegid(nsGid);
-        scope_seteuid(nsUid);
 
         // create .env file for the library to load
         scope_snprintf(path, sizeof(path), "/scope_attach_%d.env", pid);
-        int fd = scope_shm_open(path, O_RDWR|O_CREAT, S_IRUSR|S_IRGRP|S_IROTH);
+        int fd = nsInfoShmOpen(path, O_RDWR|O_CREAT, S_IRUSR|S_IRGRP|S_IROTH, nsUid, nsGid, uid, gid);
         if (fd == -1) {
-            scope_perror("shm_open() failed");
             return EXIT_FAILURE;
         }
-
-        scope_seteuid(uid);
-        scope_setegid(gid);
-
         // add the env vars we want in the library
         scope_dprintf(fd, "SCOPE_LIB_PATH=%s\n", libdirGetPath(LIBRARY_FILE));
 

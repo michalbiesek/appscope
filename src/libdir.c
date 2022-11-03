@@ -22,6 +22,7 @@
 
 #include "scopestdlib.h"
 #include "scopetypes.h" // for ROUND_UP()
+#include "nsinfo.h"
 #include "libver.h"
 
 #ifndef SCOPE_VER
@@ -278,14 +279,14 @@ libdirCreateFileIfMissing(libdirfile_t objFileType, const char *path, bool overw
 // Verify if following absolute path points to directory
 // Returns operation status
 static mkdir_status_t
-libdirCheckIfDirExists(const char *absDirPath)
+libdirCheckIfDirExists(const char *absDirPath, uid_t uid, gid_t gid)
 {
     struct stat st = {0};
     if (!scope_stat(absDirPath, &st)) {
         if (S_ISDIR(st.st_mode)) {      
             // Check for file creation abilities in directory  
-            if (((st.st_uid == scope_getuid()) && (st.st_mode & S_IWUSR)) ||
-                ((st.st_gid == scope_getgid()) && (st.st_mode & S_IWGRP)) ||
+            if (((st.st_uid == uid) && (st.st_mode & S_IWUSR)) ||
+                ((st.st_gid == gid) && (st.st_mode & S_IWGRP)) ||
                 (st.st_mode & S_IWOTH)) {
                 return MKDIR_STATUS_EXISTS;
             }
@@ -348,14 +349,14 @@ libdirInitTest(const char *installBase, const char *tmpBase, const char *rawVers
 // Create a directory in following absolute path creating any intermediate directories as necessary
 // Returns operation status
 mkdir_status_t
-libdirCreateDirIfMissing(const char *dir, mode_t mode, uid_t uid, gid_t gid) {
+libdirCreateDirIfMissing(const char *dir, mode_t mode, uid_t nsUid, gid_t nsGid) {
     int mkdirRes = -1;
     /* Operate only on absolute path */
     if (dir == NULL || *dir != '/') {
         return MKDIR_STATUS_ERR_NOT_ABS_DIR;
     }
 
-    mkdir_status_t res = libdirCheckIfDirExists(dir);
+    mkdir_status_t res = libdirCheckIfDirExists(dir, nsUid, nsGid);
 
     /* exit if path exists */
     if (res != MKDIR_STATUS_ERR_OTHER) {
@@ -367,35 +368,42 @@ libdirCreateDirIfMissing(const char *dir, mode_t mode, uid_t uid, gid_t gid) {
         goto end;
     }
 
+    uid_t uid = scope_getuid();
+    gid_t gid = scope_getgid();
+
     /* traverse the full path */
     for (char *p = tempPath + 1; *p; p++) {
         if (*p == '/') {
             /* Temporarily truncate */
             *p = '\0';
             scope_errno = 0;
-            mkdirRes = scope_mkdir(tempPath, mode);
-            if (!mkdirRes) {
-                /* We ensure that we setup correct mode regarding umask settings */
-                if (scope_chmod(tempPath, mode)) {
-                    goto end;
-                }
 
-                /* We ensure that we setup correct permissions regarding potential namespace switch */
-                if (scope_chown(tempPath, uid, gid)) {
+            struct stat st = {0};
+            if (scope_stat(tempPath, &st)) {
+                mkdirRes = nsInfoMkdir(tempPath, mode, nsUid, nsGid, uid, gid);
+                if (!mkdirRes) {
+                    /* We ensure that we setup correct mode regarding umask settings */
+                    if (scope_chmod(tempPath, mode)) {
+                        goto end;
+                    }
+
+                    /* We ensure that we setup correct permissions regarding potential namespace switch */
+                    if (scope_chown(tempPath, nsUid, nsGid)) {
+                        goto end;
+                    }
+                } else {
+                    /* nsInfoMkdir fails */
                     goto end;
                 }
-            } else if (scope_errno != EEXIST) {
-                /* scope_mkdir fails with error other than directory exists */
-                goto end;
             }
+
             *p = '/';
         }
     }
 
     /* last element */
-    scope_errno = 0;
-    mkdirRes = scope_mkdir(tempPath, mode);
-    if (mkdirRes && (scope_errno != EEXIST)) {
+    mkdirRes = nsInfoMkdir(tempPath, mode, nsUid, nsGid, uid, gid);
+    if (mkdirRes) {
         goto end;
     }
 
@@ -405,7 +413,7 @@ libdirCreateDirIfMissing(const char *dir, mode_t mode, uid_t uid, gid_t gid) {
     }
 
     /* We ensure that we setup correct permissions regarding potential namespace switch */
-    if (scope_chown(tempPath, uid, gid)) {
+    if (scope_chown(tempPath, nsUid, nsGid)) {
         goto end;
     }
 
