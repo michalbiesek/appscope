@@ -93,7 +93,7 @@ attach(pid_t pid, char *scopeLibPath)
     scope_free(exe_path);
     freeElf(ebuf->buf, ebuf->len);
 
-    scope_printf("Attaching to process %d\n", pid);
+    scope_printf("Attaching to process %d using library %s\n", pid, scopeLibPath);
     int ret = injectScope(pid, scopeLibPath);
 
     // done
