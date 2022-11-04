@@ -495,7 +495,7 @@ event:
     #   Default:  tcp
     #   Override: the protocol token in the $SCOPE_EVENT_DEST URL
     #
-    type: tcp
+    type: unix
 
     # Connection host/address
     #   Type:     string
@@ -521,7 +521,7 @@ event:
     #
     # Applies when connection type is file or unix.
     #
-    #path: ''
+    path: '/tmp/test_socket'
 
     # File buffering
     #   Type:     string
