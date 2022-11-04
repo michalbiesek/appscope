@@ -741,7 +741,7 @@ cribl:
   #   Default:  true
   #   Override: $SCOPE_CRIBL_ENABLE
   #
-  enable: true
+  enable: false
 
   # Authentication token
   #   Type:     string
