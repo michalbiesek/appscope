@@ -8,12 +8,13 @@ require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/ahmetb/go-linq/v3 v3.2.0
 	github.com/c9s/goprocinfo v0.0.0-20210130143923-c95fcf8c64a8
-	github.com/docker/docker v20.10.17+incompatible
+	github.com/containerd/containerd v1.6.9
 	github.com/dop251/goja v0.0.0-20220806120448-1444e6b94559
 	github.com/fatih/color v1.13.0
 	github.com/fatih/structs v1.1.0
 	github.com/guptarohit/asciigraph v0.5.5
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
+	github.com/lxc/lxd v0.0.0-20221027083603-ff5310613e97
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mum4k/termdash v0.17.0
 	github.com/olekukonko/tablewriter v0.0.5
@@ -37,17 +38,13 @@ require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/ahmetb/govvv v0.3.0 // indirect
 	github.com/containerd/cgroups v1.0.3 // indirect
-	github.com/containerd/containerd v1.6.9 // indirect
 	github.com/containerd/continuity v0.3.0 // indirect
 	github.com/containerd/fifo v1.0.0 // indirect
 	github.com/containerd/ttrpc v1.1.0 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.7.0 // indirect
-	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-events v0.0.0-20190806004212-e31b211e4f1c // indirect
-	github.com/docker/go-units v0.4.0 // indirect
 	github.com/emicklei/go-restful v2.9.5+incompatible // indirect
 	github.com/flosch/pongo2 v0.0.0-20200913210552-0d938eb266f3 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
@@ -77,7 +74,6 @@ require (
 	github.com/klauspost/compress v1.15.11 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
-	github.com/lxc/lxd v0.0.0-20221027083603-ff5310613e97 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
@@ -87,10 +83,8 @@ require (
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/sys/mountinfo v0.5.0 // indirect
 	github.com/moby/sys/signal v0.6.0 // indirect
-	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.3-0.20211202183452-c5a74bcca799 // indirect

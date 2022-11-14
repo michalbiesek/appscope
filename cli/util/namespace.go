@@ -8,8 +8,6 @@ import (
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/namespaces"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
 	lxd "github.com/lxc/lxd/client"
 )
 
@@ -97,28 +95,37 @@ func GetContainerDPids() ([]int, error) {
 // Get the List of PID(s) related to Docker container
 func GetDockerPids() ([]int, error) {
 	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	cli, err := containerd.New("/run/containerd/containerd.sock")
+	if err != nil {
+		return nil, ErrContainerDNotAvailable
+	}
+	defer cli.Close()
+
+	// TODO: replace GetDockerPids with the API here and namespace "moby"
+	cdctx := namespaces.WithNamespace(ctx, "moby")
+	containers, err := cli.Containers(cdctx)
+
 	if err != nil {
 		return nil, err
 	}
+	pids := make([]int, 0, len(containers))
 
-	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
-	if err != nil {
-		if client.IsErrConnectionFailed(err) {
-			return nil, ErrDockerNotAvailable
-		}
-		return nil, err
-	}
-
-	pids := make([]int, len(containers))
-
-	for indx, container := range containers {
-		ins, err := cli.ContainerInspect(ctx, container.ID)
+	for _, container := range containers {
+		task, err := container.Task(cdctx, nil)
 		if err != nil {
-			return nil, err
+			fmt.Printf("\nSkipped container %v, task error: %v", container, err)
+			continue
 		}
-		pids[indx] = ins.State.Pid
+		status, err := task.Status(cdctx)
+		if err != nil {
+			fmt.Printf("\nSkipped task %v, container %v, status error: %v", task, container, err)
+			continue
+		}
+		if status.Status == containerd.Running {
+			pids = append(pids, int(task.Pid()))
+		}
 	}
+
 	return pids, nil
 }
 
