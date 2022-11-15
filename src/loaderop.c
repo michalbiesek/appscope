@@ -411,8 +411,8 @@ do_musl(char *exld, char *ldscope)
     }
 
     // dir is expected to exist here, not creating one
-    if ((symlink((const char *)exld, lpath) == -1) &&
-        (errno != EEXIST)) {
+    if ((scope_symlink((const char *)exld, lpath) == -1) &&
+        (scope_errno!= EEXIST)) {
         scope_perror("do_musl:symlink");
         if (ldso) scope_free(ldso);
         if (lpath) scope_free(lpath);
