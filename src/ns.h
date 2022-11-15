@@ -10,7 +10,7 @@ int nsForkAndExec(pid_t, pid_t, char);
 int nsConfigure(pid_t, void *, size_t);
 service_status_t nsService(pid_t, const char *);
 
-// Operation performed from container to host
-int nsHostStart(void);
+// Operation performed from container to parent (host/container)
+int nsParentStart(void);
 
 #endif // __NS_H__

@@ -352,6 +352,43 @@ nsForkAndExec(pid_t parentPid, pid_t nsPid, char attachType)
     return EXIT_FAILURE;
 }
 
+static bool
+rerunScope(char *scopePath, char *scopeFilterPath) {
+    pid_t child = fork();
+    if (child < 0) {
+        scope_fprintf(scope_stderr, "error: fork() failed\n");
+        return FALSE;
+    } else if (child == 0) {
+        // Child
+        int execArgc = 0;
+        char **execArgv = scope_calloc(6, sizeof(char *));
+        if (!execArgv) {
+            scope_fprintf(scope_stderr, "error: calloc() failed\n");
+            return FALSE;
+        }
+        execArgv[execArgc++] = scopePath;
+        execArgv[execArgc++] = "start";
+        execArgv[execArgc++] = "-f";
+        execArgv[execArgc++] = "<";
+        execArgv[execArgc++] = scopeFilterPath;
+
+        return execve(scopePath, execArgv, environ);
+    }
+    // Parent
+    int status;
+    scope_waitpid(child, &status, 0);
+    if (WIFEXITED(status)) {
+        int exitChildStatus = WEXITSTATUS(status);
+        if (exitChildStatus == 0) {
+            scope_fprintf(scope_stderr, "Scope start in parent process success\n");
+        } else {
+            scope_fprintf(scope_stderr, "Scope start in parent process failed\n");
+        }
+        return (exitChildStatus == 0) ? TRUE : FALSE;
+    }
+    return FALSE;
+}
+
 /* Create the cron file
  *
  * When the start command is executed within a container we can't
@@ -477,7 +514,7 @@ setHostNamespace(const char *ns) {
 }
 
 /*
- * Joins the host mount namespace.
+ * Joins the parent mount namespace.
  * Required conditions:
  * - scope_filter must exists
  * - scope must exists
@@ -485,14 +522,14 @@ setHostNamespace(const char *ns) {
  * Returns TRUE if operation was success, FALSE otherwise.
  */
 static bool
-joinHostNamespace(void) {
+joinParentNamespace(void) {
     bool status = FALSE;
     size_t ldscopeSize = 0;
     size_t cfgSize = 0;
     size_t scopeSize = 0;
     char path[PATH_MAX] = {0};
-    char hostFilterPath[PATH_MAX] = {0};
-    char hostScopePath[PATH_MAX] = {0};
+    char parentFilterPath[PATH_MAX] = {0};
+    char parentScopePath[PATH_MAX] = {0};
     char *scopeFilterCfgMem = NULL;
     char *scopeMem = NULL;
 
@@ -554,8 +591,8 @@ joinHostNamespace(void) {
     }
 
     /*
-     * Reassociate current process to the host namespace
-     * - mount namespace - allows to copy file(s) into the host fs
+     * Reassociate current process to the parent namespace
+     * - mount namespace - allows to copy file(s) into the parent fs
      */
     if (setHostNamespace("mnt") == FALSE) {
         goto cleanupMem;
@@ -565,7 +602,7 @@ joinHostNamespace(void) {
     gid_t eGid = scope_getegid();
 
     /*
-     * At this point we are using the host fs.
+     * At this point we are using the parent fs.
      * Ensure that we have the dest dir
      */
     scope_memset(path, 0, PATH_MAX);
@@ -581,35 +618,45 @@ joinHostNamespace(void) {
     }
 
     /*
-     * Save the absolute path for binaries on host:
+     * Save the absolute path for binaries on parent:
      * - scope - in hostScopePath
      * - ldscope - in path
      * Note: path is already ended with /
      */
-    scope_snprintf(hostScopePath, PATH_MAX, "%sscope", path);
+    scope_snprintf(parentScopePath, PATH_MAX, "%sscope", path);
     scope_strncat(path, "ldscope", sizeof("ldscope"));
 
-    // create "ldscope" on host
+    // create "ldscope" on parent
     if ((status = extractMemToFile(ldscopeMem, ldscopeSize, path, 0775, isDevVersion, eUid, eGid)) == FALSE) {
         goto cleanupMem;
     }
 
-    // create a "filter file" on host
-    scope_snprintf(hostFilterPath, PATH_MAX, SCOPE_FILTER_USR_PATH);
-    if ((status == extractMemToFile(scopeFilterCfgMem, cfgSize, hostFilterPath, 0664, TRUE, eUid, eGid)) == FALSE) {
-        scope_memset(hostFilterPath, 0, PATH_MAX);
-        scope_snprintf(hostFilterPath, PATH_MAX, SCOPE_FILTER_TMP_PATH);
-        if ((status == extractMemToFile(scopeFilterCfgMem, cfgSize, hostFilterPath, 0664, TRUE, eUid, eGid)) == FALSE) {
+    // create a "filter file" on parent
+    scope_snprintf(parentFilterPath, PATH_MAX, SCOPE_FILTER_USR_PATH);
+    if ((status == extractMemToFile(scopeFilterCfgMem, cfgSize, parentFilterPath, 0664, TRUE, eUid, eGid)) == FALSE) {
+        scope_memset(parentFilterPath, 0, PATH_MAX);
+        scope_snprintf(parentFilterPath, PATH_MAX, SCOPE_FILTER_TMP_PATH);
+        if ((status == extractMemToFile(scopeFilterCfgMem, cfgSize, parentFilterPath, 0664, TRUE, eUid, eGid)) == FALSE) {
             goto cleanupMem;
         }
     }
 
-    // create a "scope" on host
-    if (extractMemToFile(scopeMem, scopeSize, hostScopePath, 0775, isDevVersion, eUid, eGid) == FALSE) {
+    // create a "scope" on parent
+    if (extractMemToFile(scopeMem, scopeSize, parentScopePath, 0775, isDevVersion, eUid, eGid) == FALSE) {
         goto cleanupMem;
     }
 
-    status = createCron(hostScopePath, hostFilterPath);
+    /*
+     * Check if cron exists
+     * - if not rerun scope start command since this can be nested container
+     */
+
+    if (!scope_access(SCOPE_CRON_PATH, R_OK)) {
+        status = createCron(parentScopePath, parentFilterPath);
+    } else {
+        status = rerunScope(parentScopePath, parentFilterPath);
+    }
+
 
 cleanupMem:
 
@@ -637,23 +684,23 @@ isRunningInContainer(void) {
 }
 
  /*
- * Perform ldsope host start operation - this operation begins from container namespace.
+ * Perform ldscope parent start operation - this operation begins from container namespace.
  *
- * - switch namespace to host
- * - create cron entry with filter file
+ * - switch namespace to parent
+ * - create cron entry with filter file or rerun scope start
  *
  * Returns exit code of operation
  */
 int
-nsHostStart(void) {
+nsParentStart(void) {
     if (isRunningInContainer() == FALSE) {
-        scope_fprintf(scope_stderr, "error: nsHostStart failed process is running on host\n");
+        scope_fprintf(scope_stderr, "error: nsParentStart failed process is running on host\n");
         return EXIT_FAILURE;
     }
-    scope_fprintf(scope_stdout, "Executing from a container, run the start command from the host\n");
+    scope_fprintf(scope_stdout, "Executing from a container, run the start command from the parent namespace\n");
 
-    if (joinHostNamespace() == FALSE) {
-        scope_fprintf(scope_stderr, "error: joinHostNamespace failed\n");
+    if (joinParentNamespace() == FALSE) {
+        scope_fprintf(scope_stderr, "error: joinParentNamespace failed\n");
         return EXIT_FAILURE;
     }
 
