@@ -210,6 +210,14 @@ extern int           scopelibc_setns(int, int);
 extern int           scopelibc_chown(const char *, uid_t, gid_t);
 extern int           scopelibc_fchown(int, uid_t, gid_t);
 extern int           scopelibc_symlink(const char *, const char *);
+extern int           scopelibc_mq_close(mqd_t);
+extern int           scopelibc_mq_send(mqd_t, const char *, size_t, unsigned int);
+extern int           scopelibc_mq_timedsend(mqd_t, const char *, size_t , unsigned int, const struct timespec *);
+extern ssize_t       scopelibc_mq_receive(mqd_t, char *, size_t, unsigned int *);
+extern ssize_t       scopelibc_mq_timedreceive(mqd_t, char *, size_t, unsigned int *, const struct timespec *);
+extern int           scopelibc_mq_unlink(const char *);
+extern int           scopelibc_mq_notify(mqd_t, const struct sigevent *);
+extern int           scopelibc_mq_getattr(mqd_t, struct mq_attr *);
 
 static int g_go_static;
 
@@ -1233,4 +1241,44 @@ scope_fchown(int fd, uid_t owner, gid_t group) {
 int
 scope_symlink(const char *target, const char *linkpath) {
     return scopelibc_symlink(target, linkpath);
+}
+
+int
+scope_mq_close(mqd_t mqdes) {
+    return scopelibc_mq_close(mqdes);
+}
+
+int
+scope_mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned int msg_prio) {
+    return scopelibc_mq_send(mqdes, msg_ptr, msg_len, msg_prio);
+}
+
+int
+scope_mq_timedsend(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned int msg_prio, const struct timespec *abs_timeout) {
+    return scopelibc_mq_timedsend(mqdes, msg_ptr, msg_len, msg_prio, abs_timeout);
+}
+
+ssize_t
+scope_mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned int *msg_prio) {
+    return scopelibc_mq_receive(mqdes, msg_ptr, msg_len, msg_prio);
+}
+
+ssize_t
+scope_mq_timedreceive(mqd_t mqdes, char *restrict msg_ptr, size_t msg_len, unsigned int *restrict msg_prio, const struct timespec *restrict abs_timeout) {
+    return scopelibc_mq_timedreceive(mqdes, msg_ptr, msg_len, msg_prio, abs_timeout);
+}
+
+int
+scope_mq_unlink(const char *name) {
+    return scopelibc_mq_unlink(name);
+}
+
+int
+scope_mq_notify(mqd_t mqd, const struct sigevent *sev) {
+    return scopelibc_mq_notify(mqd, sev);
+}
+
+int
+scope_mq_getattr(mqd_t mqd, struct mq_attr *attr) {
+    return scopelibc_mq_getattr(mqd, attr);
 }
