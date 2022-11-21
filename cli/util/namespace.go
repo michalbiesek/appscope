@@ -51,8 +51,17 @@ func GetLXCPids() ([]int, error) {
 
 // Get the List of PID(s) related to containerd container
 func GetContainerDPids() ([]int, error) {
+	return getContainerPids("containerd-shim")
+}
 
-	shimPids, err := PidScopeMapByProcessName("containerd-shim")
+// Get the List of PID(s) related to Podman container
+func GetPodmanPids() ([]int, error) {
+	return getContainerPids("conmon")
+}
+
+// Get the List of PID(s) related to containerd or Podman container
+func getContainerPids(parentProcess string) ([]int, error) {
+	shimPids, err := PidScopeMapByProcessName(parentProcess)
 	if err != nil {
 		return nil, err
 	}
