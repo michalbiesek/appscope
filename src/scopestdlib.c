@@ -218,6 +218,7 @@ extern ssize_t       scopelibc_mq_timedreceive(mqd_t, char *, size_t, unsigned i
 extern int           scopelibc_mq_unlink(const char *);
 extern int           scopelibc_mq_notify(mqd_t, const struct sigevent *);
 extern int           scopelibc_mq_getattr(mqd_t, struct mq_attr *);
+extern mode_t        scopelibc_umask(mode_t);
 
 static int g_go_static;
 
@@ -1281,4 +1282,9 @@ scope_mq_notify(mqd_t mqd, const struct sigevent *sev) {
 int
 scope_mq_getattr(mqd_t mqd, struct mq_attr *attr) {
     return scopelibc_mq_getattr(mqd, attr);
+}
+
+mode_t
+scope_umask(mode_t mask) {
+    return scopelibc_umask(mask);
 }
