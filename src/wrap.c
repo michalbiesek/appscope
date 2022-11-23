@@ -39,6 +39,7 @@
 #include "runtimecfg.h"
 #include "javaagent.h"
 #include "inject.h"
+#include "ipc.h"
 #include "scopestdlib.h"
 #include "../contrib/libmusl/musl.h"
 
@@ -55,6 +56,7 @@ static const char *g_cmddir;
 static list_t *g_nsslist;
 static uint64_t reentrancy_guard = 0ULL;
 static rlim_t g_max_fds = 0;
+static mqd_t g_receiver_msg_q = (mqd_t) -1;
 
 typedef int (*ssl_rdfunc_t)(SSL *, void *, int);
 typedef int (*ssl_wrfunc_t)(SSL *, const void *, int);
@@ -421,6 +423,41 @@ cmdAttach(void)
     }
 
     return TRUE;
+}
+
+
+static void
+mqConfig(void) {
+    const char *listenMqMsgName = "ScopeCLI";
+    size_t reqMqSize;
+    if (ipcIsActive(g_receiver_msg_q, &reqMqSize) == FALSE) {
+        return;
+    }
+
+    long msgCount = ipcInfoMsgCount(g_receiver_msg_q);
+    if (msgCount <= 0) {
+        return;
+    }
+
+    ipc_cmd_t cmd = -1;
+
+    if (ipcRequestMsgHandler(g_receiver_msg_q, reqMqSize, &cmd) == FALSE) {
+        return;
+    }
+
+    // Handle response
+    size_t respMqSize;
+    mqd_t cliMqDes = ipcOpenWriteConnection(listenMqMsgName);
+    if (ipcIsActive(cliMqDes, &respMqSize) == FALSE) {
+        scopeLogError("%s is missing.", listenMqMsgName);
+        return;
+    }
+
+    if (ipcResponseMsgHandler(cliMqDes, respMqSize, cmd) == FALSE) {
+        scopeLogError("Error: with sending answet to %s for cmd %d", listenMqMsgName, cmd);
+    }
+
+    ipcCloseConnection(cliMqDes);
 }
 
 static void
@@ -1002,6 +1039,11 @@ handleExit(void)
     ctlDisconnect(g_ctl, CFG_CTL);
     logFlush(g_log);
     logDisconnect(g_log);
+    ipcCloseConnection(g_receiver_msg_q);
+    g_receiver_msg_q = (mqd_t) -1;
+    char name[256];
+    scope_snprintf(name, sizeof(name), "/ScopeIPC.%d", g_proc.pid);
+    ipcDestroyConnection(name);
 }
 
 static void *
@@ -1081,6 +1123,7 @@ periodic(void *arg)
             }
         }
         remoteConfig();
+        mqConfig();
     }
 
     return NULL;
@@ -1635,6 +1678,11 @@ init(void)
     setPidEnv(g_proc.pid);
     setMachineID(g_proc.machine_id);
     setUUID(g_proc.uuid);
+
+    // Create IPC connection message queue
+    char name[256];
+    scope_snprintf(name, sizeof(name), "/ScopeIPC.%d", g_proc.pid);
+    g_receiver_msg_q = ipcCreateNonBlockReadConnection(name);
 
     // initEnv() will set this TRUE if it detects `scope_attach_PID.env` in
     // `/dev/shm` with our PID indicating we were injected into a running
