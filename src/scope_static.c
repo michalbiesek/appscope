@@ -24,77 +24,6 @@
 #include "ns.h"
 #include "setup.h"
 
-
-#define MAX_MESSAGES 10
-#define MSG_BUFFER_SIZE 8192
-#define READ_MQ_NAME  "/ScopeCLI"
-
-static int ipcTest(pid_t pid) {
-    struct mq_attr attr = {.mq_flags = 0, 
-                               .mq_maxmsg = MAX_MESSAGES,
-                               .mq_msgsize = MSG_BUFFER_SIZE,
-                               .mq_curmsgs = 0};
-    int res = EXIT_FAILURE;
-    char WriteMqName[4096] = {0};
-    scope_snprintf(WriteMqName, sizeof(WriteMqName), "/ScopeIPC.%d", pid);
-
-    mode_t oldMask = scope_umask(0);
-    mqd_t readMqDesc = scope_mq_open(READ_MQ_NAME, O_RDONLY | O_CREAT, 0666, &attr);
-    if (readMqDesc == (mqd_t)-1) {
-        scope_perror("!mq_open readMqDesc failed");
-        return res;
-    }
-    scope_umask(oldMask);
-
-    mqd_t writeMqDesc = scope_mq_open(WriteMqName, O_WRONLY);
-    if (writeMqDesc == (mqd_t)-1) {
-        scope_perror("!mq_open writeMqDesc failed");
-        goto cleanup_mqDesc;
-    }
-
-    char Txbuf[MSG_BUFFER_SIZE] = {0};
-    char RxBuf[MSG_BUFFER_SIZE] = {0};
-
-    scope_printf("\nPass example message to stdin [type 'quit' to stop]\n");
-    while (scope_fgets(Txbuf, MSG_BUFFER_SIZE, stdin) != NULL) {
-        if(scope_strcmp("quit\n", Txbuf) == 0) {
-            break;
-        }
-
-        // Send message to scoped process
-        if (scope_mq_send(writeMqDesc, Txbuf, strlen(Txbuf) + 1, 0) == -1) {
-            scope_perror("!mq_send writeMqDesc failed");
-            goto end_iteration;
-        }
-
-
-        // Read response
-        if (scope_mq_receive(readMqDesc, RxBuf, MSG_BUFFER_SIZE, NULL) == -1) {
-            scope_perror("!mq_receive readMqDesc failed");
-            goto end_iteration;
-        }
-
-        scope_printf("Response from pid process %d : %s", pid, RxBuf);
-
-        end_iteration:
-            scope_printf("\nPass example message to stdin [type 'quit' to stop]\n");
-            scope_memset(Txbuf, 0, MSG_BUFFER_SIZE);
-            scope_memset(RxBuf, 0, MSG_BUFFER_SIZE);
-    }
-
-    if (mq_close(writeMqDesc) == -1) {
-        perror ("!mq_close writeMqDesc failed");
-    }
-    res = EXIT_SUCCESS;
-
-cleanup_mqDesc:
-
-    scope_mq_close(readMqDesc);
-    scope_mq_unlink(READ_MQ_NAME);
-    return res;
-}
-
-
 /* 
  * This avoids a segfault when code using shm_open() is compiled statically.
  * For some reason, compiling the code statically causes the __shm_directory()
@@ -608,7 +537,6 @@ showUsage(char *prog)
       "  -n  --namespace PID          perform service/configure operation on specified container PID\n"
       "  -p, --patch SO_FILE          patch specified libscope.so\n"
       "  -r, --starthost              execute the scope start command in a host context with (must be run in the container)\n"
-      "  -t, --connect                connect to the IPC process\n"
       "\n"
       "Help sections are OVERVIEW, CONFIGURATION, METRICS, EVENTS, and PROTOCOLS.\n"
       "\n"
@@ -636,7 +564,6 @@ static struct option opts[] = {
     { "libbasedir", required_argument,    0, 'l' },
     { "patch",      required_argument,    0, 'p' },
     { "starthost",  no_argument,          0, 'r' },
-    { "connect",    required_argument,    0, 't' },
     { 0, 0, 0, 0 }
 };
 
@@ -644,7 +571,6 @@ int
 main(int argc, char **argv, char **env)
 {
     char *attachArg = NULL;
-    char *connectArg = NULL;
     char *configFilterPath = NULL;
     char *serviceName = NULL;
     char *nsPidArg = NULL; 
@@ -666,14 +592,11 @@ main(int argc, char **argv, char **env)
         // The initial `:` lets us handle options with optional values like
         // `-h` and `-h SECTION`.
         //
-        int opt = getopt_long(argc, argv, "+:uh:a:d:n:l:f:p:c:s:r:t", opts, &index);
+        int opt = getopt_long(argc, argv, "+:uh:a:d:n:l:f:p:c:s:r", opts, &index);
         if (opt == -1) {
             break;
         }
         switch (opt) {
-            case 't':
-                connectArg = optarg;
-                break;
             case 'u':
                 showUsage(scope_basename(argv[0]));
                 return EXIT_SUCCESS;
@@ -734,15 +657,6 @@ main(int argc, char **argv, char **env)
                 showUsage(scope_basename(argv[0]));
                 return EXIT_FAILURE;
         }
-    }
-
-    if (connectArg) {
-        pid_t Inputpid = scope_atoi(connectArg);
-        if (Inputpid < 1) {
-            scope_fprintf(scope_stderr, "error: invalid PID: %s\n", optarg);
-            return EXIT_FAILURE;
-        }
-        return ipcTest(Inputpid);
     }
 
     // either --attach, --detach, --configure, --service or a command are required

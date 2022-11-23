@@ -296,7 +296,6 @@ ssize_t       scope_mq_timedreceive(mqd_t, char *, size_t, unsigned int *, const
 int           scope_mq_unlink(const char *);
 int           scope_mq_notify(mqd_t, const struct sigevent *);
 int           scope_mq_getattr(mqd_t, struct mq_attr *);
-mode_t        scope_umask(mode_t);
 
 
 #endif // __SCOPE_STDLIB_H__
