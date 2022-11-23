@@ -39,6 +39,7 @@
 #include "runtimecfg.h"
 #include "javaagent.h"
 #include "inject.h"
+#include "ipc.h"
 #include "scopestdlib.h"
 #include "../contrib/libmusl/musl.h"
 
@@ -55,6 +56,7 @@ static const char *g_cmddir;
 static list_t *g_nsslist;
 static uint64_t reentrancy_guard = 0ULL;
 static rlim_t g_max_fds = 0;
+static mqd_t g_receiver_msg_q = (mqd_t) -1;
 
 typedef int (*ssl_rdfunc_t)(SSL *, void *, int);
 typedef int (*ssl_wrfunc_t)(SSL *, const void *, int);
@@ -423,8 +425,46 @@ cmdAttach(void)
     return TRUE;
 }
 
+
+
 static void
-remoteConfig()
+mqConfig(void) {
+    if (ipcIsActive(g_receiver_msg_q == FALSE) {
+        return;
+    }
+
+    // Handle request
+    // TODO: allocate buffer dynamically ??
+    char readBuffer[8192] = {0};
+    char writeBuffer[8192] = {0};
+    struct timespec ts = {.tv_sec = 1, .tv_nsec = 0}; // 1 s
+    ssize_t recvRes = ipcRecvWithTimeout(g_receiver_msg_q, readBuffer, sizeof(readBuffer), &ts);
+    if (recvRes == -1) {
+        return;
+    }  else {
+        scopeLogError("Receive the following message %s to /ScopeCLI.", readBuffer);
+    }
+
+
+    // Handle response
+    mqd_t climqdes = ipcOpenWriteConnection("/ScopeCLI");
+    if (ipcIsActive(climqdes == FALSE) {
+        scopeLogError("Error during open /ScopeCLI message queue %d.", scope_errno);
+        return;
+    }
+    scope_strcpy(writeBuffer, "TestAnswer");
+    int sendRes = ipcSend(climqdes, writeBuffer, sizeof(writeBuffer));
+    if (sendRes == -1) {
+        scopeLogError("Error: %d during sending message to /ScopeCLI.", scope_errno);
+    } else {
+        scopeLogError("Send the following message %s to /ScopeCLI.", writeBuffer);
+    }
+
+    ipcCloseConnection(climqdes);
+}
+
+static void
+remoteConfig(void)
 {
     int timeout;
     struct pollfd fds;
@@ -1002,6 +1042,11 @@ handleExit(void)
     ctlDisconnect(g_ctl, CFG_CTL);
     logFlush(g_log);
     logDisconnect(g_log);
+    ipcCloseConnection(g_receiver_msg_q);
+    g_receiver_msg_q = (mqd_t) -1;
+    char name[256];
+    scope_snprintf(name, sizeof(name), "/ScopeIPC.%d", g_proc.pid);
+    ipcDestroyConnection(name);
 }
 
 static void *
@@ -1081,6 +1126,7 @@ periodic(void *arg)
             }
         }
         remoteConfig();
+        mqConfig();
     }
 
     return NULL;
@@ -1636,6 +1682,11 @@ init(void)
     setMachineID(g_proc.machine_id);
     setUUID(g_proc.uuid);
 
+    // Create IPC connection message queue
+    char name[256];
+    scope_snprintf(name, sizeof(name), "/ScopeIPC.%d", g_proc.pid);
+    g_receiver_msg_q = ipcCreateNonBlockReadConnection(name);
+
     // initEnv() will set this TRUE if it detects `scope_attach_PID.env` in
     // `/dev/shm` with our PID indicating we were injected into a running
     // process.
@@ -1762,6 +1813,11 @@ init(void)
          * SM segment to enable a reattach command.
          */
         osCreateSM(&g_proc, (unsigned long)cmdAttach);
+    }
+
+    // TODO: remove this 
+    if (g_receiver_msg_q == (mqd_t)-1) {
+        scopeLogError("Error during creation of %s", name);
     }
 
     osInitJavaAgent();
