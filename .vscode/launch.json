@@ -5,6 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "(go) debug command",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cli/main.go",
+            "args": ["inspect"]
+        },
+        {
             "name": "(gdb) curl x86_64 w/preload",
             "type": "cppdbg",
             "request": "launch",
