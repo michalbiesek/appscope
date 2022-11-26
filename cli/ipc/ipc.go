@@ -18,7 +18,7 @@ var errMissingResponse = errors.New("missing response from PID")
 // Returns the string answer from process endpoint
 func IPCDispatcher(cmd IPCCmd, pid int) (string, error) {
 	ipc, err := newIPC(fmt.Sprintf("ScopeIPC.%d", pid))
-	missResponse := true
+	responseReceived := false
 
 	if err != nil {
 		return "", err
@@ -33,14 +33,14 @@ func IPCDispatcher(cmd IPCCmd, pid int) (string, error) {
 	// TODO: Ugly hack but we need to wait for answer from process
 	for i := 0; i < 5000; i++ {
 		if !ipc.empty() {
-			missResponse = false
+			responseReceived = true
 			break
 		}
 		time.Sleep(time.Millisecond)
 	}
 
 	// Special case e.g. when the filter was applied the threading process is not running
-	if !missResponse {
+	if !responseReceived {
 		return "", fmt.Errorf("%v %v", errMissingResponse, pid)
 	}
 

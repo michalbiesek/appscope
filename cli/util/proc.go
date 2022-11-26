@@ -325,9 +325,9 @@ func getNsPids(pid int) ([]int, error) {
 			// Skip Nspid
 			strPids := strings.Fields(line)[1:]
 			pids := make([]int, len(strPids))
-			for _, strPid := range strPids {
+			for i, strPid := range strPids {
 				pid, _ := strconv.Atoi(strPid)
-				pids = append(pids, pid)
+				pids[i] = pid
 			}
 			return pids, nil
 		}
