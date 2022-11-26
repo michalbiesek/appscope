@@ -308,13 +308,13 @@ func PidCmdline(pid int) (string, error) {
 	return cmdline, nil
 }
 
-// PidInitContainer verify if specific PID is the init PID in the container
-func PidInitContainer(pid int) (bool, error) {
+// getNsPids return namespace pid array for specific pid
+func getNsPids(pid int) ([]int, error) {
 	// TODO: goprocinfo does not support all the status parameters (NsPid)
 	// handle procfs by ourselves ?
 	file, err := os.Open(fmt.Sprintf("/proc/%v/status", pid))
 	if err != nil {
-		return false, errGetProcStatus
+		return nil, errGetProcStatus
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
@@ -323,12 +323,46 @@ func PidInitContainer(pid int) (bool, error) {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "NSpid:") {
 			// Skip Nspid
-			nsPidString := strings.Fields(line)[1:]
-			// Check for nested PID namespace and the init PID in namespace (it should be equals 1)
-			if (len(nsPidString) > 1) && (nsPidString[len(nsPidString)-1] == "1") {
-				return true, nil
+			strPids := strings.Fields(line)[1:]
+			pids := make([]int, len(strPids))
+			for _, strPid := range strPids {
+				pid, _ := strconv.Atoi(strPid)
+				pids = append(pids, pid)
 			}
+			return pids, nil
 		}
+	}
+	return nil, errGetProcStatus
+}
+
+// PidLastNsPid returns the value of most neted namespace PID.
+// Returns pid, status if it was nested namespace and error
+func PidLastNsPid(pid int) (int, bool, error) {
+	nsPids, err := getNsPids(pid)
+	if err != nil {
+		return -1, false, errGetProcStatus
+	}
+
+	nsPidsSize := len(nsPids)
+	// Not nested namespace
+	if nsPidsSize == 1 {
+		return pid, false, nil
+	}
+	return nsPids[nsPidsSize-1], true, nil
+}
+
+// PidInitContainer verify if specific PID is the init PID in the container
+func PidInitContainer(pid int) (bool, error) {
+
+	nsPids, err := getNsPids(pid)
+	if err != nil {
+		return false, errGetProcStatus
+	}
+	nsPidsSize := len(nsPids)
+
+	// Check for nested PID namespace and the init PID in namespace (it should be equals 1)
+	if (nsPidsSize > 1) && (nsPids[nsPidsSize-1] == 1) {
+		return true, nil
 	}
 	return false, nil
 }

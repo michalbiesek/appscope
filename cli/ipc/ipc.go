@@ -31,12 +31,12 @@ func IPCDispatcher(cmd IPCCmd, pid int) (string, error) {
 	}
 
 	// TODO: Ugly hack but we need to wait for answer from process
-	for i := 0; i < 500; i++ {
+	for i := 0; i < 5000; i++ {
 		if !ipc.empty() {
 			missResponse = false
 			break
 		}
-		time.Sleep(time.Microsecond)
+		time.Sleep(time.Millisecond)
 	}
 
 	// Special case e.g. when the filter was applied the threading process is not running
@@ -49,14 +49,14 @@ func IPCDispatcher(cmd IPCCmd, pid int) (string, error) {
 }
 
 // newIPC creates an IPC structure
-func newIPC(msgqName string) (*IPC, error) {
+func newIPC(writerName string) (*IPC, error) {
 
 	receiver, err := newNonBlockMsgQReader("ScopeCLI")
 	if err != nil {
 		return nil, err
 	}
 
-	sender, err := openMsgQWriter(msgqName)
+	sender, err := openMsgQWriter(writerName)
 	if err != nil {
 		return nil, err
 	}

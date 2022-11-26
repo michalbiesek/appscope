@@ -18,7 +18,20 @@ func Inspect() error {
 	}
 
 	for _, proc := range procs {
-		status, err := ipc.IPCDispatcher(ipc.CmdGetAttachStatus, proc.Pid)
+		nsPid, nestedNs, err := util.PidLastNsPid(proc.Pid)
+		if err != nil {
+			fmt.Println("PidLastNsPid failed.")
+			continue
+		}
+		dispatchPid := proc.Pid
+		if nestedNs {
+			if err := util.NamespaceSwitchIPC(dispatchPid); err != nil {
+				fmt.Printf("\nNamespaceSwitchIPC failed. %v ", err)
+				continue
+			}
+			dispatchPid = nsPid
+		}
+		status, err := ipc.IPCDispatcher(ipc.CmdGetAttachStatus, dispatchPid)
 		if err != nil {
 			fmt.Printf("\nError: %v", err)
 		} else {

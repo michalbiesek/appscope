@@ -32,7 +32,7 @@
 typedef size_t (*out_msg_func_t)(char *, size_t);
 
 // Remove this logic after demo
-// #define IPC_DEMO 1
+#define IPC_DEMO 1
 
 #ifdef IPC_DEMO
 // Yuck I do not like that I cannot unit test it
