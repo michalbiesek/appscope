@@ -215,6 +215,10 @@ extern int           scopelibc_mq_send(mqd_t, const char *, size_t, unsigned int
 extern ssize_t       scopelibc_mq_receive(mqd_t, char *, size_t, unsigned int *);
 extern int           scopelibc_mq_unlink(const char *);
 extern int           scopelibc_mq_getattr(mqd_t, struct mq_attr *);
+extern int           scopelibc_msgget(key_t, int);
+extern int           scopelibc_msgctl(int, int, struct msqid_ds *);
+extern int           scopelibc_msgsnd(int, const void *, size_t, int);
+extern ssize_t       scopelibc_msgrcv(int, void *, size_t, long, int);
 
 static int g_go_static;
 
@@ -1263,4 +1267,24 @@ scope_mq_unlink(const char *name) {
 int
 scope_mq_getattr(mqd_t mqd, struct mq_attr *attr) {
     return scopelibc_mq_getattr(mqd, attr);
+}
+
+int
+scope_msgget(key_t key, int msgflg) {
+    return scopelibc_msgget(key, msgflg);
+}
+
+int
+scope_msgctl(int msqid, int cmd, struct msqid_ds *buf) {
+    return scopelibc_msgctl(msqid, cmd, buf);
+}
+
+int
+scope_msgsnd(int msqid, const void *msgp, size_t msgsz, int msgflg) {
+    return scopelibc_msgsnd(msqid, msgp, msgsz, msgflg);
+}
+
+ssize_t
+scope_msgrcv(int msqid, void *msgp, size_t msgsz, long msgtyp, int msgflg) {
+    return scopelibc_msgrcv(msqid, msgp, msgsz, msgtyp, msgflg);
 }

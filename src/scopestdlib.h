@@ -9,6 +9,7 @@
 #include <locale.h>
 #include <sys/auxv.h>
 #include <sys/mman.h>
+#include <sys/msg.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/select.h>
@@ -293,6 +294,9 @@ int           scope_mq_send(mqd_t, const char *, size_t, unsigned int);
 ssize_t       scope_mq_receive(mqd_t, char *, size_t, unsigned int *);
 int           scope_mq_unlink(const char *);
 int           scope_mq_getattr(mqd_t, struct mq_attr *);
-
+int           scope_msgget(key_t, int);
+int           scope_msgctl(int, int, struct msqid_ds *);
+int           scope_msgsnd(int, const void *, size_t, int);
+ssize_t       scope_msgrcv(int, void *, size_t, long, int);
 
 #endif // __SCOPE_STDLIB_H__
