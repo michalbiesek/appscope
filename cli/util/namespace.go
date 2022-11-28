@@ -2,9 +2,12 @@ package util
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"syscall"
 
 	lxd "github.com/lxc/lxd/client"
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -83,6 +86,16 @@ func getContainerRuntimePids(runtimeProc string) ([]int, error) {
 	}
 
 	return pids, nil
+}
+
+// NamespaceSwitchIPC switch IPC namespace to the specified pid
+func NamespaceSwitchIPC(pid int) error {
+	fd, err := os.Open(fmt.Sprintf("/proc/%v/ns/ipc", pid))
+	if err != nil {
+		return err
+	}
+	defer fd.Close()
+	return unix.Setns(int(fd.Fd()), syscall.CLONE_NEWIPC)
 }
 
 /*
