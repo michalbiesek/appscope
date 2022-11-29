@@ -7,14 +7,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/criblio/scope/util"
+	"github.com/criblio/scope/ns"
+	"github.com/criblio/scope/procfs"
 )
 
-// IPC structure representes Inter Process Communication object
-type IPC struct {
+// ipc structure representes Inter Process Communication object
+type ipcObj struct {
 	sender    *sendMessageQueue    // Message queue used to send messages
 	receiver  *receiveMessageQueue // Message queue used to receive messages
-	// pid       int                  // PID of scoped process from host
 	ipcSwitch bool                 // Indicator if IPC switch occured
 }
 
@@ -23,9 +23,15 @@ var (
 	errMissingResponse     = errors.New("missing response from PID")
 )
 
-// iPCDispatcher dispatches cmd to the process specified by the pid.
+// IpcGetScopeStatus dispatches cmd to the process specified by the pid.
 // Returns the byte answer from scoped process endpoint.
-func iPCDispatcher(cmd IPCCmd, pid int) ([]byte, error) {
+func IpcGetScopeStatus(pid int) ([]byte, error) {
+	return ipcDispatcher(cmdGetScopeStatus, pid)
+}
+
+// ipcDispatcher dispatches cmd to the process specified by the pid.
+// Returns the byte answer from scoped process endpoint.
+func ipcDispatcher(cmd ipcCmd, pid int) ([]byte, error) {
 	var answer []byte
 	var responseReceived bool
 
@@ -85,34 +91,34 @@ func nsnewNonBlockMsgQReader(name string, nsUid int, nsGid int, restoreUid int, 
 }
 
 // newIPC creates an IPC object designated for communication with specific PID
-func newIPC(pid int) (*IPC, error) {
+func newIPC(pid int) (*ipcObj, error) {
 	restoreGid := os.Getegid()
 	restoreUid := os.Geteuid()
 
-	ipcSwitch, err := util.NamespaceSelfCompareIPC(pid)
+	ipcSame, err := ns.NamespaceSelfCompareIPC(pid)
 	if err != nil {
 		return nil, err
 	}
 
 	// Retrieve information about user nad group id
-	nsUid, err := util.PidNsTranslateUid(restoreUid, pid)
+	nsUid, err := procfs.PidNsTranslateUid(restoreUid, pid)
 	if err != nil {
 		return nil, err
 	}
-	nsGid, err := util.PidNsTranslateGid(restoreGid, pid)
+	nsGid, err := procfs.PidNsTranslateGid(restoreGid, pid)
 	if err != nil {
 		return nil, err
 	}
 
 	// Retrieve information about process namespace PID
-	_, ipcPid, err := util.PidLastNsPid(pid)
+	_, ipcPid, err := procfs.PidLastNsPid(pid)
 	if err != nil {
 		return nil, err
 	}
 
 	// Switch IPC if neeeded
-	if ipcSwitch {
-		if err := util.NamespaceSwitchIPC(pid); err != nil {
+	if !ipcSame {
+		if err := ns.NamespaceSwitchIPC(pid); err != nil {
 			return nil, err
 		}
 	}
@@ -120,7 +126,7 @@ func newIPC(pid int) (*IPC, error) {
 	// Try to open proc message queue
 	sender, err := openMsgQWriter(fmt.Sprintf("ScopeIPCIn.%d", ipcPid))
 	if err != nil {
-		util.NamespaceRestoreIPC()
+		ns.NamespaceRestoreIPC()
 		return nil, errMissingProcMsgQueue
 	}
 
@@ -128,30 +134,30 @@ func newIPC(pid int) (*IPC, error) {
 	receiver, err := nsnewNonBlockMsgQReader(fmt.Sprintf("ScopeIPCOut.%d", ipcPid), nsUid, nsGid, restoreUid, restoreGid)
 	if err != nil {
 		sender.close()
-		util.NamespaceRestoreIPC()
+		ns.NamespaceRestoreIPC()
 		return nil, err
 	}
 
-	return &IPC{sender: sender, receiver: receiver, ipcSwitch: ipcSwitch}, nil
+	return &ipcObj{sender: sender, receiver: receiver, ipcSwitch: ipcSame}, nil
 }
 
 // destroyIPC destroys an IPC object
-func (ipc *IPC) destroyIPC() {
+func (ipc *ipcObj) destroyIPC() {
 	ipc.sender.close()
 	ipc.receiver.close()
 	ipc.receiver.unlink()
 	if ipc.ipcSwitch {
-		util.NamespaceRestoreIPC()
+		ns.NamespaceRestoreIPC()
 	}
 }
 
 // receive receive the message from the process endpoint
-func (ipc *IPC) receive() ([]byte, error) {
+func (ipc *ipcObj) receive() ([]byte, error) {
 	return ipc.receiver.receive(0)
 }
 
 // empty checks if receiver message queque is empty
-func (ipc *IPC) empty() bool {
+func (ipc *ipcObj) empty() bool {
 	atr, err := ipc.receiver.getAttributes()
 	if err != nil {
 		return true
@@ -160,6 +166,6 @@ func (ipc *IPC) empty() bool {
 }
 
 // send sends the message to the process endpoint
-func (ipc *IPC) send(msg []byte) error {
+func (ipc *ipcObj) send(msg []byte) error {
 	return ipc.sender.send(msg, 0)
 }

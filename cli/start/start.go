@@ -12,6 +12,8 @@ import (
 	"github.com/criblio/scope/internal"
 	"github.com/criblio/scope/libscope"
 	"github.com/criblio/scope/loader"
+	"github.com/criblio/scope/ns"
+	"github.com/criblio/scope/procfs"
 	"github.com/criblio/scope/run"
 	"github.com/criblio/scope/util"
 	"github.com/rs/zerolog/log"
@@ -45,7 +47,7 @@ var (
 func getContainersPids() []int {
 	cPids := []int{}
 
-	ctrDPids, err := util.GetContainerDPids()
+	ctrDPids, err := ns.GetContainerDPids()
 	if err != nil {
 		log.Error().
 			Err(err).
@@ -55,7 +57,7 @@ func getContainersPids() []int {
 		cPids = append(cPids, ctrDPids...)
 	}
 
-	podmanPids, err := util.GetPodmanPids()
+	podmanPids, err := ns.GetPodmanPids()
 	if err != nil {
 		log.Error().
 			Err(err).
@@ -65,10 +67,10 @@ func getContainersPids() []int {
 		cPids = append(cPids, podmanPids...)
 	}
 
-	lxcPids, err := util.GetLXCPids()
+	lxcPids, err := ns.GetLXCPids()
 	if err != nil {
 		switch {
-		case errors.Is(err, util.ErrLXDSocketNotAvailable):
+		case errors.Is(err, ns.ErrLXDSocketNotAvailable):
 			log.Warn().
 				Msgf("Setup LXC containers skipped. LXD is not available")
 		default:
@@ -134,7 +136,7 @@ func startAttach(allowProcs []allowProcConfig) error {
 
 	// Iterate over all allowed processses
 	for _, process := range allowProcs {
-		pidsToAttach := make(util.PidScopeMapState)
+		pidsToAttach := make(procfs.PidScopeMapState)
 		cfgSingleProc, err := yaml.Marshal(process.Config)
 		if err != nil {
 			log.Error().
@@ -144,7 +146,7 @@ func startAttach(allowProcs []allowProcConfig) error {
 		}
 
 		if process.Procname != "" {
-			procsMap, err := util.PidScopeMapByProcessName(process.Procname)
+			procsMap, err := procfs.PidScopeMapByProcessName(process.Procname)
 			if err != nil {
 				log.Error().
 					Err(err).
@@ -155,7 +157,7 @@ func startAttach(allowProcs []allowProcConfig) error {
 			pidsToAttach = procsMap
 		}
 		if process.Arg != "" {
-			procsMap, err := util.PidScopeMapByCmdLine(process.Arg)
+			procsMap, err := procfs.PidScopeMapByCmdLine(process.Arg)
 			if err != nil {
 				log.Error().
 					Err(err).
@@ -169,7 +171,7 @@ func startAttach(allowProcs []allowProcConfig) error {
 		}
 
 		// Exclude current scope process all Os threads from attach list
-		scopeThreads, err := util.PidThreadsPids(os.Getpid())
+		scopeThreads, err := procfs.PidThreadsPids(os.Getpid())
 		if err != nil {
 			log.Warn().
 				Str("pid", strconv.Itoa(os.Getpid())).
@@ -473,7 +475,7 @@ func Start() error {
 	// which will instead run `scope start` on the host
 	// SCOPE_CLI_SKIP_START_HOST allows to run scope start in docker environment (integration tests)
 	_, skipHostCfg := os.LookupEnv("SCOPE_CLI_SKIP_START_HOST")
-	if util.InContainer() && !skipHostCfg {
+	if ns.InContainer() && !skipHostCfg {
 		if err := extract(scopeDirVersion); err != nil {
 			return err
 		}

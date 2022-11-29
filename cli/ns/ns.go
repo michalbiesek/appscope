@@ -1,4 +1,4 @@
-package util
+package ns
 
 import (
 	"errors"
@@ -6,6 +6,7 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/criblio/scope/procfs"
 	lxd "github.com/lxc/lxd/client"
 	"golang.org/x/sys/unix"
 )
@@ -64,21 +65,21 @@ func GetPodmanPids() ([]int, error) {
 
 // Get the List of PID(s) related to specific container runtime
 func getContainerRuntimePids(runtimeProc string) ([]int, error) {
-	runtimeContPids, err := PidScopeMapByProcessName(runtimeProc)
+	runtimeContPids, err := procfs.PidScopeMapByProcessName(runtimeProc)
 	if err != nil {
 		return nil, err
 	}
 	pids := make([]int, 0, len(runtimeContPids))
 
 	for runtimeContPid := range runtimeContPids {
-		childrenPids, err := PidChildren(runtimeContPid)
+		childrenPids, err := procfs.PidChildren(runtimeContPid)
 		if err != nil {
 			return nil, err
 		}
 
 		// Iterate over all the children to found container init process
 		for _, childPid := range childrenPids {
-			status, _ := PidInitContainer(childPid)
+			status, _ := procfs.PidInitContainer(childPid)
 			if status {
 				pids = append(pids, childPid)
 			}
@@ -90,16 +91,17 @@ func getContainerRuntimePids(runtimeProc string) ([]int, error) {
 
 // NamespaceSelfCompareIPC compare own IPC namespace with specified pid
 func NamespaceSelfCompareIPC(pid int) (bool, error) {
-	selfStat, err := os.Stat("/proc/self/ns/ipc")
-	if err != nil {
+	var selfStat syscall.Stat_t
+	var pidStat syscall.Stat_t
+
+	if err := syscall.Stat("/proc/self/ns/ipc", &selfStat); err != nil {
 		return false, err
 	}
 
-	pidStat, err := os.Stat(fmt.Sprintf("/proc/%v/ns/ipc", pid))
-	if err != nil {
+	if err := syscall.Stat(fmt.Sprintf("/proc/%v/ns/ipc", pid), &pidStat); err != nil {
 		return false, err
 	}
-	return os.SameFile(selfStat, pidStat), nil
+	return (selfStat.Ino == pidStat.Ino && selfStat.Dev == pidStat.Dev), nil
 }
 
 // NamespaceSwitchIPC switch IPC namespace to the specified pid

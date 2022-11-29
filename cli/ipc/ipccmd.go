@@ -1,13 +1,13 @@
 package ipc
 
-// IPCCmd represents the command structure
-type IPCCmd int64
+// ipcCmd represents the command structure
+type ipcCmd int64
 
 const (
-	cmdGetScopeStatus IPCCmd = iota
+	cmdGetScopeStatus ipcCmd = iota
 )
 
-func (cmd IPCCmd) string() string {
+func (cmd ipcCmd) string() string {
 	switch cmd {
 	case cmdGetScopeStatus:
 		return "getScopeStatus"
@@ -15,6 +15,6 @@ func (cmd IPCCmd) string() string {
 	return "unknown"
 }
 
-func (cmd IPCCmd) byte() []byte {
+func (cmd ipcCmd) byte() []byte {
 	return []byte(cmd.string())
 }

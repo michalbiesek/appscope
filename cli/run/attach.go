@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/criblio/scope/loader"
+	"github.com/criblio/scope/procfs"
 	"github.com/criblio/scope/util"
 	"github.com/rs/zerolog/log"
 	"github.com/syndtr/gocapability/capability"
@@ -30,14 +31,14 @@ var (
 
 // Attach scopes an existing PID
 func (rc *Config) Attach(args []string) error {
-	pid, err := handleInputArg(args[0])
+	pid, err := handleInputArg(args[0], true)
 	if err != nil {
 		return err
 	}
 	args[0] = fmt.Sprint(pid)
 	var reattach bool
 	// Check PID is not already being scoped
-	if !util.PidScoped(pid) {
+	if !procfs.PidScoped(pid) {
 		// Validate user has root permissions
 		if err := util.UserVerifyRootPerm(); err != nil {
 			return err
@@ -110,7 +111,7 @@ func (rc *Config) DetachAll(args []string) error {
 		}
 	}
 
-	procs, err := util.ProcessesScoped()
+	procs, err := util.ProcessesToDetach()
 	if err != nil {
 		return err
 	}
@@ -125,6 +126,7 @@ func (rc *Config) DetachAll(args []string) error {
 			{Name: "Pid", Field: "pid"},
 			{Name: "User", Field: "user"},
 			{Name: "Command", Field: "command"},
+			{Name: "Status", Field: "status"},
 		}, procs)
 
 		if !util.Confirm("Are your sure you want to detach from all of these processes?") {
@@ -159,7 +161,7 @@ func (rc *Config) DetachAll(args []string) error {
 
 // DetachSingle unscopes an existing PID
 func (rc *Config) DetachSingle(args []string) error {
-	pid, err := handleInputArg(args[0])
+	pid, err := handleInputArg(args[0], false)
 	if err != nil {
 		return err
 	}
@@ -174,7 +176,7 @@ func (rc *Config) DetachSingle(args []string) error {
 
 func (rc *Config) detach(args []string, pid int) error {
 	// Check PID is already being scoped
-	if !util.PidScoped(pid) {
+	if !procfs.PidScoped(pid) {
 		return errNotScoped
 	}
 
@@ -190,10 +192,11 @@ func (rc *Config) detach(args []string, pid int) error {
 }
 
 // handleInputArg handles the input argument (process id/name)
-func handleInputArg(InputArg string) (int, error) {
+func handleInputArg(InputArg string, toAttach bool) (int, error) {
 	// Get PID by name if non-numeric, otherwise validate/use InputArg
 	var pid int
 	var err error
+	var procs util.Processes
 	if util.IsNumeric(InputArg) {
 		pid, err = strconv.Atoi(InputArg)
 		if err != nil {
@@ -209,7 +212,12 @@ func handleInputArg(InputArg string) (int, error) {
 			}
 		}
 
-		procs, err := util.ProcessesByName(InputArg)
+		if toAttach {
+			procs, err = util.ProcessesByNameToAttach(InputArg)
+		} else {
+			procs, err = util.ProcessesByNameToDetach(InputArg)
+		}
+
 		if err != nil {
 			return -1, err
 		}
@@ -228,6 +236,7 @@ func handleInputArg(InputArg string) (int, error) {
 				{Name: "User", Field: "user"},
 				{Name: "Scoped", Field: "scoped"},
 				{Name: "Command", Field: "command"},
+				{Name: "Status", Field: "status"},
 			}, procs)
 			fmt.Println("Select an ID from the list:")
 			var selection string
@@ -247,7 +256,7 @@ func handleInputArg(InputArg string) (int, error) {
 	}
 
 	// Check PID exists
-	if !util.PidExists(pid) {
+	if !procfs.PidExists(pid) {
 		return -1, errPidMissing
 	}
 

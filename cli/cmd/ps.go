@@ -38,6 +38,7 @@ var psCmd = &cobra.Command{
 			{Name: "Pid", Field: "pid"},
 			{Name: "User", Field: "user"},
 			{Name: "Command", Field: "command"},
+			{Name: "Status", Field: "status"},
 		}, procs)
 	},
 }

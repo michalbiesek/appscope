@@ -7,6 +7,19 @@
 - The message queue created by `scope` is `ScopeIPCOut.<PID>`
 - The message queue created by scoped application is `ScopeIPCIn.<PID>`
 - scoped application reads from `ScopeIPCIn.<PID>` and writes to `ScopeIPCOut.<PID>`
-- `scope` reads from `ScopeIPCOut.<PID>` and writes to `ScopeIPCIn.<PID>`
+- `scope` reads from `ScopeIPCOut.<PID>` and writecopeIPCIn.<PID>`
 
 ![IPC Demo](images/ipc.gif)
+
+[Protocol Proposal]
+
+#Metadata
+
+#REQ
+[VERSION][INS][INS]
+
+#RESP
+[VERSION][INS][INS]
+
+VERSION - Version used by CLI 3 bytes
+INS - Instruction cmd bytes 2 bytes
