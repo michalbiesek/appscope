@@ -30,11 +30,12 @@ type Processes []Process
 var (
 	errOpenProc        = errors.New("cannot open proc directory")
 	errReadProc        = errors.New("cannot read from proc directory")
+	errGetProcGidMap   = errors.New("error getting process gid map")
+	errGetProcUidMap   = errors.New("error getting process uid map")
 	errGetProcStatus   = errors.New("error getting process status")
 	errGetProcCmdLine  = errors.New("error getting process command line")
 	errGetProcTask     = errors.New("error getting process task")
 	errGetProcChildren = errors.New("error getting process children")
-	errGetNsPid        = errors.New("error getting namespace PID")
 	errMissingUser     = errors.New("unable to find user")
 )
 
@@ -308,13 +309,60 @@ func PidCmdline(pid int) (string, error) {
 	return cmdline, nil
 }
 
-// PidInitContainer verify if specific PID is the init PID in the container
-func PidInitContainer(pid int) (bool, error) {
+// PidNsTranslateUid translate specified uid to the ID-outside-ns in specified pid.
+// See https://man7.org/linux/man-pages/man7/user_namespaces.7.html for details
+func PidNsTranslateUid(uid int, pid int) (int, error) {
+	file, err := os.Open(fmt.Sprintf("/proc/%v/uid_map", pid))
+	if err != nil {
+		return -1, errGetProcUidMap
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+	for scanner.Scan() {
+		uidMapEntry := strings.Fields(scanner.Text())
+		uidInsideNs, _ := strconv.Atoi(uidMapEntry[0])
+		uidOutsideNs, _ := strconv.Atoi(uidMapEntry[1])
+		length, _ := strconv.Atoi(uidMapEntry[2])
+		if (uid >= uidInsideNs) && (uid < uidInsideNs+length) {
+			return uidOutsideNs + uid, nil
+		}
+	}
+	// unreachable
+	return -1, errGetProcUidMap
+}
+
+// PidNsTranslateGid translate specified gid to the ID-outside-ns in specified pid.
+// See https://man7.org/linux/man-pages/man7/user_namespaces.7.html for details
+func PidNsTranslateGid(gid int, pid int) (int, error) {
+	file, err := os.Open(fmt.Sprintf("/proc/%v/gid_map", pid))
+	if err != nil {
+		return -1, errGetProcGidMap
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+	for scanner.Scan() {
+		gidMapEntry := strings.Fields(scanner.Text())
+		gidInsideNs, _ := strconv.Atoi(gidMapEntry[0])
+		gidOutsideNs, _ := strconv.Atoi(gidMapEntry[1])
+		length, _ := strconv.Atoi(gidMapEntry[2])
+		if (gid >= gidInsideNs) && (gid < gidInsideNs+length) {
+			return gidOutsideNs + gid, nil
+		}
+	}
+	// unreachable
+	return -1, errGetProcGidMap
+}
+
+// PidLastNsPid process the NsPid file for specified PID.
+// Returns status if the specified PID residents in nested PID namespace, last PID in namespace and status of operation.
+func PidLastNsPid(pid int) (bool, int, error) {
 	// TODO: goprocinfo does not support all the status parameters (NsPid)
 	// handle procfs by ourselves ?
 	file, err := os.Open(fmt.Sprintf("/proc/%v/status", pid))
 	if err != nil {
-		return false, errGetProcStatus
+		return false, -1, errGetProcStatus
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
@@ -322,13 +370,33 @@ func PidInitContainer(pid int) (bool, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "NSpid:") {
+			var nsNestedStatus bool
 			// Skip Nspid
-			nsPidString := strings.Fields(line)[1:]
-			// Check for nested PID namespace and the init PID in namespace (it should be equals 1)
-			if (len(nsPidString) > 1) && (nsPidString[len(nsPidString)-1] == "1") {
-				return true, nil
+			strPids := strings.Fields(line)[1:]
+
+			strPidsSize := len(strPids)
+			if strPidsSize > 1 {
+				nsNestedStatus = true
 			}
+			nsLastPid, _ := strconv.Atoi(strPids[strPidsSize-1])
+
+			return nsNestedStatus, nsLastPid, nil
 		}
+	}
+	return false, -1, errGetProcStatus
+}
+
+// PidInitContainer verify if specific PID is the init PID in the container
+func PidInitContainer(pid int) (bool, error) {
+
+	nsNestedStatus, nsLastPid, err := PidLastNsPid(pid)
+	if err != nil {
+		return false, errGetProcStatus
+	}
+
+	// Check for nested PID namespace and the init PID in namespace (it should be equals 1)
+	if (nsNestedStatus) && (nsLastPid == 1) {
+		return true, nil
 	}
 	return false, nil
 }

@@ -88,9 +88,33 @@ func getContainerRuntimePids(runtimeProc string) ([]int, error) {
 	return pids, nil
 }
 
+// NamespaceSelfCompareIPC compare own IPC namespace with specified pid
+func NamespaceSelfCompareIPC(pid int) (bool, error) {
+	selfStat, err := os.Stat("/proc/self/ns/ipc")
+	if err != nil {
+		return false, err
+	}
+
+	pidStat, err := os.Stat(fmt.Sprintf("/proc/%v/ns/ipc", pid))
+	if err != nil {
+		return false, err
+	}
+	return os.SameFile(selfStat, pidStat), nil
+}
+
 // NamespaceSwitchIPC switch IPC namespace to the specified pid
 func NamespaceSwitchIPC(pid int) error {
 	fd, err := os.Open(fmt.Sprintf("/proc/%v/ns/ipc", pid))
+	if err != nil {
+		return err
+	}
+	defer fd.Close()
+	return unix.Setns(int(fd.Fd()), syscall.CLONE_NEWIPC)
+}
+
+// NamespaceRestoreIPC restore IPC namespace to the one specified in PID
+func NamespaceRestoreIPC() error {
+	fd, err := os.Open("/proc/self/ns/ipc")
 	if err != nil {
 		return err
 	}
