@@ -38,8 +38,10 @@
 | RESP_DATA  | n              | Response data e.g. cfg in case of getCfg                             |
 
 
+
 Example communication
 
+Get Scope Status messsage
 Request:
 -> 0x01 0xCD 01 01
 
@@ -48,6 +50,7 @@ REQ_ID - 0xCD - Unique Id of this request
 MSG_NO - 0x01 - Message no 1
 TOTAL_MSG_NO - 0x01 - Total message of this request is 1
 
+Respones for get Scope Status messsage -> scope is Active
 Response:
 <- 0xCD 0x00 01 01 01
 
@@ -55,7 +58,7 @@ REQ_ID - 0xCD - GetScopeStatus
 STATUS - 0x00 - OK (Success)
 MSG_NO - 0x01 - message no 1
 TOTAL_MSG_NO - 0x01 - total message of this request is 1
-RESP_DATA - 0x01 - (interposition is enabled - 0x01, interposition is disabled - 0x00)
+RESP_DATA - 0x01 - (0x01 - Active state, 0x00 - Latent state)
 
 Questions:
 - ID, Request ID, MSG_NO, MAX_ID - is one byt sufficient ?
