@@ -24,8 +24,8 @@ var (
 // - maximum number of messsages in a queue
 // - maximum message size in a queue
 // Details: https://man7.org/linux/man-pages/man7/mq_overview.7.html
-const mqMaxMsgMax int = 10
-const mqMaxMsgSize int = 8192
+const mqMaxMsgMax int = 4
+const mqMaxMsgSize int = 256
 
 // Message queque attribute structure
 // Details: https://man7.org/linux/man-pages/man3/mq_getattr.3.html
