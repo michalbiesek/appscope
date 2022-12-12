@@ -20,8 +20,8 @@
  * See details in: https://man7.org/linux/man-pages/man7/mq_overview.7.html
  */
 
-#define QUEUE_MSG_MAX  10
-#define QUEUE_MSG_SIZE 8192
+#define QUEUE_MSG_MAX  4
+#define QUEUE_MSG_SIZE 256
 
 #define INPUT_CMD_LEN(x) (sizeof(x)-1)
 #define CMD_TABLE_SIZE(x) (sizeof(x)/sizeof(x[0]))
