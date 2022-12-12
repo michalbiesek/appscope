@@ -10,6 +10,12 @@ typedef enum {
     IPC_CMD_UNKNOWN,               // Unknown command
 } ipc_cmd_t;
 
+typedef enum {
+    IPC_STATUS_OK = 0U,
+    IPC_STATUS_CMD_FAILED = 1U,
+    IPC_STATUS_CMD_NOT_FOUND = 2U,
+} ipc_status_t;
+
 // Manage Inter-process connection
 mqd_t ipcCreateNonBlockReadConnection(const char *);
 mqd_t ipcOpenWriteConnection(const char *);

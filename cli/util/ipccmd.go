@@ -1,20 +1,32 @@
 package util
 
-// ipcCmd represents the command structure
-type ipcCmd int64
+import "fmt"
 
 const (
-	cmdGetScopeStatus ipcCmd = iota
+	cmdGetScopeStatus uint16 = iota
 )
 
-func (cmd ipcCmd) string() string {
-	switch cmd {
-	case cmdGetScopeStatus:
-		return "getScopeStatus"
-	}
-	return "unknown"
+// type ipcRequest interface {
+// 	instruction() uint16
+// 	data() []byte
+// 	msg() []byte
+// }
+
+// Inline with ipcRequest -> ipc.c
+type DefaultRequest struct {
+	ins   uint16
+	param uint16
 }
 
-func (cmd ipcCmd) byte() []byte {
-	return []byte(cmd.string())
+// NewScopeStatusRequest creates a new Default Request
+func NewScopeStatusRequest() DefaultRequest {
+	return DefaultRequest{
+		ins:   cmdGetScopeStatus,
+		param: 0,
+	}
+}
+
+// msg serializes request
+func (req DefaultRequest) msg() []byte {
+	return []byte(fmt.Sprintf("%v", req))
 }

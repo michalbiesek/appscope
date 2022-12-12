@@ -2,6 +2,7 @@
 
 #include "ipc.h"
 #include "runtimecfg.h"
+#include "cJSON.h"
 
 /* Inter-process communication module based on the message-queue
  *
@@ -31,11 +32,30 @@
  */
 typedef size_t (*out_msg_func_t)(char *, size_t);
 
+
+struct ipcRequest {
+  int ins;
+//   short reqId;
+//   short currentMsg;
+//   short totalMsg;
+  int param;
+  char data[];
+};
+
+struct ipcResponse {
+//   short reqId;
+  int status;
+//   short currentMsg;
+//   short totalMsg;
+  int param;
+  char data[];
+};
+
 static size_t
 cmdGetScopeStatus(char *buf, size_t len) {
     // Excluding the terminating null byte
-    const char *status = (g_cfg.funcs_attached) ? "true" : "false";
-    return scope_snprintf(buf, len, "%s", status);
+    unsigned short status = (g_cfg.funcs_attached) ? 1 : 0;
+    return scope_snprintf(buf, len, "%hu", status);
 }
 
 static size_t
@@ -45,15 +65,14 @@ cmdUnknown(char *buf, size_t len) {
 }
 
 typedef struct {
-    const char *name;       // command name string [in]
-    size_t nameLen;         // command name string length [in]
-    ipc_cmd_t cmd;          // command id [out]
-} input_cmd_table_t;
-
-typedef struct {
-    ipc_cmd_t cmd;          // command id [in]
+    ipc_cmd_t cmd;          // command instruction [in]
     out_msg_func_t func;    // output func [out]
 } output_cmd_table_t;
+
+output_cmd_table_t outputCmdTable[] = {
+    {IPC_CMD_GET_SCOPE_STATUS,  cmdGetScopeStatus},
+    {IPC_CMD_UNKNOWN,           cmdUnknown}
+};
 
 static int
 ipcSend(mqd_t mqdes, const char *data, size_t len) {
@@ -126,17 +145,24 @@ ipcRequestMsgHandler(mqd_t mqDes, size_t mqSize, ipc_cmd_t *cmdRes) {
         return FALSE;
     }
 
-    input_cmd_table_t inputCmdTable[] = {
-        {"getScopeStatus",  INPUT_CMD_LEN("getScopeStatus"), IPC_CMD_GET_SCOPE_STATUS}
-    };
+    // Minimum request size to support metadata
+    if (recvLen <= offsetof(struct ipcRequest, data)) {
+        scope_free(buf);
+        return FALSE;
+    }
 
-    for (int i = 0; i < CMD_TABLE_SIZE(inputCmdTable); ++i) {
-        if ((recvLen == inputCmdTable[i].nameLen) && !scope_memcmp(inputCmdTable[i].name, buf, recvLen)) {
-            *cmdRes = inputCmdTable[i].cmd;
+    struct ipcRequest *req = (struct ipcRequest *) buf;
+
+    // Find the proper request
+    for (int i = 0; i < CMD_TABLE_SIZE(outputCmdTable); ++i) {
+        if (req->ins == outputCmdTable[i].cmd) {
+            *cmdRes = outputCmdTable[i].cmd;
             scope_free(buf);
             return TRUE;
         }
     }
+
+    // Handle data TODO
     *cmdRes = IPC_CMD_UNKNOWN;
     scope_free(buf);
     return TRUE;
@@ -146,20 +172,19 @@ bool
 ipcResponseMsgHandler(mqd_t mqDes, size_t mqSize, ipc_cmd_t cmd) {
     bool res = FALSE;
     size_t len;
+
     if ((unsigned)(cmd) > IPC_CMD_UNKNOWN) {
+        // Default Response ??
         return res;
     }
 
+    // Allocate message from size readed from fd
     char *buf = scope_malloc(mqSize);
     if (!buf) {
         return res;
     }
 
-    output_cmd_table_t outputCmdTable[] = {
-        {IPC_CMD_GET_SCOPE_STATUS,  cmdGetScopeStatus},
-        {IPC_CMD_UNKNOWN,           cmdUnknown}
-    };
-
+    // Handle response
     for (int i = 0; i < CMD_TABLE_SIZE(outputCmdTable); ++i) {
         if (cmd == outputCmdTable[i].cmd) {
             len = outputCmdTable[i].func(buf, mqSize);
@@ -167,10 +192,17 @@ ipcResponseMsgHandler(mqd_t mqDes, size_t mqSize, ipc_cmd_t cmd) {
         }
     }
 
-    int sendRes = ipcSend(mqDes, buf, len);
+    // TODO error handling
+    cJSON *response = cJSON_CreateObject();
+    cJSON_AddNumberToObjLN(response, "status", 200);
+    cJSON_AddNumberToObjLN(response, "data", )
+
+    int sendRes = ipcSend(mqDes, (const char *) &response, respLen);
     if (sendRes != -1) {
         res = TRUE;
     }
+
+    cJSON_Delete(response);
     scope_free(buf);
 
     return res;

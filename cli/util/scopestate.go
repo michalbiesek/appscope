@@ -40,6 +40,8 @@ func getScopeStatus(pid int) ScopeStatus {
 	if err != nil {
 		return Setup
 	}
+
+	ipcGetScopeStatus()
 	if bytes.Equal(bresp, []byte("true")) {
 		return Active
 	} else if bytes.Equal(bresp, []byte("false")) {

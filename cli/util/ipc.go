@@ -23,12 +23,12 @@ var (
 // ipcGetScopeStatus dispatches cmd to the process specified by the pid.
 // Returns the byte answer from scoped process endpoint.
 func ipcGetScopeStatus(pid int) ([]byte, error) {
-	return ipcDispatcher(cmdGetScopeStatus, pid)
+	return ipcDispatcher(NewScopeStatusRequest(), pid)
 }
 
 // ipcDispatcher dispatches cmd to the process specified by the pid.
 // Returns the byte answer from scoped process endpoint.
-func ipcDispatcher(cmd ipcCmd, pid int) ([]byte, error) {
+func ipcDispatcher(req DefaultRequest, pid int) ([]byte, error) {
 	var answer []byte
 	var responseReceived bool
 
@@ -38,7 +38,7 @@ func ipcDispatcher(cmd ipcCmd, pid int) ([]byte, error) {
 	}
 	defer ipc.destroyIPC()
 
-	if err := ipc.send(cmd.byte()); err != nil {
+	if err := ipc.send(req.msg()); err != nil {
 		return answer, err
 	}
 
