@@ -1176,6 +1176,12 @@ scope___snprintf_chk(char *str, size_t maxlen, int flag, size_t slen, const char
     return ret;
 }
 
+char *
+scope___strcpy_chk(char *dest, const char *src, size_t destlen)
+{
+    return scope_strcpy(dest, src);
+}
+
 int
 scope___vfprintf_chk(FILE *fp, int flag, const char *format, va_list ap)
 {

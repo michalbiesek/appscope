@@ -3,6 +3,7 @@ __ctype_tolower_loc scope___ctype_tolower_loc
 __errno_location scopelibc___errno_location
 __isoc99_sscanf scope__iso99_sscanf
 __snprintf_chk scope___snprintf_chk
+__strcpy_chk scope___strcpy_chk
 __vfprintf_chk scope___vfprintf_chk
 __vsnprintf_chk scope___vsnprintf_chk
 accept scopelibc_accept
