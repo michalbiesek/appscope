@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -17,52 +18,48 @@ type ipcObj struct {
 
 var (
 	errMissingProcMsgQueue = errors.New("missing message queue from PID")
-	errMissingResponse     = errors.New("missing response from PID")
+	errRequest             = errors.New("error with sending request to PID")
+	errFrame               = errors.New("frame error")
 )
 
-// ipcGetScopeStatus dispatches cmd to the process specified by the pid.
+// ipcDispatcher dispatches request to the process specified by the pid.
 // Returns the byte answer from scoped process endpoint.
-func ipcGetScopeStatus(pid int) ([]byte, error) {
-	return ipcDispatcher(cmdGetScopeStatus, pid)
-}
-
-// ipcDispatcher dispatches cmd to the process specified by the pid.
-// Returns the byte answer from scoped process endpoint.
-func ipcDispatcher(cmd ipcCmd, pid int) ([]byte, error) {
-	var answer []byte
-	var responseReceived bool
+func ipcDispatcher(request []byte, pid int) ([]byte, error) {
+	var response []byte
+	var genResp scopeGenericResponse
 
 	ipc, err := newIPC(pid)
 	if err != nil {
-		return answer, err
+		return response, err
 	}
 	defer ipc.destroyIPC()
 
-	if err := ipc.send(cmd.byte()); err != nil {
-		return answer, err
+	err = ipc.send(request)
+	if err != nil {
+		return response, fmt.Errorf("%v %v", errRequest, pid)
 	}
 
-	// TODO: Ugly hack but we need to wait for answer from process
-	for i := 0; i < 5000; i++ {
-		if !ipc.empty() {
-			responseReceived = true
-			break
-		}
-		time.Sleep(time.Millisecond)
+	response, err = ipc.receive()
+	if err != nil {
+		return response, err
 	}
 
-	// Missing response
-	// The message queue on the application side exists but we are unable to receive
-	// an answer from it
-	if !responseReceived {
-		return answer, fmt.Errorf("%v %v", errMissingResponse, pid)
+	// Peek out first message to figured out if the response is based on single frame
+	err = json.Unmarshal(response, &genResp)
+	if err != nil {
+		return response, err
 	}
 
-	return ipc.receive()
+	// If this is not partial response we are done
+	if genResp.Status != responsePartialData {
+		return response, err
+	}
+
+	return ipc.receiveMultiple(response)
 }
 
-// nsnewNonBlockMsgQReader creates an IPC structure with switching effective uid and gid
-func nsnewNonBlockMsgQReader(name string, nsUid int, nsGid int, restoreUid int, restoreGid int) (*receiveMessageQueue, error) {
+// nsnewMsgQWriter creates an IPC writer structure with switching effective uid and gid
+func nsnewMsgQWriter(name string, nsUid int, nsGid int, restoreUid int, restoreGid int) (*sendMessageQueue, error) {
 
 	if err := syscall.Setegid(nsGid); err != nil {
 		return nil, err
@@ -71,7 +68,33 @@ func nsnewNonBlockMsgQReader(name string, nsUid int, nsGid int, restoreUid int, 
 		return nil, err
 	}
 
-	receiver, err := newNonBlockMsgQReader(name)
+	sender, err := newMsgQWriter(name)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := syscall.Seteuid(restoreUid); err != nil {
+		return nil, err
+	}
+
+	if err := syscall.Setegid(restoreGid); err != nil {
+		return nil, err
+	}
+
+	return sender, err
+}
+
+// nsnewMsgQReader creates an IPC reader structure with switching effective uid and gid
+func nsnewMsgQReader(name string, nsUid int, nsGid int, restoreUid int, restoreGid int) (*receiveMessageQueue, error) {
+
+	if err := syscall.Setegid(nsGid); err != nil {
+		return nil, err
+	}
+	if err := syscall.Seteuid(nsUid); err != nil {
+		return nil, err
+	}
+
+	receiver, err := newMsgQReader(name)
 	if err != nil {
 		return nil, err
 	}
@@ -120,17 +143,17 @@ func newIPC(pid int) (*ipcObj, error) {
 		}
 	}
 
-	// Try to open proc message queue
-	sender, err := openMsgQWriter(fmt.Sprintf("ScopeIPCIn.%d", ipcPid))
+	//  Create message queue to Write into it
+	sender, err := nsnewMsgQWriter(fmt.Sprintf("ScopeIPCIn.%d", ipcPid), nsUid, nsGid, restoreUid, restoreGid)
 	if err != nil {
 		namespaceRestoreIPC()
 		return nil, errMissingProcMsgQueue
 	}
 
-	// Try to create own message queue
-	receiver, err := nsnewNonBlockMsgQReader(fmt.Sprintf("ScopeIPCOut.%d", ipcPid), nsUid, nsGid, restoreUid, restoreGid)
+	// Create message queue to Read from it
+	receiver, err := nsnewMsgQReader(fmt.Sprintf("ScopeIPCOut.%d", ipcPid), nsUid, nsGid, restoreUid, restoreGid)
 	if err != nil {
-		sender.close()
+		sender.destroy()
 		namespaceRestoreIPC()
 		return nil, err
 	}
@@ -140,9 +163,8 @@ func newIPC(pid int) (*ipcObj, error) {
 
 // destroyIPC destroys an IPC object
 func (ipc *ipcObj) destroyIPC() {
-	ipc.sender.close()
-	ipc.receiver.close()
-	ipc.receiver.unlink()
+	ipc.sender.destroy()
+	ipc.receiver.destroy()
 	if ipc.ipcSwitch {
 		namespaceRestoreIPC()
 	}
@@ -150,19 +172,63 @@ func (ipc *ipcObj) destroyIPC() {
 
 // receive receive the message from the process endpoint
 func (ipc *ipcObj) receive() ([]byte, error) {
-	return ipc.receiver.receive(0)
-}
-
-// empty checks if receiver message queque is empty
-func (ipc *ipcObj) empty() bool {
-	atr, err := ipc.receiver.getAttributes()
-	if err != nil {
-		return true
-	}
-	return atr.CurrentMessages == 0
+	return ipc.receiver.receive(5 * time.Millisecond)
 }
 
 // send sends the message to the process endpoint
 func (ipc *ipcObj) send(msg []byte) error {
-	return ipc.sender.send(msg, 0)
+	return ipc.sender.send(msg, 5*time.Millisecond)
+}
+
+// sends the message to the process endpoint
+func handleFramedMsg(msg []byte, expectedId int) ([]byte, int, error) {
+	var frameResp scopeDataResponseFrame
+
+	err := json.Unmarshal(msg, &frameResp)
+	if err != nil {
+		return nil, -1, err
+	}
+
+	// Validate metadata
+	// - status must be responsePartialData
+	// - id must be equals expectedId
+	// - id cannot be larger than max
+	if frameResp.Status != responsePartialData {
+		return nil, -1, errFrame
+	}
+
+	if frameResp.Id != expectedId {
+		return nil, -1, errFrame
+	}
+
+	if frameResp.Id > frameResp.Max {
+		return nil, -1, errFrame
+	}
+
+	return []byte(frameResp.Data), frameResp.Max, nil
+}
+
+// receiveMultiple receive the message from the process endpoint
+func (ipc *ipcObj) receiveMultiple(firstMsg []byte) ([]byte, error) {
+	var response []byte
+
+	// Get information about first frame
+	data, maxFrames, err := handleFramedMsg(firstMsg, 1)
+	if err != nil {
+		return nil, err
+	}
+	response = append(response, data...)
+	for i := 2; i <= maxFrames; i++ {
+		msg, err := ipc.receive()
+		if err != nil {
+			return response, err
+		}
+		data, _, err := handleFramedMsg(msg, i)
+		if err != nil {
+			return nil, err
+		}
+		response = append(response, data...)
+	}
+
+	return response, nil
 }

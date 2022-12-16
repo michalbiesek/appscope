@@ -6,6 +6,7 @@
 #include "ipc.h"
 #include "test.h"
 #include "runtimecfg.h"
+#include "cJSON.h"
 
 rtconfig g_cfg = {0};
 
@@ -42,7 +43,7 @@ ipcCommunicationTest(void **state) {
     ssize_t dataLen;
 
     // Setup read-only IPC
-    mqReadDes = ipcCreateNonBlockReadConnection(ipcConnName);
+    mqReadDes = scope_mq_open(ipcConnName, O_RDONLY | O_CREAT | O_CLOEXEC | O_NONBLOCK, 0666, NULL);
     assert_int_not_equal(mqReadDes, -1);
     res = ipcIsActive(mqReadDes, &mqReadSize);
     assert_true(res);
@@ -107,18 +108,16 @@ ipcCommunicationTest(void **state) {
 
     status = ipcCloseConnection(mqReadDes);
     assert_int_equal(status, 0);
-    status = ipcDestroyConnection(ipcConnName);
-    assert_int_equal(status, 0);
 }
 
 static void
-ipcHandlerRequestEmpty(void **state) {
+ipcHandlerRequestEmptyQueue(void **state) {
     const char *ipcConnName = "/testConnection";
     int status;
     mqd_t mqReadWriteDes;
     ipc_cmd_t cmd;
     struct mq_attr attr;
-    bool res;
+    ipc_req_status_t res;
 
     mqReadWriteDes = scope_mq_open(ipcConnName, O_RDWR | O_CREAT | O_CLOEXEC | O_NONBLOCK, 0666, NULL);
     assert_int_not_equal(mqReadWriteDes, -1);
@@ -128,7 +127,7 @@ ipcHandlerRequestEmpty(void **state) {
 
     // Empty Message queue
     res = ipcRequestMsgHandler(mqReadWriteDes, attr.mq_msgsize, &cmd);
-    assert_false(res);
+    assert_int_equal(res, IPC_REQ_INTERNAL_ERROR);
 
     status = scope_mq_close(mqReadWriteDes);
     assert_int_equal(status, 0);
@@ -137,26 +136,87 @@ ipcHandlerRequestEmpty(void **state) {
 }
 
 static void
-ipcHandlerRequestValid(void **state) {
+ipcHandlerRequestNotJson(void **state) {
     const char *ipcConnName = "/testConnection";
     int status;
     mqd_t mqReadWriteDes;
     ipc_cmd_t cmd;
     struct mq_attr attr;
-    bool res;
+    ipc_req_status_t res;
 
     mqReadWriteDes = scope_mq_open(ipcConnName, O_RDWR | O_CREAT | O_CLOEXEC | O_NONBLOCK, 0666, NULL);
     assert_int_not_equal(mqReadWriteDes, -1);
 
-    // Put valid message on queue (cmdGetScopeStatus)
-    status = scope_mq_send(mqReadWriteDes, "getScopeStatus", scope_strlen("getScopeStatus"), 0);
+    // Not Json message on queue
+    char msg[] = "test";
+    status = scope_mq_send(mqReadWriteDes, msg, sizeof(msg), 0);
     assert_int_equal(status, 0);
 
     status = scope_mq_getattr(mqReadWriteDes, &attr);
     assert_int_equal(status, 0);
 
     res = ipcRequestMsgHandler(mqReadWriteDes, attr.mq_msgsize, &cmd);
-    assert_true(res);
+    assert_int_equal(res, IPC_REQ_NOT_JSON_ERROR);
+
+    status = scope_mq_close(mqReadWriteDes);
+    assert_int_equal(status, 0);
+    status = scope_mq_unlink(ipcConnName);
+    assert_int_equal(status, 0);
+}
+
+static void
+ipcHandlerRequestMissingMandatory(void **state) {
+    const char *ipcConnName = "/testConnection";
+    int status;
+    mqd_t mqReadWriteDes;
+    ipc_cmd_t cmd;
+    struct mq_attr attr;
+    ipc_req_status_t res;
+
+    mqReadWriteDes = scope_mq_open(ipcConnName, O_RDWR | O_CREAT | O_CLOEXEC | O_NONBLOCK, 0666, NULL);
+    assert_int_not_equal(mqReadWriteDes, -1);
+
+    // Valid message on queue
+    char msg[] = "{}";
+    status = scope_mq_send(mqReadWriteDes, msg, sizeof(msg), 0);
+    assert_int_equal(status, 0);
+
+    status = scope_mq_getattr(mqReadWriteDes, &attr);
+    assert_int_equal(status, 0);
+
+    res = ipcRequestMsgHandler(mqReadWriteDes, attr.mq_msgsize, &cmd);
+    assert_int_equal(res, IPC_REQ_MANDATORY_FIELD_ERROR);
+
+    status = scope_mq_close(mqReadWriteDes);
+    assert_int_equal(status, 0);
+    status = scope_mq_unlink(ipcConnName);
+    assert_int_equal(status, 0);
+}
+
+static void
+ipcHandlerRequestKnown(void **state) {
+    const char *ipcConnName = "/testConnection";
+    int status;
+    mqd_t mqReadWriteDes;
+    ipc_cmd_t cmd;
+    struct mq_attr attr;
+    ipc_req_status_t res;
+    char msgBuf[1024] = {0};
+
+    mqReadWriteDes = scope_mq_open(ipcConnName, O_RDWR | O_CREAT | O_CLOEXEC | O_NONBLOCK, 0666, NULL);
+    assert_int_not_equal(mqReadWriteDes, -1);
+
+    // Valid message on queue
+    scope_sprintf(msgBuf, "{\"req\": %d}", IPC_CMD_GET_SCOPE_STATUS);
+    size_t msgLen = scope_strlen(msgBuf);
+    status = scope_mq_send(mqReadWriteDes, msgBuf, msgLen, 0);
+    assert_int_equal(status, 0);
+
+    status = scope_mq_getattr(mqReadWriteDes, &attr);
+    assert_int_equal(status, 0);
+
+    res = ipcRequestMsgHandler(mqReadWriteDes, attr.mq_msgsize, &cmd);
+    assert_int_equal(res, IPC_REQ_OK);
     assert_int_equal(cmd, IPC_CMD_GET_SCOPE_STATUS);
 
     status = scope_mq_close(mqReadWriteDes);
@@ -172,21 +232,55 @@ ipcHandlerRequestUnknown(void **state) {
     mqd_t mqReadWriteDes;
     ipc_cmd_t cmd;
     struct mq_attr attr;
-    bool res;
+    ipc_req_status_t res;
 
     mqReadWriteDes = scope_mq_open(ipcConnName, O_RDWR | O_CREAT | O_CLOEXEC | O_NONBLOCK, 0666, NULL);
     assert_int_not_equal(mqReadWriteDes, -1);
 
-    // Put dummy message on queue
-    status = scope_mq_send(mqReadWriteDes, "loremIpsum", scope_strlen("loremIpsum"), 0);
+    // Unkonwn message on queue
+    char msg[] = "{\"req\": 100000}";
+    status = scope_mq_send(mqReadWriteDes, msg, sizeof(msg), 0);
     assert_int_equal(status, 0);
 
     status = scope_mq_getattr(mqReadWriteDes, &attr);
     assert_int_equal(status, 0);
 
     res = ipcRequestMsgHandler(mqReadWriteDes, attr.mq_msgsize, &cmd);
-    assert_true(res);
+    assert_int_equal(res, IPC_REQ_OK);
     assert_int_equal(cmd, IPC_CMD_UNKNOWN);
+
+    status = scope_mq_close(mqReadWriteDes);
+    assert_int_equal(status, 0);
+    status = scope_mq_unlink(ipcConnName);
+    assert_int_equal(status, 0);
+}
+
+static void
+ipcHandlerResponseQueueTooSmallForResponse(void **state) {
+    const char *ipcConnName = "/testConnection";
+    int status;
+    mqd_t mqReadWriteDes;
+    bool res;
+    long msgCount;
+
+    // Limit the parameter so small that it is too small to handle any response
+    const long maxMsgSize = 3;
+    struct mq_attr attr = {.mq_flags = 0, 
+                           .mq_maxmsg = 10,
+                           .mq_msgsize = maxMsgSize,
+                           .mq_curmsgs = 0};
+
+
+    mqReadWriteDes = scope_mq_open(ipcConnName, O_RDWR | O_CREAT | O_CLOEXEC | O_NONBLOCK, 0666, &attr);
+    assert_int_not_equal(mqReadWriteDes, -1);
+
+    status = scope_mq_getattr(mqReadWriteDes, &attr);
+    assert_int_equal(status, 0);
+
+    res = ipcResponseMsgHandler(mqReadWriteDes, attr.mq_msgsize, IPC_CMD_GET_SCOPE_STATUS, IPC_REQ_OK);
+    assert_false(res);
+    msgCount = ipcInfoMsgCount(mqReadWriteDes);
+    assert_int_equal(msgCount, 0);
 
     status = scope_mq_close(mqReadWriteDes);
     assert_int_equal(status, 0);
@@ -209,7 +303,7 @@ ipcHandlerResponseFail(void **state) {
     status = scope_mq_getattr(mqReadDes, &attr);
     assert_int_equal(status, 0);
 
-    res = ipcResponseMsgHandler(mqReadDes, attr.mq_msgsize, IPC_CMD_GET_SCOPE_STATUS);
+    res = ipcResponseMsgHandler(mqReadDes, attr.mq_msgsize, IPC_CMD_GET_SCOPE_STATUS, IPC_REQ_OK);
     assert_false(res);
     msgCount = ipcInfoMsgCount(mqReadDes);
     assert_int_equal(msgCount, 0);
@@ -219,7 +313,6 @@ ipcHandlerResponseFail(void **state) {
     status = scope_mq_unlink(ipcConnName);
     assert_int_equal(status, 0);
 }
-
 
 static void
 ipcHandlerResponseValid(void **state) {
@@ -238,7 +331,7 @@ ipcHandlerResponseValid(void **state) {
     status = scope_mq_getattr(mqReadWriteDes, &attr);
     assert_int_equal(status, 0);
 
-    res = ipcResponseMsgHandler(mqReadWriteDes, attr.mq_msgsize, IPC_CMD_GET_SCOPE_STATUS);
+    res = ipcResponseMsgHandler(mqReadWriteDes, attr.mq_msgsize, IPC_CMD_GET_SCOPE_STATUS, IPC_REQ_OK);
     assert_true(res);
     msgCount = ipcInfoMsgCount(mqReadWriteDes);
     assert_int_equal(msgCount, 1);
@@ -253,10 +346,10 @@ ipcHandlerResponseValid(void **state) {
     dataLen = scope_mq_receive(mqReadWriteDes, buf, attr.mq_msgsize, 0);
     assert_int_not_equal(dataLen, -1);
 
-    assert_int_equal(dataLen, sizeof("false") - 1);
+    char resp[] = "{\"status\":200,\"scoped\":false}";
+    assert_int_equal(dataLen, sizeof(resp)-1);
 
-    //below should reflect cmdGetScopeStatus
-    status = scope_memcmp(buf, "false", dataLen);
+    status = scope_memcmp(buf, resp, dataLen);
     assert_int_equal(status, 0);
 
     scope_free(buf);
@@ -266,6 +359,54 @@ ipcHandlerResponseValid(void **state) {
     status = scope_mq_unlink(ipcConnName);
     assert_int_equal(status, 0);
 }
+
+static void
+ipcHandlerResponseValidMultipleFrames(void **state) {
+    const char *ipcConnName = "/testConnection";
+    int status;
+    mqd_t mqReadWriteDes;
+    bool res;
+    long msgCount;
+    void *buf;
+    ssize_t dataLen;
+    char testBuf[4096] = {0};
+    const long maxMsgSize = 52;
+    struct mq_attr attr = {.mq_flags = 0, 
+                           .mq_maxmsg = 10,
+                           .mq_msgsize = maxMsgSize,
+                           .mq_curmsgs = 0};
+
+    mqReadWriteDes = scope_mq_open(ipcConnName, O_RDWR | O_CREAT | O_CLOEXEC | O_NONBLOCK, 0666, &attr);
+    assert_int_not_equal(mqReadWriteDes, -1);
+
+    status = scope_mq_getattr(mqReadWriteDes, &attr);
+    assert_int_equal(status, 0);
+
+    res = ipcResponseMsgHandler(mqReadWriteDes, attr.mq_msgsize, IPC_CMD_GET_SCOPE_CFG, IPC_REQ_OK);
+    assert_true(res);
+    msgCount = ipcInfoMsgCount(mqReadWriteDes);
+
+    status = scope_mq_getattr(mqReadWriteDes, &attr);
+    assert_int_equal(status, 0);
+
+    buf = scope_malloc(attr.mq_msgsize);
+    assert_non_null(buf);
+    size_t testOffset = 0;
+    for (int i = 0; i < msgCount; ++i) {
+        dataLen = scope_mq_receive(mqReadWriteDes, buf, attr.mq_msgsize, 0);
+        assert_int_not_equal(dataLen, -1);
+        scope_memcpy(testBuf+testOffset, buf, dataLen);
+    }
+
+    scope_free(buf);
+
+    status = scope_mq_close(mqReadWriteDes);
+    assert_int_equal(status, 0);
+    status = scope_mq_unlink(ipcConnName);
+    assert_int_equal(status, 0);
+}
+
+
 
 static void
 ipcHandlerResponseUnknown(void **state) {
@@ -284,7 +425,7 @@ ipcHandlerResponseUnknown(void **state) {
     status = scope_mq_getattr(mqReadWriteDes, &attr);
     assert_int_equal(status, 0);
 
-    res = ipcResponseMsgHandler(mqReadWriteDes, attr.mq_msgsize, IPC_CMD_UNKNOWN);
+    res = ipcResponseMsgHandler(mqReadWriteDes, attr.mq_msgsize, IPC_CMD_UNKNOWN, IPC_REQ_OK);
     assert_true(res);
     msgCount = ipcInfoMsgCount(mqReadWriteDes);
     assert_int_equal(msgCount, 1);
@@ -298,10 +439,11 @@ ipcHandlerResponseUnknown(void **state) {
 
     dataLen = scope_mq_receive(mqReadWriteDes, buf, attr.mq_msgsize, 0);
     assert_int_not_equal(dataLen, -1);
-    assert_int_equal(dataLen, sizeof("Unknown") - 1);
 
-    //below should reflect cmdUnknown
-    status = scope_memcmp(buf, "Unknown", dataLen);
+    char resp[] = "{\"status\":501}";
+    assert_int_equal(dataLen, sizeof(resp)-1);
+
+    status = scope_memcmp(buf, resp, dataLen);
     assert_int_equal(status, 0);
 
     scope_free(buf);
@@ -321,11 +463,15 @@ main(int argc, char* argv[]) {
         cmocka_unit_test(ipcInfoMsgCountNonExisting),
         cmocka_unit_test(ipcOpenNonExistingConnection),
         cmocka_unit_test(ipcCommunicationTest),
-        cmocka_unit_test(ipcHandlerRequestEmpty),
-        cmocka_unit_test(ipcHandlerRequestValid),
+        cmocka_unit_test(ipcHandlerRequestEmptyQueue),
+        cmocka_unit_test(ipcHandlerRequestNotJson),
+        cmocka_unit_test(ipcHandlerRequestMissingMandatory),
+        cmocka_unit_test(ipcHandlerRequestKnown),
         cmocka_unit_test(ipcHandlerRequestUnknown),
+        cmocka_unit_test(ipcHandlerResponseQueueTooSmallForResponse),
         cmocka_unit_test(ipcHandlerResponseFail),
         cmocka_unit_test(ipcHandlerResponseValid),
+        // cmocka_unit_test(ipcHandlerResponseValidMultipleFrames),
         cmocka_unit_test(ipcHandlerResponseUnknown),
         cmocka_unit_test(dbgHasNoUnexpectedFailures),
     };

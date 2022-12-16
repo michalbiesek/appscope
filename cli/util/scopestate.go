@@ -1,7 +1,8 @@
 package util
 
 import (
-	"bytes"
+	"encoding/json"
+	"fmt"
 )
 
 // ScopeStatus represents the process status in context of libscope.so
@@ -34,15 +35,37 @@ func (state ScopeStatus) String() string {
 	return []string{"Disable", "Setup", "Active", "Latent"}[state]
 }
 
-// getScopeStatus retreive sinformation about Scope status from IPC
+func TestFrames(pid int) ([]byte, error) {
+	var testResp scopeTestResponse
+
+	request, _ := json.Marshal(scopeRequestOnly{Req: cmdReqGetScopeCfg})
+
+	response, err := ipcDispatcher(request, pid)
+
+	err = json.Unmarshal(response, &testResp)
+	if err != nil {
+		fmt.Printf("Unmarshal fails: %v", err)
+	} else {
+		fmt.Printf("Received a message: %#v", testResp)
+	}
+}
+
+// getScopeStatus retreives information about Scope status using IPC
 func getScopeStatus(pid int) ScopeStatus {
-	bresp, err := ipcGetScopeStatus(pid)
+	var scopeResp scopeStatusResponse
+
+	request, _ := json.Marshal(scopeRequestOnly{Req: cmdReqGetScopeStatus})
+
+	response, err := ipcDispatcher(request, pid)
 	if err != nil {
 		return Setup
 	}
-	if bytes.Equal(bresp, []byte("true")) {
-		return Active
-	} else if bytes.Equal(bresp, []byte("false")) {
+	json.Unmarshal(response, &scopeResp)
+
+	if scopeResp.Status == responseOK {
+		if scopeResp.Scoped {
+			return Active
+		}
 		return Latent
 	}
 	return Disable
