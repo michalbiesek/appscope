@@ -55,7 +55,7 @@ genflowtest:
 	./flows/gen_flow_test.sh
 
 ## all: build and compress \`scope\`
-all: scope compressscope require-go-version
+all: scope require-go-version
 
 ## clean: remove the built binary
 clean:
@@ -100,11 +100,6 @@ $(SCOPE): run/bundle.go $(GOVVV) $(filter-out %_test.go,$(shell find . -type f -
 		$(BUILD_OPTS) \
 	       	-o $(SCOPE)
 
-compressscope: $(SCOPE) require-upx
-	@if [ -z $(SCOPE_NOCOMPRESS) ] ; then \
-		upx -l $(SCOPE) >/dev/null 2>&1 || upx -9 $(SCOPE); \
-	fi
-
 ## test: run unit tests
 test:
 	$(GO) test -v -p 1 -failfast -timeout 600s -coverprofile coverage.out ./...
@@ -140,4 +135,4 @@ require-upx:
 	@[ -n "$(shell which upx)" ] || \
 	  { echo >&2 "error: upx required"; exit 1; }
 
-.PHONY: build debug all clean deps rebuild scope compressscope test fmt lint vet cover check help require-upx
+.PHONY: build debug all clean deps rebuild scope test fmt lint vet cover check help require-upx
