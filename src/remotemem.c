@@ -41,6 +41,20 @@ memRegionDestroy(mem_region_t *region) {
     scope_free(region);
 }
 
+static bool
+memLibMapCreate(vector *memLibMap) {
+    return vecInit(memLibMap);
+}
+
+static void
+memLibMapDestroy(vector *memLibMap) {
+    for (unsigned i = 0; i < memLibMap->size; ++i) {
+        memRegionDestroy(vecGet(memLibMap, i));
+    }
+
+    vecDelete(memLibMap);
+}
+
  /*
  * Append the memory region to library structure on begin and end arguments.
  *
@@ -152,6 +166,15 @@ freeLocalIov:
     return status;
 }
 
+static void
+findDynamicSegment(vector *memLibMap) {
+    mem_region_t *reg = vecGet(memLibMap, 0);
+    Elf64_Ehdr *elf = (Elf64_Ehdr *)reg->buf;
+    Elf64_Phdr *phead = (Elf64_Phdr *)&reg->buf[elf->e_phoff];
+
+    return;
+}
+
  /*
  * Find the addresss of specific symbol in remote process
  *
@@ -161,7 +184,8 @@ uint64_t
 remoteProcSymbolAddr(pid_t pid, const char *symbolName) {
     uint64_t symAddr = 0;
     vector memLibMap;
-    if (vecInit(&memLibMap) == FALSE) {
+
+    if (memLibMapCreate(&memLibMap) == FALSE) {
         return symAddr;
     }
 
@@ -174,8 +198,6 @@ remoteProcSymbolAddr(pid_t pid, const char *symbolName) {
         scope_fprintf(scope_stderr, "\nmemoryLibRead failed");
         goto destroyLib;
     }
-
-    Elf64_Ehdr elf = {0};
 
     findDynamicSegment(&memLibMap);
 
@@ -194,10 +216,6 @@ remoteProcSymbolAddr(pid_t pid, const char *symbolName) {
     // free_symbol_table(libSymTable);
 
 destroyLib:
-    for (unsigned i = 0; i < memLibMap.size; ++i) {
-        memRegionDestroy(vecGet(&memLibMap, i));
-    }
-
-    vecDelete(&memLibMap);
+    memLibMapDestroy(&memLibMap);
     return symAddr;
 }
