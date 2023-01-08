@@ -4,6 +4,9 @@
 #include "vector.h"
 #include "scopeelf.h"
 
+// memory library structure
+typedef vector mem_lib_t;
+
 typedef struct {
     uint64_t vAddrBegin;        // virtual address begin
     uint64_t vAddrSize;         // virtual address size
@@ -41,18 +44,31 @@ memRegionDestroy(mem_region_t *region) {
     scope_free(region);
 }
 
+ /*
+ * Initialize memory library.
+ */
 static bool
-memLibMapCreate(vector *memLibMap) {
-    return vecInit(memLibMap);
+memLibInit(mem_lib_t *memLib) {
+    return vecInit(memLib);
 }
 
+ /*
+ * Destroys memory library.
+ */
 static void
-memLibMapDestroy(vector *memLibMap) {
-    for (unsigned i = 0; i < memLibMap->size; ++i) {
-        memRegionDestroy(vecGet(memLibMap, i));
+memLibMapDestroy(mem_lib_t *memLib) {
+    for (unsigned i = 0; i < memLib->size; ++i) {
+        memRegionDestroy(vecGet(memLib, i));
     }
+    vecDelete(memLib);
+}
 
-    vecDelete(memLibMap);
+ /*
+ * Get specific region in the memory library.
+ */
+static mem_region_t *
+memLibGetRegion(mem_lib_t *memLib, unsigned indx) {
+    return vecGet(memLib, indx);
 }
 
  /*
@@ -61,14 +77,14 @@ memLibMapDestroy(vector *memLibMap) {
  * Returns status of operation - TRUE on success, FALSE on failure.
  */
 static bool
-memLibAppendRegion(vector *memLibMap, uint64_t regionBegin, uint64_t regionEnd) {
+memLibAppendRegion(mem_lib_t *memLib, uint64_t regionBegin, uint64_t regionEnd) {
     // create new memory region 
     mem_region_t *region = memRegionCreate(regionBegin, regionEnd);
     if (!region) {
         return FALSE;
     }
 
-    return vecAdd(memLibMap, region);
+    return vecAdd(memLib, region);
 }
 
  /*
@@ -77,7 +93,7 @@ memLibAppendRegion(vector *memLibMap, uint64_t regionBegin, uint64_t regionEnd) 
  * Returns status of operation - TRUE on success, FALSE on failure.
  */
 static bool
-memoryLibMap(pid_t pid, vector *memLibMap) {
+memoryLibMap(pid_t pid, mem_lib_t *memLib) {
     char filename[PATH_MAX];
     char line[1024];
     FILE *fd;
@@ -103,7 +119,7 @@ memoryLibMap(pid_t pid, vector *memLibMap) {
                 continue;
             }
 
-            if (memLibAppendRegion(memLibMap, vAddrBegin, vAddrEnd) == FALSE) {
+            if (memLibAppendRegion(memLib, vAddrBegin, vAddrEnd) == FALSE) {
                 scope_fclose(fd);
                 return FALSE;
             }
@@ -119,22 +135,22 @@ memoryLibMap(pid_t pid, vector *memLibMap) {
  * Returns status of operation - TRUE on success, FALSE on failure.
  */
 static bool
-memoryLibRead(pid_t pid, vector *memLibMap) {
+memoryLibRead(pid_t pid, mem_lib_t *memLib) {
     bool status = FALSE;
     ssize_t vmReadBytes = 0;
     size_t libSizeBytes = 0;
 
-    struct iovec *localIov = scope_calloc(memLibMap->size, sizeof(struct iovec));
+    struct iovec *localIov = scope_calloc(memLib->size, sizeof(struct iovec));
     if (!localIov) {
         return status;
     }
-    struct iovec *remoteIov = scope_calloc(memLibMap->size, sizeof(struct iovec));
+    struct iovec *remoteIov = scope_calloc(memLib->size, sizeof(struct iovec));
     if (!remoteIov) {
         goto freeLocalIov;
     }
 
-    for (unsigned i = 0; i < memLibMap->size; ++i) {
-        mem_region_t *reg = vecGet(memLibMap, i);
+    for (unsigned i = 0; i < memLib->size; ++i) {
+        mem_region_t *reg = memLibGetRegion(memLib, i);
 
         localIov[i].iov_base = reg->buf;
         localIov[i].iov_len = reg->vAddrSize;
@@ -143,7 +159,7 @@ memoryLibRead(pid_t pid, vector *memLibMap) {
         libSizeBytes += reg->vAddrSize;
     }
 
-    vmReadBytes = scope_process_vm_readv(pid, localIov, memLibMap->size, remoteIov, memLibMap->size, 0);
+    vmReadBytes = scope_process_vm_readv(pid, localIov, memLib->size, remoteIov, memLib->size, 0);
     if (vmReadBytes < 0) {
         goto freeRemoteIov;
     }
@@ -166,14 +182,51 @@ freeLocalIov:
     return status;
 }
 
-static void
-findDynamicSegment(vector *memLibMap) {
-    mem_region_t *reg = vecGet(memLibMap, 0);
-    Elf64_Ehdr *elf = (Elf64_Ehdr *)reg->buf;
-    Elf64_Phdr *phead = (Elf64_Phdr *)&reg->buf[elf->e_phoff];
-
-    return;
+ /*
+ * Resolve virtual address against the mapped library
+ *
+ * Returns status of operation - TRUE on success, FALSE on failure.
+ */
+static void*
+memoryLibMapLocateVirtAddr(uint64_t vAddr, mem_lib_t *memLib) {
+    for (unsigned i = 0; i < memLib->size; ++i) {
+        mem_region_t *reg = memLibGetRegion(memLib, i);
+        // check if virtual address belongs to the region
+        if (reg->vAddrBegin <= vAddr && vAddr < (reg->vAddrBegin + reg->vAddrSize)) {
+            return reg->buf + (vAddr - reg->vAddrBegin);
+        }  
+    }
+    return NULL;
 }
+
+static uint64_t
+findFunctionAddress(mem_lib_t *memLib) {
+    uint64_t funcAddr = 0;
+    // Find the dynamic section address
+    mem_region_t *reg = memLibGetRegion(memLib, 0);
+    const Elf64_Ehdr *elf = (Elf64_Ehdr *)reg->buf; 
+    Elf64_Phdr *phead = (Elf64_Phdr *)&reg->buf[elf->e_phoff];
+    // unsigned long count = elf->e_phnum;
+    // Elf64_Dyn *dyn = NULL;
+
+    // for (int i = 0; i < elf->e_phnum; ++i) {
+    //     if ((phead[i].p_type == PT_DYNAMIC)) {
+    //         dyn = phead[i].p_vaddr + reg->buf;
+    //     }
+    // }
+
+    // // Dynamic section not found
+    // if (!dyn) {
+    //     return funcAddr;
+    // }
+
+
+    // funcAddr = symbols.st_value + reg->buf;
+
+
+    return funcAddr;
+}
+
 
  /*
  * Find the addresss of specific symbol in remote process
@@ -183,39 +236,25 @@ findDynamicSegment(vector *memLibMap) {
 uint64_t
 remoteProcSymbolAddr(pid_t pid, const char *symbolName) {
     uint64_t symAddr = 0;
-    vector memLibMap;
+    mem_lib_t memLib;
 
-    if (memLibMapCreate(&memLibMap) == FALSE) {
+    if (memLibInit(&memLib) == FALSE) {
         return symAddr;
     }
 
-    if (memoryLibMap(pid, &memLibMap) == FALSE) {
+    if (memoryLibMap(pid, &memLib) == FALSE) {
         scope_fprintf(scope_stderr, "\nmemoryLibMap failed");
         goto destroyLib;
     }
 
-    if (memoryLibRead(pid, &memLibMap) == FALSE) {
+    if (memoryLibRead(pid, &memLib) == FALSE) {
         scope_fprintf(scope_stderr, "\nmemoryLibRead failed");
         goto destroyLib;
     }
 
-    findDynamicSegment(&memLibMap);
-
-    // symbol_table_t *libSymTable = findDynamicSymbolTable(&memLibMap);
-    // if (!libSymTable) {
-    //     scope_fprintf(scope_stderr, "\nfindDynamicSymbolTable failed");
-    //     goto destroyLib;
-    // }
-
-    // symAddr = resolveSymbol(symbolName, libSymTable);
-
-    // if (symAddr == 0) {
-    //     scope_fprintf(scope_stderr, "\nresolveSymbol failed");
-    // }
-
-    // free_symbol_table(libSymTable);
+    symAddr = findFunctionAddress(&memLib);
 
 destroyLib:
-    memLibMapDestroy(&memLibMap);
+    memLibMapDestroy(&memLib);
     return symAddr;
 }
