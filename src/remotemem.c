@@ -536,6 +536,19 @@ void free_symbol_table(symbol_table_t *table)
     scope_free(table);
 }
 
+static void
+findDynamicSegment(vector *memLibMap) {
+    mem_region_t *begin = vecGet(memLibMap, 0);
+    Elf64_Ehdr *elf = (Elf64_Ehdr *)begin->buf;
+    // Elf64_Phdr *phead = (Elf64_Phdr *)&buf[elf->e_phoff];
+
+    p_segmt = (Elf64_Phdr *) (p_lib->lib_addr + bin.e_phoff);
+
+
+
+    return;
+}
+
  /*
  * Find the addresss of specific symbol in remote process
  *
@@ -559,19 +572,23 @@ remoteProcSymbolAddr(pid_t pid, const char *symbolName) {
         goto destroyLib;
     }
 
-    symbol_table_t *libSymTable = findDynamicSymbolTable(&memLibMap);
-    if (!libSymTable) {
-        scope_fprintf(scope_stderr, "\nfindDynamicSymbolTable failed");
-        goto destroyLib;
-    }
+    Elf64_Ehdr elf = {0};
 
-    symAddr = resolveSymbol(symbolName, libSymTable);
+    findDynamicSegment(&memLibMap);
 
-    if (symAddr == 0) {
-        scope_fprintf(scope_stderr, "\nresolveSymbol failed");
-    }
+    // symbol_table_t *libSymTable = findDynamicSymbolTable(&memLibMap);
+    // if (!libSymTable) {
+    //     scope_fprintf(scope_stderr, "\nfindDynamicSymbolTable failed");
+    //     goto destroyLib;
+    // }
 
-    free_symbol_table(libSymTable);
+    // symAddr = resolveSymbol(symbolName, libSymTable);
+
+    // if (symAddr == 0) {
+    //     scope_fprintf(scope_stderr, "\nresolveSymbol failed");
+    // }
+
+    // free_symbol_table(libSymTable);
 
 destroyLib:
     for (unsigned i = 0; i < memLibMap.size; ++i) {
