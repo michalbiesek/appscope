@@ -1765,7 +1765,6 @@ processProtocolEntry(config_t* config, yaml_document_t* doc, yaml_node_t* node)
                 DBG(NULL);
             }
             protocol_context = NULL;
-            destroyProtEntry(found);
             break;
         }
     }
