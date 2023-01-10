@@ -668,6 +668,8 @@ dynConfig(void)
         return 0;
     }
 
+    scopeLogError("dynConfig process %s", path);
+
     // Have we already processed this file?
     now = fileModTime(path);
     if (now == modtime) {
@@ -681,11 +683,18 @@ dynConfig(void)
     // Open the command file
     if ((fs = scope_fopen(path, "r")) == NULL) return -1;
 
+    scopeLogError("dynConfig before cfgProcessCommands");
+
     // Modify the static config from the command file
     cfgProcessCommands(g_staticfg, fs);
 
+    scopeLogError("dynConfig after cfgProcessCommands");
+
     scope_fclose(fs);
-    scope_unlink(path);
+    int res = scope_unlink(path);
+
+    scopeLogError("dynConfig after cfgProcessCommands unlink status %d", res);
+
 
     // Apply the config
     doConfig(g_staticfg);

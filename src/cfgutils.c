@@ -254,7 +254,7 @@ cfgPathSearch(const char* cfgname)
         !scope_access(path, R_OK)) {
         return scope_realpath(path, NULL);
     }
-
+    scopeLogError("cfgPathSearch return NULL");
     return NULL;
 }
 
@@ -412,11 +412,14 @@ processCmdDebug(const char* path)
 static void
 processReloadConfig(config_t *cfg, const char* value)
 {
+    scopeLogError("Process Reload config start");
     if (!cfg || !value) return;
     unsigned int enable = strToVal(boolMap, value);
 
     if (enable == TRUE) {
+        scopeLogError("Process Reload config enable path start");
         char *path = cfgPath();
+        scopeLogError("Process Reload config enable path %s", path);
         cfgSetFromFile(cfg, path);
         if (path) scope_free(path);
     } else {
@@ -2092,6 +2095,7 @@ cfgSetFromFile(config_t *config, const char* path)
     int doc_successful = 0;
     yaml_parser_t parser;
     yaml_document_t doc;
+    scopeLogError("cfgSetFromFile start");
 
     if (!config) goto cleanup;
     if (!path) goto cleanup;

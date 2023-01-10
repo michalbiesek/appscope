@@ -1,0 +1,34 @@
+cribl:
+    enable: true
+    transport:
+        path: /opt/edge/state/appscope.sock
+        type: unix
+event:
+    watch:
+    -   field: .*
+        name: .*
+        type: http
+        value: .*
+libscope:
+    log:
+        transport:
+            path: /var/log/scope/cribl.log
+            type: file
+    summaryperiod: 60
+protocol:
+-   detect: false
+    name: HTTP
+    payload: false
+    regex: " HTTP\\/1\\.[0-2]|PRI \\* HTTP\\/2\\.0\r\n\r\nSM\r\n\r\n"
+-   binary: true
+    detect: false
+    len: 6
+    name: TLS
+    payload: false
+    regex: ^16030[0-3].{4}0[12]
+tags:
+    aws_account_id: $ACCOUNTID
+    deployment_name: $DEPLOYMENT_NAME
+    domain: $CRIBL_CLOUD_DOMAIN
+    service: logstream-$CRIBL_DIST_MODE
+    tenantId: $TENANT_ID
