@@ -50,10 +50,17 @@ type receiveMessageQueue struct {
 	messageQueue
 }
 
+// newMqAttrAlwaysOnHeap ensures that messageQueueAttributes are putted on heap
+//
+//go:noinline
+func newMqAttrAlwaysOnHeap() *messageQueueAttributes {
+	return new(messageQueueAttributes)
+}
+
 // msgQCurrentMessages retrieves Message queue current messages attribute from file descriptor
 func msgQCurrentMessages(fd int) (int, error) {
 
-	attr := &messageQueueAttributes{}
+	attr := newMqAttrAlwaysOnHeap()
 
 	// int syscall(SYS_mq_getsetattr, mqd_t mqdes, const struct mq_attr *newattr, struct mq_attr *oldattr)
 	// Details: https://man7.org/linux/man-pages/man2/mq_getsetattr.2.html
