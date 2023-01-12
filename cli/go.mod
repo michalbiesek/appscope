@@ -31,6 +31,7 @@ require (
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/aceofkid/go-ipc v0.0.0-20200719150353-460e94bf07c1 // indirect
 	github.com/ahmetb/govvv v0.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.7.0 // indirect
