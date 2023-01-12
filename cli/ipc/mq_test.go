@@ -2,10 +2,27 @@ package ipc
 
 import (
 	"fmt"
+	"golang.org/x/sys/unix"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestSimpleMqReader(t *testing.T) {
+	const mqName string = "goTestMqSimple"
+	msgQUnlink(mqName)
+	mqfd, err := msgQOpen(mqName, unix.O_CREAT|unix.O_RDONLY|unix.O_NONBLOCK|unix.O_EXCL)
+	assert.NoError(t, err)
+	for i := 0; i < 1000; i++ {
+		size, err := msgQCurrentMessages(mqfd)
+		assert.Zero(t, size)
+		assert.NoError(t, err)
+	}
+
+	unix.Close(mqfd)
+	// Always unlink even when closing fails
+	msgQUnlink(mqName)
+}
 
 func TestNewMqReader(t *testing.T) {
 	const mqName string = "goTestMq"
