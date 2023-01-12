@@ -48,6 +48,10 @@ build: all
 debug:
 	$(MAKE) scope BUILD_OPTS="-gcflags=all=\"-N -l\""
 
+## escape: build with escape analysis output
+escape:
+	$(MAKE) scope BUILD_OPTS="-gcflags=all=\"-m\""
+
 # If any cli TestGetFlow* test fails, this may need to be rerun
 # and the expected results in flows/flow_test.go will need to be
 # adjusted accordingly.  Blech.
@@ -140,4 +144,4 @@ require-upx:
 	@[ -n "$(shell which upx)" ] || \
 	  { echo >&2 "error: upx required"; exit 1; }
 
-.PHONY: build debug all clean deps rebuild scope compressscope test fmt lint vet cover check help require-upx
+.PHONY: build debug escape all clean deps rebuild scope compressscope test fmt lint vet cover check help require-upx
