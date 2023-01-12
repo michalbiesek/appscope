@@ -176,6 +176,34 @@ ipcRespSetScopeCfg(const cJSON *scopeReq) {
 }
 
 /*
+ * Creates the wrapper for response to IPC_CMD_GET_TRANSPORT_STATUS
+ * TODO: use unused attribute later
+ */
+scopeRespWrapper *
+ipcRespGetTransportStatus(const cJSON *unused) {
+    scopeRespWrapper *wrap = respWrapperCreate();
+    if (!wrap) {
+        return NULL;
+    }
+    cJSON *resp = cJSON_CreateObject();
+    if (!resp) {
+        goto allocFail;
+    }
+    wrap->resp = resp;
+    if (!cJSON_AddNumberToObjLN(resp, "status", IPC_RESP_OK)) {
+        goto allocFail;
+    }
+
+    // TODO placeholder for transport
+
+    return wrap;
+
+allocFail:
+    ipcRespWrapperDestroy(wrap);
+    return NULL; 
+}
+
+/*
  * Creates the wrapper for failed case in processing scope msg
  */
 scopeRespWrapper *
