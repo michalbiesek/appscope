@@ -50,6 +50,7 @@ type receiveMessageQueue struct {
 	messageQueue
 }
 
+// TODO: FIX ME here is a bug
 // msgQCurrentMessages retrieves Message queue current messages attribute from file descriptor
 func msgQCurrentMessages(fd int) (int, error) {
 
