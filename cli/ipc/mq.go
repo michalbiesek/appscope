@@ -6,6 +6,7 @@ import (
 	"syscall"
 	"unsafe"
 
+	gomq "github.com/michalbiesek/go-ipc/mq"
 	"golang.org/x/sys/unix"
 )
 
@@ -53,7 +54,7 @@ type receiveMessageQueue struct {
 // msgQCurrentMessages retrieves Message queue current messages attribute from file descriptor
 func msgQCurrentMessages(fd int) (int, error) {
 
-	attr := &messageQueueAttributes{}
+	attr := new(messageQueueAttributes)
 
 	// int syscall(SYS_mq_getsetattr, mqd_t mqdes, const struct mq_attr *newattr, struct mq_attr *oldattr)
 	// Details: https://man7.org/linux/man-pages/man2/mq_getsetattr.2.html
@@ -230,4 +231,12 @@ func (mq *sendMessageQueue) send(msg []byte) error {
 // receive data from message queque
 func (mq *receiveMessageQueue) receive() ([]byte, error) {
 	return msgQReceive(mq.fd, mq.cap)
+}
+
+func CreateMqLinux(name string, flags int) (*gomq.LinuxMessageQueue, error) {
+	return gomq.CreateLinuxMessageQueue(name, flags, 0666, mqMaxMsgMax, mqMaxMsgSize)
+}
+
+func CreateLinuxMQReader(name string) (*gomq.LinuxMessageQueue, error) {
+	return CreateMqLinux(name, unix.O_CREAT|unix.O_RDONLY|unix.O_NONBLOCK|unix.O_EXCL)
 }

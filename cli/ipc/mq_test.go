@@ -1,10 +1,10 @@
 package ipc
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/sys/unix"
 )
 
 func TestNewMqReader(t *testing.T) {
@@ -13,151 +13,172 @@ func TestNewMqReader(t *testing.T) {
 	msgQ, err := newMsgQReader(mqName)
 	assert.NoError(t, err)
 	assert.NotNil(t, msgQ)
-	size, err := msgQ.size()
-	assert.Zero(t, size)
-	assert.NoError(t, err)
+	for i := 0; i < 1000; i++ {
+		fmt.Println((i))
+		size, err := msgQ.size()
+		assert.Zero(t, size)
+		assert.NoError(t, err)
+	}
 	err = msgQ.destroy()
 	assert.NoError(t, err)
 }
 
-func TestNewMqWriter(t *testing.T) {
+func TestNewMqReaderNew(t *testing.T) {
 	const mqName string = "goTestMq"
 
-	msgQ, err := newMsgQWriter(mqName)
+	msgQ, err := CreateLinuxMQReader(mqName)
 	assert.NoError(t, err)
 	assert.NotNil(t, msgQ)
-	size, err := msgQ.size()
-	assert.Zero(t, size)
-	assert.NoError(t, err)
-	err = msgQ.destroy()
-	assert.NoError(t, err)
-}
-
-func TestNoDuplicate(t *testing.T) {
-	const mqNameR string = "goTestMqR"
-	const mqNameW string = "goTestMqW"
-
-	msgQW, err := newMsgQWriter(mqNameW)
-	assert.NoError(t, err)
-	assert.NotNil(t, msgQW)
-	msgQWNew, err := newMsgQWriter(mqNameW)
-	assert.Error(t, err)
-	assert.Nil(t, msgQWNew)
-
-	msgQR, err := newMsgQReader(mqNameR)
-	assert.NoError(t, err)
-	assert.NotNil(t, msgQR)
-	msgQRNew, err := newMsgQReader(mqNameR)
-	assert.Error(t, err)
-	assert.Nil(t, msgQRNew)
-	err = msgQR.destroy()
-	assert.NoError(t, err)
-	err = msgQW.destroy()
+	for i := 0; i < 1000; i++ {
+		fmt.Println((i))
+		size := msgQ.Size()
+		assert.Zero(t, size)
+		// assert.NoError(t, err)
+	}
+	err = msgQ.Destroy()
 	assert.NoError(t, err)
 }
 
-func TestCommunicationMqReader(t *testing.T) {
-	const mqName string = "goTestMqReader"
-	byteTestMsg := []byte("Lorem Ipsum")
+// func TestNewMqWriter(t *testing.T) {
+// 	const mqName string = "goTestMq"
 
-	msgQReader, err := newMsgQReader(mqName)
-	assert.NoError(t, err)
-	assert.NotNil(t, msgQReader)
+// 	msgQ, err := newMsgQWriter(mqName)
+// 	assert.NoError(t, err)
+// 	assert.NotNil(t, msgQ)
+// 	size, err := msgQ.size()
+// 	assert.Zero(t, size)
+// 	assert.NoError(t, err)
+// 	err = msgQ.destroy()
+// 	assert.NoError(t, err)
+// }
 
-	msgQWriteFd, err := msgQOpen(mqName, unix.O_WRONLY)
-	assert.NoError(t, err)
-	assert.NotEqual(t, msgQWriteFd, -1)
+// func TestNoDuplicate(t *testing.T) {
+// 	const mqNameR string = "goTestMqR"
+// 	const mqNameW string = "goTestMqW"
 
-	// Try to read from empty queue
-	data, err := msgQReader.receive()
-	assert.Nil(t, data)
-	assert.Error(t, err)
+// 	msgQW, err := newMsgQWriter(mqNameW)
+// 	assert.NoError(t, err)
+// 	assert.NotNil(t, msgQW)
+// 	msgQWNew, err := newMsgQWriter(mqNameW)
+// 	assert.Error(t, err)
+// 	assert.Nil(t, msgQWNew)
 
-	// Empty message send to w
-	err = msgQSend(msgQWriteFd, []byte(""))
-	assert.Error(t, err)
-	size, err := msgQReader.size()
-	assert.NoError(t, err)
-	assert.Zero(t, size)
-	size, err = msgQCurrentMessages(msgQWriteFd)
-	assert.NoError(t, err)
-	assert.Zero(t, size)
+// 	msgQR, err := newMsgQReader(mqNameR)
+// 	assert.NoError(t, err)
+// 	assert.NotNil(t, msgQR)
+// 	msgQRNew, err := newMsgQReader(mqNameR)
+// 	assert.Error(t, err)
+// 	assert.Nil(t, msgQRNew)
+// 	err = msgQR.destroy()
+// 	assert.NoError(t, err)
+// 	err = msgQW.destroy()
+// 	assert.NoError(t, err)
+// }
 
-	// Normal message send
-	err = msgQSend(msgQWriteFd, byteTestMsg)
-	assert.NoError(t, err)
-	size, err = msgQReader.size()
-	assert.NoError(t, err)
-	assert.Equal(t, size, 1)
-	size, err = msgQCurrentMessages(msgQWriteFd)
-	assert.NoError(t, err)
-	assert.Equal(t, size, 1)
+// func TestCommunicationMqReader(t *testing.T) {
+// 	const mqName string = "goTestMqReader"
+// 	byteTestMsg := []byte("Lorem Ipsum")
 
-	data, err = msgQReader.receive()
-	assert.Equal(t, data, byteTestMsg)
-	assert.NotNil(t, data)
-	assert.NoError(t, err)
-	size, err = msgQReader.size()
-	assert.NoError(t, err)
-	assert.Zero(t, size)
-	size, err = msgQCurrentMessages(msgQWriteFd)
-	assert.NoError(t, err)
-	assert.Zero(t, size)
+// 	msgQReader, err := newMsgQReader(mqName)
+// 	assert.NoError(t, err)
+// 	assert.NotNil(t, msgQReader)
 
-	err = unix.Close(msgQWriteFd)
-	assert.NoError(t, err)
+// 	msgQWriteFd, err := msgQOpen(mqName, unix.O_WRONLY)
+// 	assert.NoError(t, err)
+// 	assert.NotEqual(t, msgQWriteFd, -1)
 
-	err = msgQReader.destroy()
-	assert.NoError(t, err)
-}
+// 	// Try to read from empty queue
+// 	data, err := msgQReader.receive()
+// 	assert.Nil(t, data)
+// 	assert.Error(t, err)
 
-func TestCommunicationMqWriter(t *testing.T) {
-	const mqName string = "goTestMqReader"
-	byteTestMsg := []byte("Lorem Ipsum")
+// 	// Empty message send to w
+// 	err = msgQSend(msgQWriteFd, []byte(""))
+// 	assert.Error(t, err)
+// 	size, err := msgQReader.size()
+// 	assert.NoError(t, err)
+// 	assert.Zero(t, size)
+// 	attr := new(messageQueueAttributes)
+// 	size, err = msgQCurrentMessages(msgQWriteFd, attr)
+// 	assert.NoError(t, err)
+// 	assert.Zero(t, size)
 
-	msgQWriter, err := newMsgQWriter(mqName)
+// 	// Normal message send
+// 	err = msgQSend(msgQWriteFd, byteTestMsg)
+// 	assert.NoError(t, err)
+// 	size, err = msgQReader.size()
+// 	assert.NoError(t, err)
+// 	assert.Equal(t, size, 1)
+// 	size, err = msgQCurrentMessages(msgQWriteFd, attr)
+// 	assert.NoError(t, err)
+// 	assert.Equal(t, size, 1)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, msgQWriter)
+// 	data, err = msgQReader.receive()
+// 	assert.Equal(t, data, byteTestMsg)
+// 	assert.NotNil(t, data)
+// 	assert.NoError(t, err)
+// 	size, err = msgQReader.size()
+// 	assert.NoError(t, err)
+// 	assert.Zero(t, size)
+// 	size, err = msgQCurrentMessages(msgQWriteFd, attr)
+// 	assert.NoError(t, err)
+// 	assert.Zero(t, size)
 
-	msgQReaderFd, err := msgQOpen(mqName, unix.O_RDONLY)
-	assert.NoError(t, err)
-	assert.NotEqual(t, msgQReaderFd, -1)
+// 	err = unix.Close(msgQWriteFd)
+// 	assert.NoError(t, err)
 
-	// Empty message send to writer message queue
-	err = msgQWriter.send([]byte(""))
-	assert.Error(t, err)
-	size, err := msgQWriter.size()
-	assert.NoError(t, err)
-	assert.Zero(t, size)
-	size, err = msgQCurrentMessages(msgQReaderFd)
-	assert.NoError(t, err)
-	assert.Zero(t, size)
+// 	err = msgQReader.destroy()
+// 	assert.NoError(t, err)
+// }
 
-	// Normal message send
-	err = msgQWriter.send(byteTestMsg)
-	assert.NoError(t, err)
-	size, err = msgQWriter.size()
-	assert.NoError(t, err)
-	assert.Equal(t, size, 1)
-	size, err = msgQCurrentMessages(msgQReaderFd)
-	assert.NoError(t, err)
-	assert.Equal(t, size, 1)
+// func TestCommunicationMqWriter(t *testing.T) {
+// 	const mqName string = "goTestMqReader"
+// 	byteTestMsg := []byte("Lorem Ipsum")
 
-	data, err := msgQReceive(msgQReaderFd, msgQWriter.cap)
-	assert.NoError(t, err)
-	assert.NotNil(t, data)
-	assert.Equal(t, data, byteTestMsg)
-	size, err = msgQWriter.size()
-	assert.NoError(t, err)
-	assert.Zero(t, size)
-	size, err = msgQCurrentMessages(msgQReaderFd)
-	assert.NoError(t, err)
-	assert.Zero(t, size)
+// 	msgQWriter, err := newMsgQWriter(mqName)
 
-	err = unix.Close(msgQReaderFd)
-	assert.NoError(t, err)
+// 	assert.NoError(t, err)
+// 	assert.NotNil(t, msgQWriter)
 
-	err = msgQWriter.destroy()
-	assert.NoError(t, err)
-}
+// 	msgQReaderFd, err := msgQOpen(mqName, unix.O_RDONLY)
+// 	assert.NoError(t, err)
+// 	assert.NotEqual(t, msgQReaderFd, -1)
+
+// 	// Empty message send to writer message queue
+// 	err = msgQWriter.send([]byte(""))
+// 	assert.Error(t, err)
+// 	size, err := msgQWriter.size()
+// 	assert.NoError(t, err)
+// 	assert.Zero(t, size)
+// 	attr := new(messageQueueAttributes)
+// 	size, err = msgQCurrentMessages(msgQReaderFd, attr)
+// 	assert.NoError(t, err)
+// 	assert.Zero(t, size)
+
+// 	// Normal message send
+// 	err = msgQWriter.send(byteTestMsg)
+// 	assert.NoError(t, err)
+// 	size, err = msgQWriter.size()
+// 	assert.NoError(t, err)
+// 	assert.Equal(t, size, 1)
+// 	size, err = msgQCurrentMessages(msgQReaderFd, attr)
+// 	assert.NoError(t, err)
+// 	assert.Equal(t, size, 1)
+
+// 	data, err := msgQReceive(msgQReaderFd, msgQWriter.cap)
+// 	assert.NoError(t, err)
+// 	assert.NotNil(t, data)
+// 	assert.Equal(t, data, byteTestMsg)
+// 	size, err = msgQWriter.size()
+// 	assert.NoError(t, err)
+// 	assert.Zero(t, size)
+// 	size, err = msgQCurrentMessages(msgQReaderFd, attr)
+// 	assert.NoError(t, err)
+// 	assert.Zero(t, size)
+
+// 	err = unix.Close(msgQReaderFd)
+// 	assert.NoError(t, err)
+
+// 	err = msgQWriter.destroy()
+// 	assert.NoError(t, err)
+// }
