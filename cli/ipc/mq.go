@@ -3,9 +3,11 @@ package ipc
 import (
 	"errors"
 	"fmt"
+	"os"
 	"syscall"
 	"unsafe"
 
+	"github.com/aceofkid/go-ipc/mq"
 	"golang.org/x/sys/unix"
 )
 
@@ -207,6 +209,13 @@ func newMsgQReader(name string) (*receiveMessageQueue, error) {
 			cap:  mqMaxMsgSize,
 		},
 	}, nil
+}
+
+func (m *messageQueue) test() error {
+	q, err := mq.CreateLinuxMessageQueue("testQ", os.O_EXCL|mq.O_NONBLOCK, 0666, mqMaxMsgMax, mqMaxMsgMax)
+	cap := q.Cap()
+	fmt.Println(cap)
+	return err
 }
 
 // size returns the current message on the queue
