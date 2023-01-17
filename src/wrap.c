@@ -1649,7 +1649,7 @@ initSigErrorHandler(void)
     }
 }
 
-__attribute__((constructor)) void
+SCOPE_CONSTRUCTOR void
 init(void)
 {
     config_t *cfg = NULL;
@@ -3720,7 +3720,7 @@ _exit(int status)
     } else {
         exit(status);
     }
-    UNREACHABLE();
+    SCOPE_UNREACHABLE();
 }
 
 #endif // __linux__

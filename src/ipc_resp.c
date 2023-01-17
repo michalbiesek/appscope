@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 
+#include "scopeattr.h"
 #include "com.h"
 #include "ipc_resp.h"
 #include "scopestdlib.h"
@@ -73,10 +74,9 @@ allocFail:
 
 /*
  * Creates the wrapper for response to IPC_CMD_GET_SCOPE_STATUS
- * TODO: use unused attribute later
  */
 scopeRespWrapper *
-ipcRespGetScopeStatus(const cJSON *unused) {
+ipcRespGetScopeStatus(SCOPE_ATTR_UNUSED const cJSON *unused) {
     scopeRespWrapper *wrap = respWrapperCreate();
     if (!wrap) {
         return NULL;
@@ -101,10 +101,9 @@ allocFail:
 
 /*
  * Creates the wrapper for response to IPC_CMD_GET_SCOPE_CFG
- * TODO: use unused attribute later
  */
 scopeRespWrapper *
-ipcRespGetScopeCfg(const cJSON *unused) {
+ipcRespGetScopeCfg(SCOPE_ATTR_UNUSED cJSON *unused) {
     scopeRespWrapper *wrap = respWrapperCreate();
     if (!wrap) {
         return NULL;
@@ -139,10 +138,9 @@ allocFail:
 
 /*
  * Creates the wrapper for response to IPC_CMD_UNKNOWN
- * TODO: use unused attribute later
  */
 scopeRespWrapper *
-ipcRespStatusNotImplemented(const cJSON *unused) {
+ipcRespStatusNotImplemented(SCOPE_ATTR_UNUSED const cJSON *unused) {
     return ipcRespStatus(IPC_RESP_NOT_IMPLEMENTED);
 }
 

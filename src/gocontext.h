@@ -111,7 +111,7 @@ extern tap_t g_go_tap[];
 
 extern int arch_prctl(int, unsigned long);
 extern void initGoHook(elf_buf_t*);
-extern void sysprint(const char *, ...) PRINTF_FORMAT(1, 2);
+extern void sysprint(const char *, ...) SCOPE_ATTR_FORMAT(1, 2);
 extern void *getSymbol(const char *, char *);
 
 extern void go_hook_reg_syscall(void);

@@ -61,7 +61,7 @@ translateParseStatusToResp(req_parse_status_t status) {
         DBG("%d", status);
         return IPC_BAD_REQUEST;
     default:
-        UNREACHABLE();
+        SCOPE_UNREACHABLE();
         DBG("%d", status);
         return IPC_RESP_SERVER_ERROR;
     }

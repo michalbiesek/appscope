@@ -269,7 +269,7 @@ dbgAddLine(const char *key, const char *fmt, ...)
 // This weak definition allows us to not have to define this symbol
 // for unit tests and allows for a different definition for the
 // scope executable.
-void __attribute__((weak))
+void SCOPE_ATTR_WEAK
 scopeLog(cfg_log_level_t level, const char *format, ...)
 {
     return;

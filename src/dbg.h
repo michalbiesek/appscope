@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "log.h"
 #include "scopetypes.h"
+#include "scopeattr.h"
 
 typedef struct _dbg_t dbg_t;
 
@@ -28,9 +29,6 @@ extern uint64_t g_cbuf_drop_count;
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 #define DBG_FILE_AND_LINE __FILE__ ":" TOSTRING(__LINE__)
-
-#define PRINTF_FORMAT(fmt_id, arg_id) __attribute__((format(printf, (fmt_id), (arg_id))))
-#define UNREACHABLE() (__builtin_unreachable())
 
 //
 //  The DBG macro is used to keep track of unexpected/undesirable
@@ -71,8 +69,8 @@ extern proc_id_t g_proc;
 extern bool g_constructor_debug_enabled;
 extern bool g_ismusl;
 
-void scopeLog(cfg_log_level_t, const char *, ...) PRINTF_FORMAT(2,3);
-void scopeLogHex(cfg_log_level_t, const void *, size_t, const char *, ...) PRINTF_FORMAT(4,5);
+void scopeLog(cfg_log_level_t, const char *, ...) SCOPE_ATTR_FORMAT(2,3);
+void scopeLogHex(cfg_log_level_t, const void *, size_t, const char *, ...) SCOPE_ATTR_FORMAT(4,5);
 void scopeLogDropItOnTheFloor(const char *, ...);
 void scopeBacktrace(cfg_log_level_t);
 
