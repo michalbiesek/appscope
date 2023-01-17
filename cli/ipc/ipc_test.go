@@ -67,3 +67,7 @@ func TestParsingIpcFrameScopeMsgMissingStatus(t *testing.T) {
 	err = cmd.UnmarshalResp(scopeMsg)
 	assert.ErrorIs(t, err, errMissingMandatoryField)
 }
+
+func TestParsingIpcFrameScopeMsgMultiple(t *testing.T) {
+
+}
