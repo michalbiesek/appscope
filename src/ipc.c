@@ -322,7 +322,7 @@ scopeMsgAppend(char *msg, size_t msgLen, const char *frame, size_t frameLen, req
  * Returns scope msg
  */
 char *
-ipcRequestHandler(mqd_t mqDes, size_t mqMaxMsgSize, req_parse_status_t *parseStatus, int *uniqueReq) {
+ipcRequestHandler(mqd_t mqDes, size_t mqMaxMsgSize, req_parse_status_t *parseStatus, int *msgUniqReq) {
     char *frameRes = NULL;
     char *msgRes = NULL;
     size_t msgLen = 0;
@@ -335,11 +335,12 @@ ipcRequestHandler(mqd_t mqDes, size_t mqMaxMsgSize, req_parse_status_t *parseSta
         return msgRes;
     }
     
+    size_t remainLen = SIZE_MAX;
+    ssize_t mqMsgLen = -1;
     bool listenForResponseTransmission = TRUE;
+    int frameUniqReq = -1;
     while (listenForResponseTransmission) {
         size_t frameLen = 0;
-        size_t remainLen = SIZE_MAX;
-        ssize_t mqMsgLen = -1;
 
         ipc_receive_result recvStatus = ipcReceiveFrameWithRetry(mqDes, mqMsgBuf, mqMaxMsgSize, &mqMsgLen);
         if (recvStatus != MSG_RECV_OK) {
@@ -349,7 +350,7 @@ ipcRequestHandler(mqd_t mqDes, size_t mqMaxMsgSize, req_parse_status_t *parseSta
             return NULL;
         }
         // Data from single frame
-        frameRes = ipcParseSingleFrame(mqMsgBuf, mqMsgLen, parseStatus, uniqueReq, &frameLen, &remainLen);
+        frameRes = ipcParseSingleFrame(mqMsgBuf, mqMsgLen, parseStatus, &frameUniqReq, &frameLen, &remainLen);
         if (!frameRes) {
             scope_free(mqMsgBuf);
             scope_free(msgRes);
@@ -358,6 +359,8 @@ ipcRequestHandler(mqd_t mqDes, size_t mqMaxMsgSize, req_parse_status_t *parseSta
 
         // First frame 
         if (!msgRes) {
+            // Save message unique request
+            *msgUniqReq = frameUniqReq;
             msgRes = scopeMsgCreate(frameRes, frameLen);
             if (!msgRes) {
                 *parseStatus = REQ_PARSE_ALLOCATION_ERROR;
@@ -367,6 +370,15 @@ ipcRequestHandler(mqd_t mqDes, size_t mqMaxMsgSize, req_parse_status_t *parseSta
             }
             msgLen += frameLen;
         } else {
+            // Check consistency between frames
+            if (*msgUniqReq != frameUniqReq) {
+                *parseStatus = REQ_PARSE_UNIQ_ERROR;
+                scope_free(frameRes);
+                scope_free(msgRes);
+                scope_free(mqMsgBuf);
+                return NULL;
+            }
+
             char *temp = scopeMsgAppend(msgRes, msgLen, frameRes, frameLen, parseStatus);
             if (!temp) {
                 scope_free(frameRes);
