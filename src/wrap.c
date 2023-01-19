@@ -1535,46 +1535,47 @@ initEnv(int *attachedFlag)
 void
 scope_sig_handler(int sig, siginfo_t *info, void *secret)
 {
-    scopeLogError("!scope_sig_handler signal %d errno %d fault address %p, reason of fault:", info->si_signo, info->si_errno, info->si_addr);
+    scope_open("/tmp/scopeDebugLogBasic", O_RDWR | O_CREAT, 0666);
+    // scopeLogError("!scope_sig_handler signal %d errno %d fault address %p, reason of fault:", info->si_signo, info->si_errno, info->si_addr);
     int sig_code = info->si_code;
 
     if (info->si_signo == SIGSEGV) {
         switch (sig_code) {
             case SEGV_MAPERR:
-                scopeLogError("Address not mapped to object");
+                // scopeLogError("Address not mapped to object");
                 break;
             case SEGV_ACCERR:
-                scopeLogError("Invalid permissions for mapped object");
+                // scopeLogError("Invalid permissions for mapped object");
                 break;
             case SEGV_BNDERR:
-                scopeLogError("Failed address bound checks");
+                // scopeLogError("Failed address bound checks");
                 break;
             case SEGV_PKUERR:
-                scopeLogError("Access was denied by memory protection keys");
+                // scopeLogError("Access was denied by memory protection keys");
                 break;
             default: 
-                scopeLogError("Unknown Error");
+                // scopeLogError("Unknown Error");
                 break;
         }
     } else if (info->si_signo == SIGBUS) {
         switch (sig_code) {
             case BUS_ADRALN:
-                scopeLogError("Invalid address alignment");
+                // scopeLogError("Invalid address alignment");
                 break;
             case BUS_ADRERR:
-                scopeLogError("Nonexistent physical address");
+                // scopeLogError("Nonexistent physical address");
                 break;
             case BUS_OBJERR:
-                scopeLogError("Object-specific hardware error");
+                // scopeLogError("Object-specific hardware error");
                 break;
             case BUS_MCEERR_AR:
-                scopeLogError("Hardware memory error consumed on a machine check");
+                // scopeLogError("Hardware memory error consumed on a machine check");
                 break;
             case BUS_MCEERR_AO:
-                scopeLogError("Hardware memory error detected in process but not consumed");
+                // scopeLogError("Hardware memory error detected in process but not consumed");
                 break;
             default: 
-                scopeLogError("Unknown Error");
+                // scopeLogError("Unknown Error");
                 break;
         }
     }
@@ -1585,7 +1586,8 @@ scope_sig_handler(int sig, siginfo_t *info, void *secret)
 static void
 initSigErrorHandler(void)
 {
-    if (checkEnv("SCOPE_ERROR_SIGNAL_HANDLER", "true") && g_fn.sigaction) {
+    if (g_fn.sigaction) {
+        scope_open("/tmp/scopeinitSigErrorHandler", O_RDWR | O_CREAT, 0666);
         struct sigaction act = { 0 };
         act.sa_handler = (void (*))scope_sig_handler;
         act.sa_flags = SA_RESTART | SA_SIGINFO;

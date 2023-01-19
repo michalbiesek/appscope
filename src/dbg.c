@@ -1,4 +1,6 @@
 #define _GNU_SOURCE
+#include <stdio.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <stdarg.h>
@@ -285,7 +287,12 @@ scopeBacktrace(cfg_log_level_t level)
     unw_getcontext(&uc);
     unw_init_local(&cursor, &uc);
     int frame_count = 0;
-    scopeLog(level, "--- scopeBacktrace");
+
+    int fd1 = scope_open("/tmp/scopeDebugLog", O_RDWR | O_CREAT, 0666);
+    if (fd1 < 0) {
+        return;
+    }
+    // scopeLog(level, "--- scopeBacktrace");
     while(unw_step(&cursor) > 0) {
         char symbol[SYMBOL_BT_NAME_LEN];
         unw_word_t offset;
@@ -297,12 +304,14 @@ scopeBacktrace(cfg_log_level_t level)
 
         ret = unw_get_proc_name(&cursor, symbol, SYMBOL_BT_NAME_LEN, &offset);
         if (!ret) {
-            scopeLog(level, "#%d 0x%lx %s + %d", frame_count, (long)ip, symbol, (int)offset);
+            // scopeLog(level, "#%d 0x%lx %s + %d", frame_count, (long)ip, symbol, (int)offset);
         } else {
-            scopeLog(level, "#%d  0x%lx ?", frame_count, (long)ip);
+            // scopeLog(level, "#%d  0x%lx ?", frame_count, (long)ip);
         }
         frame_count++;
     }
+    scope_write(fd1, "SIGNAL HANDLER CALLED", sizeof("SIGNAL HANDLER CALLED"));
+    scope_close(fd1);
 }
 
 void
