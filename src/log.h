@@ -11,6 +11,7 @@ void                logDestroy(log_t **);
 
 // Accessors
 int                 logSend(log_t *, const char *, cfg_log_level_t);
+int                 logSignalSafeSend(log_t *, const char *, cfg_log_level_t);
 cfg_log_level_t     logLevel(log_t *);
 void                logFlush(log_t *);
 

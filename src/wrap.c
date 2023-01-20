@@ -1594,6 +1594,7 @@ initEnv(int *attachedFlag)
 void
 scope_sig_handler(int sig, siginfo_t *info, void *secret)
 {
+    scopeLogWriteSignalSafe()
     scopeLogError("!scope_sig_handler signal %d errno %d fault address %p, reason of fault:", info->si_signo, info->si_errno, info->si_addr);
     int sig_code = info->si_code;
 
@@ -4052,7 +4053,7 @@ __stdio_write(struct MUSL_IO_FILE *stream, const unsigned char *buf, size_t len)
 	};
 
     struct iovec *iov = iovs;
-    int iovcnt = 2;
+    int iovcnt = 2;      
     int dothis = 0;
     ssize_t rc;
 
@@ -5268,6 +5269,11 @@ getaddrinfo(const char *node, const char *service,
 #define LOG_BUF_SIZE 4096
 #define LOG_TIME_SIZE 23
 #define LOG_TZ_BUF_SIZE 7
+
+void
+scopeLogWriteSignalSafe(const char *buf, size_t count) {
+    logSignalSafeSend(g_log, buf, CFG_LOG_ERROR);
+}
 
 // This overrides a weak definition in src/dbg.c
 void
