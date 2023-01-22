@@ -28,6 +28,21 @@
 #include <time.h>
 #include <unistd.h>
 
+#if SCOPE_VALGRIND
+#include "valgrindstub.h"
+#define scope_asprintf(s, ...) ({ \
+  int __ret = 0; \
+  do { \
+    __ret = scopelibc_asprintf(s, __VA_ARGS__); \
+    size_t size = scope_strlen(*s); \
+    SCOPE_VALGRIND_MALLOCLIKE_BLOCK(*s, size + 1, 0, 0); \
+  } while(0); \
+  __ret; \
+})
+#else 
+#define scope_asprintf scopelibc_asprintf
+#endif
+
 extern int  scopelibc_fcntl(int, int, ... /* arg */);
 extern int  scopelibc_open(const char *, int, ...);
 extern long scopelibc_syscall(long, ...);
@@ -57,7 +72,6 @@ extern int32_t ** scopelibc___ctype_tolower_loc(void);
 #define scope_sscanf   scopelibc_sscanf
 #define scope_fscanf   scopelibc_fscanf
 #define scope_sprintf  scopelibc_sprintf
-#define scope_asprintf scopelibc_asprintf
 #define scope_mq_open  scopelibc_mq_open
 #define scope_errno    scopelibc_errno_val
 #define scope_stdin    (&scopelibc___stdin_FILE)

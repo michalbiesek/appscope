@@ -15,98 +15,100 @@ extern void  scopelibc_lock_before_fork_op(void);
 extern void  scopelibc_unlock_after_fork_op(int);
 
 // Memory management handling operations
+extern size_t  scopelibc_malloc_usable_size(void *);
 extern void *  scopelibc_memalign(size_t, size_t);
 extern void *  scopelibc_malloc(size_t);
 extern void *  scopelibc_calloc(size_t, size_t);
 extern void *  scopelibc_realloc(void *, size_t);
-extern void   scopelibc_free(void *);
+extern void    scopelibc_free(void *);
 extern void *  scopelibc_mmap(void *, size_t, int, int, int, off_t);
-extern int    scopelibc_munmap(void *, size_t);
-extern FILE*  scopelibc_open_memstream(char **, size_t *);
+extern int     scopelibc_munmap(void *, size_t);
+extern FILE*   scopelibc_open_memstream(char **, size_t *);
 extern void *  scopelibc_memset(void *, int, size_t);
 extern void *  scopelibc_memmove(void *, const void *, size_t);
-extern int    scopelibc_memcmp(const void *, const void *, size_t);
-extern int    scopelibc_mprotect(void *, size_t, int);
+extern int     scopelibc_memcmp(const void *, const void *, size_t);
+extern int     scopelibc_mprotect(void *, size_t, int);
 extern void *  scopelibc_memcpy(void *, const void *, size_t);
-extern int    scopelibc_mlock(const void *, size_t);
-extern int    scopelibc_msync(void *, size_t, int);
-extern int    scopelibc_mincore(void *, size_t, unsigned char *);
-extern int    scopelibc_memfd_create(const char *, unsigned int);
+extern int     scopelibc_mlock(const void *, size_t);
+extern int     scopelibc_msync(void *, size_t, int);
+extern int     scopelibc_mincore(void *, size_t, unsigned char *);
+extern int     scopelibc_memfd_create(const char *, unsigned int);
 
 // File handling operations
-extern FILE*          scopelibc_fopen(const char *, const char *);
-extern int            scopelibc_fclose(FILE *);
-extern FILE*          scopelibc_fdopen(int, const char *);
-extern int            scopelibc_close(int);
-extern ssize_t        scopelibc_read(int, void *, size_t);
-extern size_t         scopelibc_fread(void *, size_t, size_t, FILE *);
-extern ssize_t        scopelibc_write(int, const void *, size_t);
-extern size_t         scopelibc_fwrite(const void *, size_t, size_t, FILE *);
-extern char *         scopelibc_fgets(char *, int, FILE *);
-extern ssize_t        scopelibc_getline(char **, size_t *, FILE *);
-extern int            scopelibc_puts(const char *);
-extern int            scopelibc_setvbuf(FILE *, char *, int, size_t);
-extern int            scopelibc_fflush(FILE *);
+extern FILE *          scopelibc_fopen(const char *, const char *);
+extern int             scopelibc_fclose(FILE *);
+extern FILE *          scopelibc_fdopen(int, const char *);
+extern int             scopelibc_close(int);
+extern ssize_t         scopelibc_read(int, void *, size_t);
+extern size_t          scopelibc_fread(void *, size_t, size_t, FILE *);
+extern ssize_t         scopelibc_write(int, const void *, size_t);
+extern size_t          scopelibc_fwrite(const void *, size_t, size_t, FILE *);
+extern char *          scopelibc_fgets(char *, int, FILE *);
+extern ssize_t         scopelibc_getline(char **, size_t *, FILE *);
+extern int             scopelibc_puts(const char *);
+extern int             scopelibc_setvbuf(FILE *, char *, int, size_t);
+extern int             scopelibc_fflush(FILE *);
 extern char *          scopelibc_dirname(char *);
-extern DIR*           scopelibc_opendir(const char *);
-extern struct dirent* scopelibc_readdir(DIR *);
-extern int            scopelibc_closedir(DIR *);
-extern int            scopelibc_access(const char *, int);
+extern DIR*            scopelibc_opendir(const char *);
+extern struct dirent * scopelibc_readdir(DIR *);
+extern int             scopelibc_closedir(DIR *);
+extern int             scopelibc_access(const char *, int);
 extern FILE *          scopelibc_fmemopen(void *, size_t, const char *);
-extern long           scopelibc_ftell(FILE *);
-extern int            scopelibc_fseek(FILE *, long, int);
-extern off_t          scopelibc_lseek(int, off_t, int);
-extern int            scopelibc_unlink(const char *);
-extern int            scopelibc_dup2(int, int);
+extern long            scopelibc_ftell(FILE *);
+extern int             scopelibc_fseek(FILE *, long, int);
+extern off_t           scopelibc_lseek(int, off_t, int);
+extern int             scopelibc_unlink(const char *);
+extern int             scopelibc_dup2(int, int);
 extern char *          scopelibc_basename(char *);
-extern int            scopelibc_stat(const char *, struct stat *);
-extern int            scopelibc_chmod(const char *, mode_t);
-extern int            scopelibc_fchmod(int, mode_t);
-extern int            scopelibc_feof(FILE *);
-extern int            scopelibc_fileno(FILE *);
-extern int            scopelibc_flock(int, int);
-extern int            scopelibc_fstat(int, struct stat *);
-extern int            scopelibc_mkdir(const char *, mode_t);
-extern int            scopelibc_chdir(const char *);
-extern int            scopelibc_rmdir(const char *);
+extern int             scopelibc_stat(const char *, struct stat *);
+extern int             scopelibc_chmod(const char *, mode_t);
+extern int             scopelibc_fchmod(int, mode_t);
+extern int             scopelibc_feof(FILE *);
+extern int             scopelibc_fileno(FILE *);
+extern int             scopelibc_flock(int, int);
+extern int             scopelibc_fstat(int, struct stat *);
+extern int             scopelibc_mkdir(const char *, mode_t);
+extern int             scopelibc_chdir(const char *);
+extern int             scopelibc_rmdir(const char *);
 extern char *          scopelibc_get_current_dir_name(void);
 extern char *          scopelibc_getcwd(char *, size_t);
-extern int            scopelibc_lstat(const char *, struct stat *);
-extern int            scopelibc_rename(const char *, const char *);
-extern int            scopelibc_remove(const char *);
-extern int            scopelibc_pipe2(int [2], int);
-extern void           scopelibc_setbuf(FILE *, char *);
+extern int             scopelibc_lstat(const char *, struct stat *);
+extern int             scopelibc_rename(const char *, const char *);
+extern int             scopelibc_remove(const char *);
+extern int             scopelibc_pipe2(int [2], int);
+extern void            scopelibc_setbuf(FILE *, char *);
 
 // String handling operations
 extern char *               scopelibc_realpath(const char *, char *);
-extern ssize_t             scopelibc_readlink(const char *, char *, size_t);
+extern ssize_t              scopelibc_readlink(const char *, char *, size_t);
 extern char *               scopelibc_strdup(const char *);
-extern int                 scopelibc_vasprintf(char **, const char *, va_list);
-extern size_t              scopelibc_strftime(char *, size_t, const char *, const struct tm *);
-extern size_t              scopelibc_strlen(const char *);
-extern size_t              scopelibc_strnlen(const char *, size_t);
+extern char *               scopelibc_strndup(const char *, size_t);
+extern int                  scopelibc_vasprintf(char **, const char *, va_list);
+extern size_t               scopelibc_strftime(char *, size_t, const char *, const struct tm *);
+extern size_t               scopelibc_strlen(const char *);
+extern size_t               scopelibc_strnlen(const char *, size_t);
 extern char *               scopelibc_strerror(int);
-extern int                 scopelibc_strerror_r(int, char *, size_t);
-extern double              scopelibc_strtod(const char *, char **);
-extern long                scopelibc_strtol(const char *, char **, int);
-extern long long           scopelibc_strtoll(const char *, char **, int);
-extern unsigned long       scopelibc_strtoul(const char *, char **, int);
-extern unsigned long long  scopelibc_strtoull(const char *, char **, int);
+extern int                  scopelibc_strerror_r(int, char *, size_t);
+extern double               scopelibc_strtod(const char *, char **);
+extern long                 scopelibc_strtol(const char *, char **, int);
+extern long long            scopelibc_strtoll(const char *, char **, int);
+extern unsigned long        scopelibc_strtoul(const char *, char **, int);
+extern unsigned long long   scopelibc_strtoull(const char *, char **, int);
 extern char *               scopelibc_strchr(const char *, int);
 extern char *               scopelibc_strrchr(const char *, int);
 extern char *               scopelibc_strstr(const char *, const char *);
-extern int                 scopelibc_vsnprintf(char *, size_t, const char *, va_list);
-extern int                 scopelibc_vfprintf(FILE *, const char *, va_list);
-extern int                 scopelibc_vprintf(const char *, va_list);
-extern int                 scopelibc_vsscanf(const char *, const char *, va_list);
-extern int                 scopelibc_strcmp(const char *, const char *);
-extern int                 scopelibc_strncmp(const char *, const char *, size_t);
-extern int                 scopelibc_strcasecmp(const char *, const char *);
+extern int                  scopelibc_vsnprintf(char *, size_t, const char *, va_list);
+extern int                  scopelibc_vfprintf(FILE *, const char *, va_list);
+extern int                  scopelibc_vprintf(const char *, va_list);
+extern int                  scopelibc_vsscanf(const char *, const char *, va_list);
+extern int                  scopelibc_strcmp(const char *, const char *);
+extern int                  scopelibc_strncmp(const char *, const char *, size_t);
+extern int                  scopelibc_strcasecmp(const char *, const char *);
 extern char *               scopelibc_strcpy(char *, const char *);
 extern char *               scopelibc_strncpy(char *, const char *, size_t);
 extern char *               scopelibc_stpcpy(char *, const char *);
 extern char *               scopelibc_stpncpy(char *, const char *, size_t);
-extern size_t              scopelibc_strcspn(const char *, const char *);
+extern size_t               scopelibc_strcspn(const char *, const char *);
 extern char *               scopelibc_strcat(char *, const char *);
 extern char *               scopelibc_strncat(char *, const char *, size_t);
 extern char *               scopelibc_strpbrk(const char *, const char *);
@@ -116,108 +118,108 @@ extern char *               scopelibc_strtok_r(char *, const char *, char **);
 extern const char *         scopelibc_gai_strerror(int);
 
 // Network handling operations
-extern int             scopelibc_gethostname(char *, size_t);
-extern int             scopelibc_getsockname(int, struct sockaddr *, socklen_t *);
-extern int             scopelibc_getsockopt(int, int, int, void *, socklen_t *);
-extern int             scopelibc_setsockopt(int, int, int, const void *, socklen_t);
-extern int             scopelibc_socket(int, int, int);
-extern int             scopelibc_bind(int, const struct sockaddr *, socklen_t);
-extern int             scopelibc_accept(int, struct sockaddr *, socklen_t *);
-extern int             scopelibc_connect(int, const struct sockaddr *, socklen_t);
-extern int             scopelibc_listen(int, int);
-extern void            scopelibc_rewind(FILE *);
-extern ssize_t         scopelibc_send(int, const void *, size_t, int);
-extern ssize_t         scopelibc_sendmsg(int, const struct msghdr *, int);
-extern ssize_t         scopelibc_recv(int, void *, size_t, int);
-extern ssize_t         scopelibc_recvmsg(int, struct msghdr *, int);
-extern ssize_t         scopelibc_recvfrom(int, void *, size_t, int, struct sockaddr *, socklen_t *);
-extern int             scopelibc_shutdown(int, int);
-extern int             scopelibc_poll(struct pollfd *, nfds_t, int);
-extern int             scopelibc_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
-extern int             scopelibc_getaddrinfo(const char *, const char *, const struct addrinfo *, struct addrinfo **);
-extern void            scopelibc_freeaddrinfo(struct addrinfo *);
-extern int             scopelibc_copyaddrinfo(struct sockaddr *, socklen_t, struct addrinfo **);
-extern int             scopelibc_getnameinfo(const struct sockaddr *, socklen_t, char *, socklen_t, char *, socklen_t, int);
-extern int             scopelibc_getpeername(int, struct sockaddr *, socklen_t *);
-extern struct hostent* scopelibc_gethostbyname(const char *);
+extern int              scopelibc_gethostname(char *, size_t);
+extern int              scopelibc_getsockname(int, struct sockaddr *, socklen_t *);
+extern int              scopelibc_getsockopt(int, int, int, void *, socklen_t *);
+extern int              scopelibc_setsockopt(int, int, int, const void *, socklen_t);
+extern int              scopelibc_socket(int, int, int);
+extern int              scopelibc_bind(int, const struct sockaddr *, socklen_t);
+extern int              scopelibc_accept(int, struct sockaddr *, socklen_t *);
+extern int              scopelibc_connect(int, const struct sockaddr *, socklen_t);
+extern int              scopelibc_listen(int, int);
+extern void             scopelibc_rewind(FILE *);
+extern ssize_t          scopelibc_send(int, const void *, size_t, int);
+extern ssize_t          scopelibc_sendmsg(int, const struct msghdr *, int);
+extern ssize_t          scopelibc_recv(int, void *, size_t, int);
+extern ssize_t          scopelibc_recvmsg(int, struct msghdr *, int);
+extern ssize_t          scopelibc_recvfrom(int, void *, size_t, int, struct sockaddr *, socklen_t *);
+extern int              scopelibc_shutdown(int, int);
+extern int              scopelibc_poll(struct pollfd *, nfds_t, int);
+extern int              scopelibc_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
+extern int              scopelibc_getaddrinfo(const char *, const char *, const struct addrinfo *, struct addrinfo **);
+extern void             scopelibc_freeaddrinfo(struct addrinfo *);
+extern int              scopelibc_copyaddrinfo(struct sockaddr *, socklen_t, struct addrinfo **);
+extern int              scopelibc_getnameinfo(const struct sockaddr *, socklen_t, char *, socklen_t, char *, socklen_t, int);
+extern int              scopelibc_getpeername(int, struct sockaddr *, socklen_t *);
+extern struct hostent * scopelibc_gethostbyname(const char *);
 extern const char *     scopelibc_inet_ntop(int, const void *, char *, socklen_t);
-extern uint16_t        scopelibc_ntohs(uint16_t);
-extern uint16_t        scopelibc_htons(uint16_t);
+extern uint16_t         scopelibc_ntohs(uint16_t);
+extern uint16_t         scopelibc_htons(uint16_t);
 
 // Misc handling operations
-extern int           scopelibc_atoi(const char *);
-extern int           scopelibc_isspace(int);
-extern int           scopelibc_isprint(int);
-extern int           scopelibc_isdigit(int);
-extern void          scopelibc_perror(const char *);
-extern int           scopelibc_gettimeofday(struct timeval *, struct timezone *);
-extern int           scopelibc_timer_create(clockid_t, struct sigevent *, timer_t *);
-extern int           scopelibc_timer_settime(timer_t, int, const struct itimerspec *, struct itimerspec *);
-extern int           scopelibc_timer_delete(timer_t);
-extern time_t        scopelibc_time(time_t *);
+extern int            scopelibc_atoi(const char *);
+extern int            scopelibc_isspace(int);
+extern int            scopelibc_isprint(int);
+extern int            scopelibc_isdigit(int);
+extern void           scopelibc_perror(const char *);
+extern int            scopelibc_gettimeofday(struct timeval *, struct timezone *);
+extern int            scopelibc_timer_create(clockid_t, struct sigevent *, timer_t *);
+extern int            scopelibc_timer_settime(timer_t, int, const struct itimerspec *, struct itimerspec *);
+extern int            scopelibc_timer_delete(timer_t);
+extern time_t         scopelibc_time(time_t *);
 extern struct tm *    scopelibc_localtime_r(const time_t *, struct tm *);
 extern struct tm *    scopelibc_gmtime_r(const time_t *, struct tm *);
-extern unsigned int  scopelibc_sleep(unsigned int);
-extern int           scopelibc_usleep(useconds_t);
-extern int           scopelibc_nanosleep(const struct timespec *, struct timespec *);
-extern int           scopelibc_sigaction(int, const struct sigaction *, struct sigaction *);
-extern int           scopelibc_sigemptyset(sigset_t *);
-extern int           scopelibc_pthread_create(pthread_t *, const pthread_attr_t *, void *(*)(void *), void *);
-extern int           scopelibc_pthread_barrier_init(pthread_barrier_t *, const pthread_barrierattr_t *, unsigned);
-extern int           scopelibc_pthread_barrier_destroy(pthread_barrier_t *);
-extern int           scopelibc_pthread_barrier_wait(pthread_barrier_t *);
-extern int           scopelibc_dlclose(void *);
-extern int           scopelibc_ns_initparse(const unsigned char *, int, ns_msg *);
-extern int           scopelibc_ns_parserr(ns_msg *, ns_sect, int, ns_rr *);
-extern int           scopelibc_getgrgid_r(gid_t, struct group *, char *, size_t, struct group **);
-extern int           scopelibc_getpwuid_r(uid_t, struct passwd *, char *, size_t, struct passwd **);
-extern pid_t         scopelibc_getpid(void);
-extern pid_t         scopelibc_getppid(void);
-extern uid_t         scopelibc_getuid(void);
-extern uid_t         scopelibc_geteuid(void);
-extern gid_t         scopelibc_getegid(void);
-extern int           scopelibc_seteuid(uid_t);
-extern int           scopelibc_setegid(gid_t);
-extern gid_t         scopelibc_getgid(void);
+extern unsigned int   scopelibc_sleep(unsigned int);
+extern int            scopelibc_usleep(useconds_t);
+extern int            scopelibc_nanosleep(const struct timespec *, struct timespec *);
+extern int            scopelibc_sigaction(int, const struct sigaction *, struct sigaction *);
+extern int            scopelibc_sigemptyset(sigset_t *);
+extern int            scopelibc_pthread_create(pthread_t *, const pthread_attr_t *, void *(*)(void *), void *);
+extern int            scopelibc_pthread_barrier_init(pthread_barrier_t *, const pthread_barrierattr_t *, unsigned);
+extern int            scopelibc_pthread_barrier_destroy(pthread_barrier_t *);
+extern int            scopelibc_pthread_barrier_wait(pthread_barrier_t *);
+extern int            scopelibc_dlclose(void *);
+extern int            scopelibc_ns_initparse(const unsigned char *, int, ns_msg *);
+extern int            scopelibc_ns_parserr(ns_msg *, ns_sect, int, ns_rr *);
+extern int            scopelibc_getgrgid_r(gid_t, struct group *, char *, size_t, struct group **);
+extern int            scopelibc_getpwuid_r(uid_t, struct passwd *, char *, size_t, struct passwd **);
+extern pid_t          scopelibc_getpid(void);
+extern pid_t          scopelibc_getppid(void);
+extern uid_t          scopelibc_getuid(void);
+extern uid_t          scopelibc_geteuid(void);
+extern gid_t          scopelibc_getegid(void);
+extern int            scopelibc_seteuid(uid_t);
+extern int            scopelibc_setegid(gid_t);
+extern gid_t          scopelibc_getgid(void);
 extern void *         scopelibc_dlopen(const char *, int);
-extern int           scopelibc_dlclose(void *);
+extern int            scopelibc_dlclose(void *);
 extern void *         scopelibc_dlsym(void *, const char *);
-extern long          scopelibc_ptrace(int, pid_t, void *, void *);
-extern pid_t         scopelibc_waitpid(pid_t, int *, int);
+extern long           scopelibc_ptrace(int, pid_t, void *, void *);
+extern pid_t          scopelibc_waitpid(pid_t, int *, int);
 extern char *         scopelibc_getenv(const char *);
-extern int           scopelibc_setenv(const char *, const char *, int);
-extern struct lconv* scopelibc_localeconv(void);
-extern int           scopelibc_shm_open(const char *, int, mode_t);
-extern int           scopelibc_shm_unlink(const char *);
-extern long          scopelibc_sysconf(int);
-extern int           scopelibc_mkstemp(char *);
-extern int           scopelibc_clock_gettime(clockid_t, struct timespec *);
-extern int           scopelibc_getpagesize(void);
-extern int           scopelibc_uname(struct utsname *);
-extern int           scopelibc_arch_prctl(int, unsigned long);
-extern int           scopelibc_getrusage(int , struct rusage *);
-extern int           scopelibc_atexit(void (*)(void));
-extern int           scopelibc_tcsetattr(int, int, const struct termios *);
-extern int           scopelibc_tcgetattr(int, struct termios *);
+extern int            scopelibc_setenv(const char *, const char *, int);
+extern struct lconv * scopelibc_localeconv(void);
+extern int            scopelibc_shm_open(const char *, int, mode_t);
+extern int            scopelibc_shm_unlink(const char *);
+extern long           scopelibc_sysconf(int);
+extern int            scopelibc_mkstemp(char *);
+extern int            scopelibc_clock_gettime(clockid_t, struct timespec *);
+extern int            scopelibc_getpagesize(void);
+extern int            scopelibc_uname(struct utsname *);
+extern int            scopelibc_arch_prctl(int, unsigned long);
+extern int            scopelibc_getrusage(int , struct rusage *);
+extern int            scopelibc_atexit(void (*)(void));
+extern int            scopelibc_tcsetattr(int, int, const struct termios *);
+extern int            scopelibc_tcgetattr(int, struct termios *);
 extern void *         scopelibc_shmat(int, const void *, int);
-extern int           scopelibc_shmdt(const void *);
-extern int           scopelibc_shmget(key_t, size_t, int);
-extern int           scopelibc_sched_getcpu(void);
-extern int           scopelibc_rand(void);
-extern void          scopelibc_srand(unsigned int);
-extern int           scopelibc_ftruncate(int, off_t);
-extern int           scopelibc_setns(int, int);
-extern int           scopelibc_chown(const char *, uid_t, gid_t);
-extern int           scopelibc_fchown(int, uid_t, gid_t);
-extern int           scopelibc_getc(FILE *);
-extern int           scopelibc_putc(int, FILE *);
-extern int           scopelibc_symlink(const char *, const char *);
-extern int           scopelibc_mq_close(mqd_t);
-extern int           scopelibc_mq_send(mqd_t, const char *, size_t, unsigned int);
-extern ssize_t       scopelibc_mq_receive(mqd_t, char *, size_t, unsigned int *);
-extern int           scopelibc_mq_unlink(const char *);
-extern int           scopelibc_mq_getattr(mqd_t, struct mq_attr *);
-
+extern int            scopelibc_shmdt(const void *);
+extern int            scopelibc_shmget(key_t, size_t, int);
+extern int            scopelibc_sched_getcpu(void);
+extern int            scopelibc_rand(void);
+extern void           scopelibc_srand(unsigned int);
+extern int            scopelibc_ftruncate(int, off_t);
+extern int            scopelibc_setns(int, int);
+extern int            scopelibc_chown(const char *, uid_t, gid_t);
+extern int            scopelibc_fchown(int, uid_t, gid_t);
+extern int            scopelibc_getc(FILE *);
+extern int            scopelibc_putc(int, FILE *);
+extern int            scopelibc_symlink(const char *, const char *);
+extern int            scopelibc_mq_close(mqd_t);
+extern int            scopelibc_mq_send(mqd_t, const char *, size_t, unsigned int);
+extern ssize_t        scopelibc_mq_receive(mqd_t, char *, size_t, unsigned int *);
+extern int            scopelibc_mq_unlink(const char *);
+extern int            scopelibc_mq_getattr(mqd_t, struct mq_attr *);
+ 
 static int g_go_static;
 
 // TODO consider moving GOAppState API somewhere else
@@ -258,8 +260,150 @@ scope_op_after_fork(int who) {
     scopelibc_unlock_after_fork_op(who);
 }
 
-// Memory management handling operations
+size_t scope_malloc_usable_size(void *p) {
+    return scopelibc_malloc_usable_size(p);
+}
 
+size_t
+scope_strlen(const char *s) {
+    return scopelibc_strlen(s);
+}
+
+FILE *
+scope_open_memstream(char **ptr, size_t *sizeloc) {
+    return scopelibc_open_memstream(ptr, sizeloc);
+}
+
+#if SCOPE_VALGRIND
+void *
+scope_memalign(size_t alignment, size_t size) {
+    void *ptr = scopelibc_memalign(alignment, size);
+    SCOPE_VALGRIND_MALLOCLIKE_BLOCK(ptr, size, 0, 0);
+    return ptr;
+}
+
+void *
+scope_malloc(size_t size) {
+    void *ptr = scopelibc_malloc(size);
+    SCOPE_VALGRIND_MALLOCLIKE_BLOCK(ptr, size, 0, 0);
+    return ptr;
+}
+
+void *
+scope_calloc(size_t nmemb, size_t size) {
+    void *ptr = scopelibc_calloc(nmemb, size);
+    SCOPE_VALGRIND_MALLOCLIKE_BLOCK(ptr, nmemb * size, 0, 1);
+    return ptr;
+}
+
+void
+scope_free(void *ptr) {
+    SCOPE_VALGRIND_FREELIKE_BLOCK(ptr, 0);
+    scopelibc_free(ptr);
+}
+
+void *
+scope_realloc(void *ptr, size_t size) {
+    if (!ptr) {
+        return scope_malloc(size);
+    }
+    size_t oldSize = scope_malloc_usable_size(ptr);
+	void *new = scope_malloc(size);
+	if (!new) {
+        return NULL;
+    }
+	scope_memcpy(new, ptr, size < oldSize ? size : oldSize);
+	scope_free(ptr);
+	return new;
+}
+
+void *
+scope_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
+    void *ptr = scopelibc_mmap(addr, length, prot, flags, fd, offset);
+    SCOPE_VALGRIND_MALLOCLIKE_BLOCK(ptr, length, 0, 0);
+    return ptr;
+}
+
+int
+scope_munmap(void *addr, size_t length) {
+    int res = scopelibc_munmap(addr, length);
+    if (!res) {
+        SCOPE_VALGRIND_FREELIKE_BLOCK(addr, 0);
+    }
+    return res;
+}
+
+char *
+scope_strdup(const char *s) {
+    size_t len = scope_strlen(s);
+    char *dest = scope_malloc(len+1);
+    if (!dest) {
+        return NULL;
+    }
+    return scope_memcpy(dest, s, len+1);
+}
+
+char *
+scope_strndup(const char *s, size_t n) {
+	size_t len = scope_strnlen(s, n);
+	char *dest = scope_malloc(len+1);
+	if (!dest) {
+        return NULL;
+    }
+	scope_memcpy(dest, s, len);
+	dest[len] = 0;
+	return dest;
+}
+
+char *
+scope_realpath(const char *restrict path, char *restrict resolved_path) {
+    char *res = scopelibc_realpath(path, resolved_path);
+    if (!resolved_path) {
+        size_t len = scope_strlen(res);
+        SCOPE_VALGRIND_MALLOCLIKE_BLOCK(res, len + 1, 0, 0);
+    }
+    return res;
+}
+
+char *
+scope_getcwd(char *buf, size_t size) {
+    char *ptr = scopelibc_getcwd(buf, size);
+    if (buf) {
+        return ptr;
+    }
+    if (size == 0) {
+        size_t len = scope_strlen(ptr);
+        SCOPE_VALGRIND_MALLOCLIKE_BLOCK(ptr, len + 1, 0, 0);
+    } else {
+        SCOPE_VALGRIND_MALLOCLIKE_BLOCK(ptr, size, 0, 0);
+    }
+    return ptr;
+}
+
+char *
+scope_get_current_dir_name(void){
+    char *dirName = scopelibc_get_current_dir_name();
+    size_t len = scope_strlen(dirName);
+    SCOPE_VALGRIND_MALLOCLIKE_BLOCK(dirName, len + 1, 0, 0);
+    return dirName;
+}
+
+ssize_t
+scope_getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream) {
+    int valgrindOpt = -1;
+    if (*lineptr == NULL) {
+        valgrindOpt = 1;
+    }
+    ssize_t length = scopelibc_getline(lineptr, n, stream);
+    if (valgrindOpt != -1) {
+        size_t size = scope_malloc_usable_size(*lineptr);
+        SCOPE_VALGRIND_MALLOCLIKE_BLOCK(*lineptr, size, 0, 0);
+    }
+
+    return length;
+}
+
+#else
 void *
 scope_memalign(size_t alignment, size_t size) {
     return scopelibc_memalign(alignment, size);
@@ -275,14 +419,14 @@ scope_calloc(size_t nmemb, size_t size) {
     return scopelibc_calloc(nmemb, size);
 }
 
-void *
-scope_realloc(void *ptr, size_t size) {
-    return scopelibc_realloc(ptr, size);
-}
-
 void
 scope_free(void *ptr) {
     scopelibc_free(ptr);
+}
+
+void *
+scope_realloc(void *ptr, size_t size) {
+    return scopelibc_realloc(ptr, size);
 }
 
 void *
@@ -295,10 +439,37 @@ scope_munmap(void *addr, size_t length) {
     return scopelibc_munmap(addr, length);
 }
 
-FILE *
-scope_open_memstream(char **ptr, size_t *sizeloc) {
-    return scopelibc_open_memstream(ptr, sizeloc);
+char *
+scope_strdup(const char *s) {
+    return scopelibc_strdup(s);
 }
+
+char *
+scope_strndup(const char *s, size_t n) {
+    return scopelibc_strndup(s, n);
+}
+
+char *
+scope_realpath(const char *restrict path, char *restrict resolved_path) {
+    return scopelibc_realpath(path, resolved_path);
+}
+
+char *
+scope_getcwd(char *buf, size_t size) {
+    return scopelibc_getcwd(buf, size);
+}
+
+char *
+scope_get_current_dir_name(void){
+    return scopelibc_get_current_dir_name();
+}
+
+ssize_t
+scope_getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream) {
+    return scopelibc_getline(lineptr, n, stream);
+}
+
+#endif //SCOPE_VALGRIND
 
 void *
 scope_memset(void *s, int c, size_t n) {
@@ -390,11 +561,6 @@ scope_fwrite(const void *restrict ptr, size_t size, size_t nmemb, FILE *restrict
 char *
 scope_fgets(char *restrict s, int n, FILE *restrict stream) {
     return scopelibc_fgets(s, n, stream);
-}
-
-ssize_t
-scope_getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream) {
-    return scopelibc_getline(lineptr, n, stream);
 }
 
 int
@@ -520,16 +686,6 @@ scope_rmdir(const char *pathname) {
     return scopelibc_rmdir(pathname);
 }
 
-char *
-scope_get_current_dir_name(void){
-    return scopelibc_get_current_dir_name();
-}
-
-char *
-scope_getcwd(char *buf, size_t size) {
-    return scopelibc_getcwd(buf, size);
-}
-
 int
 scope_lstat(const char *restrict path, struct stat *restrict buf) {
     return scopelibc_lstat(path, buf);
@@ -577,20 +733,9 @@ scope_stpncpy(char *restrict dest, const char *restrict src, size_t n) {
 
 
 // String handling operations
-
-char *
-scope_realpath(const char *restrict path, char *restrict resolved_path) {
-    return scopelibc_realpath(path, resolved_path);
-}
-
 ssize_t
 scope_readlink(const char *restrict pathname, char *restrict buf, size_t bufsiz) {
     return scopelibc_readlink(pathname, buf, bufsiz);
-}
-
-char *
-scope_strdup(const char *s) {
-    return scopelibc_strdup(s);
 }
 
 int
@@ -601,11 +746,6 @@ scope_vasprintf(char **strp, const char *fmt, va_list ap) {
 size_t
 scope_strftime(char *restrict s, size_t max, const char *restrict format, const struct tm *restrict tm) {
     return scopelibc_strftime(s, max, format, tm);
-}
-
-size_t
-scope_strlen(const char *s) {
-    return scopelibc_strlen(s);
 }
 
 size_t
