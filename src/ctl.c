@@ -651,13 +651,7 @@ ctlDestroy(ctl_t **ctl)
     cbufFree((*ctl)->msgbuf);
     cbufFree((*ctl)->events);
 
-    if ((*ctl)->payload.dir) {
-        scope_free((*ctl)->payload.dir);
-    }
-    if ((*ctl)->payload.dirRepr) {
-        scope_free((*ctl)->payload.dirRepr);
-    }
-
+    if ((*ctl)->payload.dir) scope_free((*ctl)->payload.dir);
     cbufFree((*ctl)->payload.ringbuf);
 
     transportDestroy(&(*ctl)->transport);
