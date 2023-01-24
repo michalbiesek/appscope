@@ -123,7 +123,8 @@ build/libunwind/src/.libs/libunwind.a:
 	@echo "$${CI:+::group::}Building coredumper"
 	@$(RM) -r build/coredumper
 	@mkdir build/coredumper
-	cd build/coredumper && cmake ../../coredumper -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=Debug && $(MAKE)
+	cd build/coredumper && ../../coredumper/preconfig && ../../coredumper/configure && $(MAKE)
+# cd build/coredumper && cmake ../../coredumper -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=Debug && $(MAKE)
 	objcopy --redefine-syms redefine_syms.lst  build/coredumper/src/libcoredumper.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
