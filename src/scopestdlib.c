@@ -1125,6 +1125,11 @@ scope_getpagesize(void) {
 }
 
 int
+scope___getpagesize(void) {
+    return scopelibc_getpagesize();
+}
+
+int
 scope_uname(struct utsname *buf) {
     return scopelibc_uname(buf);
 }

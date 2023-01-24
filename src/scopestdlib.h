@@ -279,6 +279,7 @@ int           scope_shm_unlink(const char *);
 long          scope_sysconf(int);
 int           scope_mkstemp(char *);
 int           scope_clock_gettime(clockid_t, struct timespec *);
+int           scope___getpagesize(void);
 int           scope_getpagesize(void);
 int           scope_uname(struct utsname *);
 int           scope_arch_prctl(int, unsigned long);
