@@ -28,7 +28,7 @@ scopeLogSigSafe(const char *msg, size_t msgLen) {
  * Helper functions for signal safe logging
  *
  * scopeLogErrorSigSafeCStr - logs the const string
- * scopeLogErrorSigSafeStr - logs the const string 
+ * scopeLogErrorSigSafeStr - logs the string with unknown length
  *
  */
 #define scopeLogErrorSigSafeCStr(s) scopeLogSigSafe(s, sizeof(s) - 1)
