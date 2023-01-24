@@ -3,6 +3,7 @@
 #include "scopestdlib.h"
 #include "log.h"
 #include "utils.h"
+#include "scopedump.h"
 
 #define UNW_LOCAL_ONLY
 #include "libunwind.h"
@@ -94,7 +95,7 @@ scopeLogBacktrace(void) {
 
 /*
  * Signal handler for SIGSEGV, SIGBUS, SIGILL and SIGFPE.
- * Logs the backtrace inforamation.
+ * Logs the backtrace information.
  */
 void
 scopeSignalHandlerBacktrace(int sig, siginfo_t *info, void *secret) {
@@ -209,5 +210,15 @@ scopeSignalHandlerBacktrace(int sig, siginfo_t *info, void *secret) {
     }
 
     scopeLogBacktrace();
+    abort();
+}
+
+/*
+ * Signal handler for SIGSEGV, SIGBUS, SIGILL and SIGFPE.
+ * Generate core dump.
+ */
+void
+scopeSignalHandlerCoreDump(int sig, siginfo_t *info, void *secret) {
+    scopeCoreDumpGenerate(scope_getpid());
     abort();
 }
