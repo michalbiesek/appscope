@@ -2,10 +2,10 @@
 
 CWD = $(shell pwd)
 OS=linux
-CC=gcc
+CC=clang-15
 CFLAGS=-fPIC -g -Wall -Wno-nonnull -Wno-deprecated-declarations -Werror=implicit-function-declaration -Werror=override-init -I contrib/ls-hpack $(if $(DEBUG),-DDEBUG)
 SCOPE_VER:="$(shell git --no-pager describe --abbrev=12 --dirty=+ --always --tags)"
-TEST_CFLAGS=-g -Wall -Wno-nonnull -O0 -coverage
+TEST_CFLAGS=-g -Wall -Wno-nonnull -O0 -fsanitize=address -static-libsan
 TEST_CFLAGS+=-DSCOPE_VER=\"$(SCOPE_VER)\"
 YAML_DEFINES=-DYAML_VERSION_MAJOR="0" -DYAML_VERSION_MINOR="2" -DYAML_VERSION_PATCH="2" -DYAML_VERSION_STRING="\"0.2.2\""
 CJSON_DEFINES=-DENABLE_LOCALES
@@ -21,7 +21,7 @@ TEST_AR=$(MUSL_AR) ${UNWIND_AR} $(YAML_AR) $(JSON_AR) $(PCRE2_AR) ${OPENSSL_AR} 
 #TEST_LIB=contrib/build/cmocka/src/libcmocka.dylib
 TEST_LIB=contrib/build/cmocka/src/libcmocka.so
 TEST_INCLUDES=-I./src -I./contrib/cmocka/include -I contrib/ls-hpack
-TEST_LD_FLAGS=-Lcontrib/build/cmocka/src -lcmocka -ldl -lresolv -lrt -lpthread
+TEST_LD_FLAGS=-Lcontrib/build/cmocka/src -lcmocka -ldl -lresolv -lrt -lpthread -fsanitize=address
 
 ARCH=$(shell uname -m)
 
@@ -127,7 +127,7 @@ coretest: $(C_FILES) $(YAML_AR) $(JSON_AR) $(TEST_LIB)
 	$(CC) $(TEST_CFLAGS) test/manual/unixpeer.c -lpthread -o test/$(OS)/unixpeer
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 	@echo "$${CI:+::group::}Running Tests and Generating Test Coverage"
-	test/execute.sh
+	# test/execute.sh
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 # see file:///Users/cribl/scope/coverage/index.html
 

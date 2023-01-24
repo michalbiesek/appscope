@@ -123,9 +123,10 @@ build/musl/lib/libc.a:
 	@$(RM) -r build/musl
 	@mkdir build/musl
 # To enable debug please add below --enable-debug --enable-optimize=no
-	cd build/musl && ../../musl/configure --disable-shared --disable-wrapper CFLAGS=$(DISABLE_X28) && $(MAKE)
+	cd build/musl && ../../musl/configure --disable-shared --disable-wrapper CFLAGS="$(DISABLE_X28)" && $(MAKE)
 	cp build/musl/lib/libc.a build/musl/lib/libc_orig.a
 	objcopy --prefix-symbols=scopelibc_ build/musl/lib/libc.a
+	# objcopy --redefine-syms redefine_syms_asan.lst build/musl/lib/libc.a
 # TODO verify if the code below be done via mfloat-abi=soft not sure if aarch64 support soft though
 # https://developer.arm.com/documentation/dui0774/b/compiler-command-line-options/-mfloat-abi
 # -mgeneral-regs-only maybe ? https://gcc.gnu.org/onlinedocs/gcc/AArch64-Options.html

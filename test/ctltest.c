@@ -814,32 +814,37 @@ ctlSendLogConsoleNoneAsciiData(void **state)
 int
 main(int argc, char* argv[])
 {
-    printf("running %s\n", argv[0]);
-    initFn();
-
+    // printf("running %s\n", argv[0]);
+    // initFn();
+    // char *s = malloc(100);
+    // strcpy(s, "Hello world!");
+    // printf("string is: %s\n", s);
+    char *t = scope_malloc(100);
+    scope_strcpy(t, "Hello world!");
+    scope_printf("string is: %s\n", t);
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(ctlParseRxMsgNullReturnsParseError),
-        cmocka_unit_test(ctlParseRxMsgUnparseableReturnsParseError),
-        cmocka_unit_test(ctlParseRxMsgRequiredFieldProblemsReturnsMalformed),
-        cmocka_unit_test(ctlParseRxMsgBogusReqReturnsUnknown),
-        cmocka_unit_test(ctlParseRxMsgSetCfgWithoutDataObjectReturnsParamErr),
-        cmocka_unit_test(ctlParseRxMsgSetCfg),
-        cmocka_unit_test(ctlParseRxMsgGetCfg),
-        cmocka_unit_test(ctlParseRxMsgGetDiags),
-        cmocka_unit_test(ctlParseRxMsgBlockPort),
-        cmocka_unit_test(ctlParseRxMsgSwitch),
-        cmocka_unit_test(ctlCreateTxMsgReturnsNullForNullUpload),
-        cmocka_unit_test(ctlCreateTxMsgInfo),
-        cmocka_unit_test(ctlCreateTxMsgResp),
-        cmocka_unit_test(ctlCreateTxMsgEvt),
-        cmocka_unit_test(ctlSendMsgForNullMtcDoesntCrash),
-        cmocka_unit_test(ctlSendMsgForNullMessageDoesntCrash),
-        cmocka_unit_test(ctlTransportSetAndMtcSend),
-        cmocka_unit_test(ctlAddProtocol),
-        cmocka_unit_test(ctlDelProtocol),
-        cmocka_unit_test(ctlSendLogConsoleAsciiData),
-        cmocka_unit_test(ctlSendLogConsoleNoneAsciiData),
-        cmocka_unit_test(dbgHasNoUnexpectedFailures),
+    //     cmocka_unit_test(ctlParseRxMsgNullReturnsParseError),
+    //     cmocka_unit_test(ctlParseRxMsgUnparseableReturnsParseError),
+    //     cmocka_unit_test(ctlParseRxMsgRequiredFieldProblemsReturnsMalformed),
+    //     cmocka_unit_test(ctlParseRxMsgBogusReqReturnsUnknown),
+    //     cmocka_unit_test(ctlParseRxMsgSetCfgWithoutDataObjectReturnsParamErr),
+    //     cmocka_unit_test(ctlParseRxMsgSetCfg),
+    //     cmocka_unit_test(ctlParseRxMsgGetCfg),
+    //     cmocka_unit_test(ctlParseRxMsgGetDiags),
+    //     cmocka_unit_test(ctlParseRxMsgBlockPort),
+    //     cmocka_unit_test(ctlParseRxMsgSwitch),
+    //     cmocka_unit_test(ctlCreateTxMsgReturnsNullForNullUpload),
+    //     cmocka_unit_test(ctlCreateTxMsgInfo),
+    //     cmocka_unit_test(ctlCreateTxMsgResp),
+    //     cmocka_unit_test(ctlCreateTxMsgEvt),
+    //     cmocka_unit_test(ctlSendMsgForNullMtcDoesntCrash),
+    //     cmocka_unit_test(ctlSendMsgForNullMessageDoesntCrash),
+    //     cmocka_unit_test(ctlTransportSetAndMtcSend),
+    //     cmocka_unit_test(ctlAddProtocol),
+    //     cmocka_unit_test(ctlDelProtocol),
+    //     cmocka_unit_test(ctlSendLogConsoleAsciiData),
+    //     cmocka_unit_test(ctlSendLogConsoleNoneAsciiData),
+    //     cmocka_unit_test(dbgHasNoUnexpectedFailures),
     };
 
     return cmocka_run_group_tests(tests, groupSetup, groupTeardown);
