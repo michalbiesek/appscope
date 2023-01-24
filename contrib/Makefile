@@ -27,7 +27,7 @@ cmocka: build/cmocka/src/libcmocka.so
 funchook: build/funchook/libfunchook.a
 libyaml: build/libyaml/src/.libs/libyaml.a
 libunwind: build/libunwind/src/.libs/libunwind.a
-coredumper: build/coredumper/src/libcoredumper.a
+coredumper: build/coredumper/.libs/libcoredumper.a
 openssl: build/openssl/libssl.a build/openssl/libcrypto.a
 pcre2: build/pcre2/libpcre2-posix.a build/pcre2/libpcre2-8.a
 ls-hpack: build/ls-hpack/libls-hpack.a
@@ -119,13 +119,13 @@ build/libunwind/src/.libs/libunwind.a:
 	fi
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
- build/coredumper/src/libcoredumper.a:
+ build/coredumper/.libs/libcoredumper.a:
 	@echo "$${CI:+::group::}Building coredumper"
 	@$(RM) -r build/coredumper
 	@mkdir build/coredumper
-	cd build/coredumper && ../../coredumper/preconfig && ../../coredumper/configure && $(MAKE)
+	cd build/coredumper && autoreconf -fvi ../../coredumper && ../../coredumper/configure && $(MAKE)
 # cd build/coredumper && cmake ../../coredumper -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=Debug && $(MAKE)
-	objcopy --redefine-syms redefine_syms.lst  build/coredumper/src/libcoredumper.a
+	objcopy --redefine-syms redefine_syms.lst  build/coredumper/.libs/libcoredumper.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 build/musl/lib/libc.a:
