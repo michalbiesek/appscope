@@ -1105,9 +1105,11 @@ scopeErrorsSignals[] = {SIGSEGV, SIGBUS, SIGILL, SIGFPE};
 static void
 initSigErrorHandler(void)
 {
-    if (checkEnv("SCOPE_ERROR_SIGNAL_HANDLER", "true") && g_fn.sigaction) {
+    // if (checkEnv("SCOPE_ERROR_SIGNAL_HANDLER", "true") && g_fn.sigaction) {
+    if (g_fn.sigaction) {
         struct sigaction act = { 0 };
         act.sa_handler = (void (*))scopeSignalHandlerBacktrace;
+        // act.sa_handler = (void (*))scopeSignalHandlerCoreDump;
         act.sa_flags = SA_RESTART | SA_SIGINFO;
         for (int i = 0; i < ARRAY_SIZE(scopeErrorsSignals); ++i) {
             g_fn.sigaction(scopeErrorsSignals[i], &act, NULL);
@@ -1128,11 +1130,11 @@ periodic(void *arg)
 
     sigset_t mask;
     scope_sigfillset(&mask);
-    if (checkEnv("SCOPE_ERROR_SIGNAL_HANDLER", "true")) {
-        for (int i = 0; i < ARRAY_SIZE(scopeErrorsSignals); ++i) {
-            scope_sigdelset(&mask, scopeErrorsSignals[i]);
-        }
+    // if (checkEnv("SCOPE_ERROR_SIGNAL_HANDLER", "true")) {
+    for (int i = 0; i < ARRAY_SIZE(scopeErrorsSignals); ++i) {
+        scope_sigdelset(&mask, scopeErrorsSignals[i]);
     }
+    // }
 
     pthread_sigmask(SIG_BLOCK, &mask, NULL);
     bool perf;
