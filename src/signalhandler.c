@@ -210,6 +210,7 @@ scopeSignalHandlerBacktrace(int sig, siginfo_t *info, void *secret) {
     }
 
     scopeLogBacktrace();
+    scopeCoreDumpGenerate(scope_getpid());
     abort();
 }
 
