@@ -31,7 +31,12 @@ scopeLogSigSafe(const char *msg, size_t msgLen) {
  * scopeLogErrorSigSafeStr - logs the string with unknown length
  *
  */
-#define scopeLogErrorSigSafeCStr(s) scopeLogSigSafe(s, C_STRLEN(s))
+#define scopeLogErrorSigSafeCStr(s) ({ \
+  do { \
+    SCOPE_BUILD_ASSERT(!IS_PTR(s), "s is not an array"); \
+    scopeLogSigSafe(s, C_STRLEN(s)); \
+  } while(0); \
+})
 #define scopeLogErrorSigSafeStr(s) scopeLogSigSafe(s, (scope_strlen(s)))
 
 /*
@@ -98,6 +103,10 @@ scopeLogBacktrace(void) {
  */
 void
 scopeSignalHandlerBacktrace(int sig, siginfo_t *info, void *secret) {
+    char * t = "LoremIpsum";
+    char tf[] = "LoremNewIpsum";
+    scopeLogErrorSigSafeCStr(t);
+    scopeLogErrorSigSafeCStr(tf);
     scopeLogErrorSigSafeCStr("Scope Version: "); 
     scopeLogErrorSigSafeCStr(SCOPE_VER);
     scopeLogErrorSigSafeCStr("\n");
