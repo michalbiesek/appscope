@@ -31,13 +31,7 @@ extern uint64_t g_cbuf_drop_count;
 #define DBG_FILE_AND_LINE __FILE__ ":" TOSTRING(__LINE__)
 
 #define PRINTF_FORMAT(fmt_id, arg_id) __attribute__((format(printf, (fmt_id), (arg_id))))
-#define UNREACHABLE() (__builtin_unreachable())
 
-#ifdef static_assert
-#define SCOPE_BUILD_ASSERT(cond, msg) ({static_assert(cond, msg);})
-#else
-#define SCOPE_BUILD_ASSERT(cond, msg)
-#endif
 //
 //  The DBG macro is used to keep track of unexpected/undesirable
 //  conditions as instrumented with DBG in the source code.  This is done

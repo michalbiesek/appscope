@@ -28,21 +28,13 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "scopeattr.h"
+
 /*
 * Following macro is commonly used in several places
 * Note: If the set of common used macro used will grow
 * please consider moving these macros to separate file
 */
-
-/*
-* Size of array
-*/
-#define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
-
-/*
-* Constant String length
-*/ 
-#define C_STRLEN(a)  (sizeof(a) - 1)
 
 extern int  scopelibc_fcntl(int, int, ... /* arg */);
 extern int  scopelibc_open(const char *, int, ...);
