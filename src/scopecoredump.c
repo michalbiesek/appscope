@@ -3,7 +3,7 @@
 #include "scopecoredump.h"
 #include "scopestdlib.h"
 #include "utils.h"
-#include "google/coredumper.h"
+#include "coredumper.h"
 
 // Prefix for core dump file
 #define CORE_PREFIX "/tmp/scope_core."
