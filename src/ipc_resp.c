@@ -487,6 +487,7 @@ ipcRespStatusScopeError(ipc_resp_status_t status) {
  */
 scopeRespWrapper *
 ipcRespCoreDumpTrigger(const cJSON *scopeReq) {
-    ipc_resp_status_t status = scopeCoreDumpGenerate(scope_getpid()) == TRUE ? IPC_RESP_OK : IPC_RESP_SERVER_ERROR;
+    ipc_resp_status_t status = scopeUnwindCoreDumpGenerate() == TRUE ? IPC_RESP_OK : IPC_RESP_SERVER_ERROR;
+    // ipc_resp_status_t status = scopeCoreDumpGenerate(scope_getpid()) == TRUE ? IPC_RESP_OK : IPC_RESP_SERVER_ERROR;
     return ipcRespStatus(status);
 }
