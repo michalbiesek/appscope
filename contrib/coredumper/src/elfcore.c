@@ -1064,7 +1064,7 @@ static int CreateElfCore(void *handle,
           ehdr.e_ehsize   = sizeof(Ehdr);
           ehdr.e_phentsize= sizeof(Phdr);
           ehdr.e_phnum    = num_mappings + num_extra_phdrs + 1;
-          ehdr.e_shentsize= sizeof(Shdr);
+          ehdr.e_shentsize= 0;
           if (writer(handle, &ehdr, sizeof(Ehdr)) != sizeof(Ehdr)) {
             goto done;
           }
