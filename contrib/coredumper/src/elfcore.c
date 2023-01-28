@@ -752,6 +752,14 @@ static Ehdr *SanitizeVDSO(Ehdr *ehdr, size_t start, size_t end) {
   return ehdr;
 }
 
+void foo (void)
+{
+  static i = 1;
+  while(1){
+    sleep(1);
+  }
+}
+
 /* This function is invoked from a separate process. It has access to a
  * copy-on-write copy of the parents address space, and all crucial
  * information about the parent has been computed by the caller.
@@ -776,7 +784,7 @@ static int CreateElfCore(void *handle,
 
   if (sys_pipe(loopback) < 0)
     goto done;
-
+  foo();
   io.data = io.end = 0;
   NO_INTR(io.fd = sys_open("/proc/self/maps", O_RDONLY, 0));
   if (io.fd >= 0) {

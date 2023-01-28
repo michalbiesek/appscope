@@ -51,7 +51,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,)],
                   [AC_SUBST(AM_CFLAGS, ["$AM_CFLAGS -fno-strict-aliasing"])
                    AC_MSG_RESULT([yes])],
                   [AC_MSG_RESULT([no])])
-CFLAGS="$saved_CFLAGS"
+CFLAGS="$saved_CFLAGS -g3 -O0"
 
 # Write generated configuration file
 AC_CONFIG_FILES([Makefile])
