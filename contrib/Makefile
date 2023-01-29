@@ -61,7 +61,7 @@ build/funchook/libfunchook.a:
 	fi
 	cd build/funchook && $(MAKE) capstone-static funchook-static
 	objcopy --redefine-syms redefine_syms.lst build/funchook/libfunchook.a
-	objcopy --redefine-syms redefine_syms.lst build/funchook/capstone-build/src/capstone-build/libcapstone.a
+	objcopy --redefine-syms redefine_syms.lst build/funchook/capstone-build/libcapstone.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 # Can't be cached because we have to `autoreconf` the source folder.

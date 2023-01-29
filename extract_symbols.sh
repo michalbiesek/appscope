@@ -32,7 +32,7 @@ declare -a stdlib_ignore_syms=('/_GLOBAL_OFFSET_TABLE_/d'
 declare -a conrib_libs=(
 "./contrib/cJSON/libcjson.a" 
 "./contrib/build/funchook/libfunchook.a"
-"./contrib/build/funchook/capstone_src-prefix/src/capstone_src-build/libcapstone.a"
+"./contrib/build/funchook/capstone-build/libcapstone.a"
 "./contrib/build/libyaml/src/.libs/libyaml.a"
 "./contrib/build/openssl/libcrypto.a"
 "./contrib/build/openssl/libssl.a"
