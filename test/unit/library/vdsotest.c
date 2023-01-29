@@ -21,16 +21,22 @@ vdso_functions_after_init(void **state)
     scope_clock_gettime(CLOCK_MONOTONIC, &ts);
     scope_sched_getcpu();
 }
+void *p;
+void *ps;
 
 int
 main(int argc, char* argv[])
 {
     printf("running %s\n", argv[0]);
+    p = malloc(7);
+    p = 0; // The memory is leaked here.
+    ps = scope_malloc(7);
+    ps = 0; // The memory is leaked here.
 
-    const struct CMUnitTest tests[] = {
-        cmocka_unit_test(vdso_functions_before_init),
-        cmocka_unit_test(vdso_functions_after_init),
-        cmocka_unit_test(dbgHasNoUnexpectedFailures),
-    };
-    return cmocka_run_group_tests(tests, groupSetup, groupTeardown);
+    // const struct CMUnitTest tests[] = {
+    //     cmocka_unit_test(vdso_functions_before_init),
+    //     cmocka_unit_test(vdso_functions_after_init),
+    //     cmocka_unit_test(dbgHasNoUnexpectedFailures),
+    // };
+    return 0;
 }

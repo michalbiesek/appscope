@@ -43,6 +43,8 @@ require-go-version:
 	elif [ $(GO_MINOR_VERSION) -lt $(MIN_REQ_GO_MINOR_VERSION) ] ; then \
 		echo 'error: minimum supported version of Go is $(MIN_REQ_GO_MAJOR_VERSION).$(MIN_REQ_GO_MINOR_VERSION), detected is $(GO_MAJOR_VERSION).$(GO_MINOR_VERSION)';\
 		exit 1; \
+	else \
+		echo 'asd $(GOBIN)';\
 	fi
 
 ## build: build all (default)
@@ -72,7 +74,7 @@ clean:
 	$(RM) -rf -- .gobin/aarch64/go*
 
 ## deps: install dependencies
-deps: $(GO_BINDATA) $(GOVVV) $(GOLANGCI_LINT)
+deps: $(GO_BINDATA) $(GOVVV)
 $(GO_BINDATA):
 	$(GO) install github.com/go-bindata/go-bindata/...
 $(GOVVV):
