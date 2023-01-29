@@ -103,6 +103,8 @@ mtcTransportSetAndMtcSend(void** state)
     if (unlink(file_path))
         fail_msg("Couldn't delete file %s", file_path);
 
+    free(msg);
+
     mtcDestroy(&mtc);
 }
 
