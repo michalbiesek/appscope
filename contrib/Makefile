@@ -59,9 +59,9 @@ build/funchook/libfunchook.a:
 		echo >&2 "error: unsupported ARCH; \"$(ARCH)\""; \
 		exit 1; \
 	fi
-	cd build/funchook && $(MAKE) capstone_src funchook-static
+	cd build/funchook && $(MAKE) capstone-static funchook-static
 	objcopy --redefine-syms redefine_syms.lst build/funchook/libfunchook.a
-	objcopy --redefine-syms redefine_syms.lst build/funchook/capstone_src-prefix/src/capstone_src-build/libcapstone.a
+	objcopy --redefine-syms redefine_syms.lst build/funchook/capstone-build/src/capstone-build/libcapstone.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 # Can't be cached because we have to `autoreconf` the source folder.
