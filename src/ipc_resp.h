@@ -54,7 +54,7 @@ typedef enum {
 } req_parse_status_t;
 
 // Forward declaration
-typedef struct scopeRespWrapper scopeRespWrapper;
+typedef cJSON scopeRespWrapper;
 
 // This must be inline with respStatus in ipccmd.go
 typedef enum {

@@ -26,23 +26,12 @@ extern log_t *g_log;
 extern mtc_t *g_mtc;
 extern ctl_t *g_ctl;
 
-// Wrapper for scope message response
-// TODO: replace scopeRespWrapper with cJSON
-struct scopeRespWrapper{
-    cJSON *resp;                // Scope message response
-};
-
 /*
  * Creates the scope response wrapper object
  */
-static scopeRespWrapper *
+static inline scopeRespWrapper *
 respWrapperCreate(void) {
-    scopeRespWrapper *wrap = scope_calloc(1, sizeof(scopeRespWrapper));
-    if (!wrap) {
-        return NULL;
-    }
-    wrap->resp = NULL;
-    return wrap;
+    return cJSON_CreateObject();
 }
 
 /*
@@ -50,11 +39,7 @@ respWrapperCreate(void) {
  */
 void
 ipcRespWrapperDestroy(scopeRespWrapper *wrap) {
-    if (wrap->resp) {
-        cJSON_Delete(wrap->resp);
-    }
-
-    scope_free(wrap);
+    cJSON_Delete(wrap);
 }
 
 /*
@@ -62,7 +47,7 @@ ipcRespWrapperDestroy(scopeRespWrapper *wrap) {
  */
 char *
 ipcRespScopeRespStr(scopeRespWrapper *wrap) {
-    return cJSON_PrintUnformatted(wrap->resp);
+    return cJSON_PrintUnformatted(wrap);
 }
 
 /*
@@ -75,12 +60,8 @@ ipcRespStatus(ipc_resp_status_t status) {
     if (!wrap) {
         return NULL;
     }
-    cJSON *resp = cJSON_CreateObject();
-    if (!resp) {
-        goto allocFail;
-    }
-    wrap->resp = resp;
-    if (!cJSON_AddNumberToObjLN(resp, "status", status)) {
+
+    if (!cJSON_AddNumberToObjLN(wrap, "status", status)) {
         goto allocFail;
     }
 
@@ -126,12 +107,8 @@ ipcRespGetScopeCmds(const cJSON * unused) {
     if (!wrap) {
         return NULL;
     }
-    cJSON *resp = cJSON_CreateObject();
-    if (!resp) {
-        goto allocFail;
-    }
-    wrap->resp = resp;
-    if (!cJSON_AddNumberToObjLN(resp, "status", IPC_RESP_OK)) {
+
+    if (!cJSON_AddNumberToObjLN(wrap, "status", IPC_RESP_OK)) {
         goto allocFail;
     }
 
@@ -147,7 +124,7 @@ ipcRespGetScopeCmds(const cJSON * unused) {
         }
         cJSON_AddItemToArray(metaCmds, singleCmd);
     }
-    cJSON_AddItemToObjectCS(resp, "commands_meta", metaCmds);
+    cJSON_AddItemToObjectCS(wrap, "commands_meta", metaCmds);
 
     cJSON *scopeCmds = cJSON_CreateArray();
     if (!scopeCmds) {
@@ -161,7 +138,7 @@ ipcRespGetScopeCmds(const cJSON * unused) {
         }
         cJSON_AddItemToArray(scopeCmds, singleCmd);
     }
-    cJSON_AddItemToObjectCS(resp, "commands_scope", scopeCmds);
+    cJSON_AddItemToObjectCS(wrap, "commands_scope", scopeCmds);
 
     return wrap;
 
@@ -186,15 +163,11 @@ ipcRespGetScopeStatus(const cJSON *unused) {
     if (!wrap) {
         return NULL;
     }
-    cJSON *resp = cJSON_CreateObject();
-    if (!resp) {
+
+    if (!cJSON_AddNumberToObjLN(wrap, "status", IPC_RESP_OK)) {
         goto allocFail;
     }
-    wrap->resp = resp;
-    if (!cJSON_AddNumberToObjLN(resp, "status", IPC_RESP_OK)) {
-        goto allocFail;
-    }
-    if (!cJSON_AddBoolToObjLN(resp, "scoped", (g_cfg.funcs_attached))) {
+    if (!cJSON_AddBoolToObjLN(wrap, "scoped", (g_cfg.funcs_attached))) {
         goto allocFail;
     }
     return wrap;
@@ -214,23 +187,18 @@ ipcRespGetScopeCfg(const cJSON *unused) {
     if (!wrap) {
         return NULL;
     }
-    cJSON *resp = cJSON_CreateObject();
-    if (!resp) {
-        goto allocFail;
-    }
-    wrap->resp = resp;
 
     cJSON *cfg = jsonConfigurationObject(g_cfg.staticfg);
     if (!cfg) {
-        if (!cJSON_AddNumberToObjLN(resp, "status", IPC_RESP_SERVER_ERROR)) {
+        if (!cJSON_AddNumberToObjLN(wrap, "status", IPC_RESP_SERVER_ERROR)) {
             goto allocFail;
         }
         return wrap;
     }
 
-    cJSON_AddItemToObjectCS(resp, "cfg", cfg);
+    cJSON_AddItemToObjectCS(wrap, "cfg", cfg);
     
-    if (!cJSON_AddNumberToObjLN(resp, "status", IPC_RESP_OK)) {
+    if (!cJSON_AddNumberToObjLN(wrap, "status", IPC_RESP_OK)) {
         goto allocFail;
     }
     
@@ -397,12 +365,8 @@ ipcRespGetTransportStatus(const cJSON *unused) {
     if (!wrap) {
         return NULL;
     }
-    cJSON *resp = cJSON_CreateObject();
-    if (!resp) {
-        goto allocFail;
-    }
-    wrap->resp = resp;
-    if (!cJSON_AddNumberToObjLN(resp, "status", IPC_RESP_OK)) {
+
+    if (!cJSON_AddNumberToObjLN(wrap, "status", IPC_RESP_OK)) {
         goto allocFail;
     }
 
@@ -464,7 +428,7 @@ ipcRespGetTransportStatus(const cJSON *unused) {
         }
         cJSON_AddItemToArray(interfaces, singleInterface);
     }
-    cJSON_AddItemToObjectCS(resp, "interfaces", interfaces);
+    cJSON_AddItemToObjectCS(wrap, "interfaces", interfaces);
     return wrap;
 
 interfaceFail:
