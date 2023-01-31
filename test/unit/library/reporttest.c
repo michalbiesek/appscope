@@ -129,7 +129,7 @@ clearTestData(void)
 }
 
 static void
-init_g_proc()
+init_g_proc(void)
 {
     g_proc.pid = 50;
     g_proc.ppid = 49;
@@ -137,6 +137,11 @@ init_g_proc()
     strcpy(g_proc.procname, "procname");
     g_proc.cmd = strdup("command with args");
     strcpy(g_proc.id, "procid");
+}
+
+static void
+destroy_g_proc(void) {
+    free(g_proc.cmd);
 }
 
 static int
@@ -166,10 +171,13 @@ countTestSetup(void** state)
 static int
 countTestTeardown(void** state)
 {
-    logDestroy(&g_log);
-    mtcDestroy(&g_mtc);
-    ctlDestroy(&g_ctl);
+    destroyState();
 
+    ctlDestroy(&g_ctl);
+    mtcDestroy(&g_mtc);
+    logDestroy(&g_log);
+
+    destroy_g_proc();
     // Call the general groupTeardown() too.
     return groupTeardown(state);
 }
