@@ -3,7 +3,7 @@
 #include "coredump.h"
 #include "scopestdlib.h"
 #include "utils.h"
-#include "google/coredumper.h"
+// #include "google/coredumper.h"
 
 
 /*
@@ -25,5 +25,5 @@ coreDumpGenerate(const char *pathPrefix, size_t pathPrefixSize, pid_t pid) {
     }
     scope_memcpy(path + pathPrefixSize, pidBuf, msgLen);
 
-    return (WriteCoreDump(path) == 0);
+    return 0;
 }
