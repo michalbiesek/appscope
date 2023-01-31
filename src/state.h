@@ -35,8 +35,9 @@ typedef enum {
     FS_CONTENT_TEXT     // File content type text
 } fs_content_type_t;
 
-void initState();
-void resetState();
+void initState(void);
+void resetState(void);
+void destroyState(void);
 
 bool payloadToDiskForced(void);
 void setVerbosity(unsigned);

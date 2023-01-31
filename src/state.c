@@ -203,6 +203,16 @@ addProtocol(request_t *req)
 }
 
 static void
+destroyPayloadDetect(void) {
+    destroyProtEntry(g_tls_protocol_def);
+    g_tls_protocol_def = NULL;
+    destroyProtEntry(g_http_protocol_def);
+    g_http_protocol_def = NULL;
+    destroyProtEntry(g_statsd_protocol_def);
+    g_statsd_protocol_def = NULL;
+}
+
+static void
 initPayloadDetect()
 {
     int errornumber = 0;
@@ -268,16 +278,11 @@ initPayloadDetect()
 error:
     DBG("g_tls_protocol_def = %p, g_http_protocol_def = %p, g_statsd_protocol_def = %p",
          g_tls_protocol_def, g_http_protocol_def, g_statsd_protocol_def);
-    destroyProtEntry(g_tls_protocol_def);
-    g_tls_protocol_def = NULL;
-    destroyProtEntry(g_http_protocol_def);
-    g_http_protocol_def = NULL;
-    destroyProtEntry(g_statsd_protocol_def);
-    g_statsd_protocol_def = NULL;
+    destroyPayloadDetect();
 }
 
 void
-initState()
+initState(void)
 {
     // Per a Read Update & Change (RUC) model; now that the object is ready assign the global
     if ((g_netinfo = (net_info *)scope_calloc(1, sizeof(struct net_info_t) * NET_ENTRIES)) == NULL) {
@@ -316,9 +321,20 @@ initState()
 }
 
 void
-resetState()
+resetState(void)
 {
     scope_memset(&g_ctrs, 0, sizeof(struct metric_counters_t));
+}
+
+void
+destroyState(void) {
+    destroyReporting();
+    lstDestroy(&g_extra_net_info_list);
+    destroyPayloadDetect();
+    lstDestroy(&g_protlist);
+    destroyHttpState();
+    scope_free(g_fsinfo);
+    scope_free(g_netinfo);
 }
 
 // DEBUG

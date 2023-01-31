@@ -195,7 +195,7 @@ destroyHttp2Stream(void *data)
 }
 
 void
-initReporting()
+initReporting(void)
 {
     // NB: Each of these does a dynamic allocation that we are not releasing.
     //     They don't grow and would ideally be released when the reporting
@@ -204,6 +204,14 @@ initReporting()
     g_http2_channels = lstCreate(destroyHttp2Channel);
     g_http_status = searchComp(HTTP_STATUS);
     g_http_agg = httpAggCreate();
+}
+
+void
+destroyReporting(void) {
+    httpAggDestroy(&g_http_agg);
+    searchFree(&g_http_status);
+    lstDestroy(&g_http2_channels);
+    lstDestroy(&g_maplist);
 }
 
 void
