@@ -271,6 +271,7 @@ ipcProcessSetCfg(const cJSON *scopeReq) {
     char *cfgStr = cJSON_PrintUnformatted(cfgKey);
     config_t *cfg = cfgFromString(cfgStr);
     doAndReplaceConfig(cfg);
+    scope_free(cfgStr);
     res = TRUE;
     return res;
 }

@@ -91,6 +91,9 @@ doAndReplaceConfig(void *data) {
     }
     g_staticfg = cfg;
     g_cfg.staticfg = g_staticfg;
+    scope_free(g_cfg.cfgStr);
+    g_cfg.cfgStr = NULL;
+    g_cfg.cfgStr = jsonStringFromCfg(g_cfg.staticfg);
 }
 
 // When used with dl_iterate_phdr(), this has a similar result to
@@ -610,9 +613,7 @@ remoteConfig()
                     break;
                 case REQ_SET_CFG:
                     if (req->cfg) {
-                        // Apply the config
-                        doConfig(req->cfg);
-                        g_staticfg = req->cfg;
+                        doAndReplaceConfig(req->cfg);
                     } else {
                         DBG(NULL);
                     }
@@ -1760,6 +1761,7 @@ init(void)
     g_cfg.funcs_attached = scopedFlag;
     g_cfg.staticfg = g_staticfg;
     g_cfg.blockconn = DEFAULT_PORTBLOCK;
+    g_cfg.cfgStr = jsonStringFromCfg(g_cfg.staticfg);
 
     // replaces atexit(handleExit);  Allows events to be reported before
     // the TLS destructors are run.  This mechanism is used regardless
