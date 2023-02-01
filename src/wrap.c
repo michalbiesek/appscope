@@ -1837,6 +1837,25 @@ init(void)
 
 }
 
+EXPORTOFF sighandler_t
+signal(int signum, sighandler_t handler) {
+    WRAP_CHECK(signal, NULL);
+
+    /*
+     * Prevent the situation to override our handler when it is enabled.
+     * Condition below must be inline with `snapshotErrorsSignals` array
+     */
+    if ((snapshotEnabled) && (
+        signum == SIGSEGV ||
+        signum == SIGBUS ||
+        signum == SIGILL ||
+        signum == SIGFPE)) {
+        return handler;
+    }
+
+    return g_fn.signal(signum, handler);
+}
+
 EXPORTOFF int
 sigaction(int signum, const struct sigaction *act, struct sigaction *oldact)
 {
@@ -1847,6 +1866,18 @@ sigaction(int signum, const struct sigaction *act, struct sigaction *oldact)
      */
     if ((signum == SIGUSR2) && (act != NULL)) {
         g_thread.act = act; 
+        return 0;
+    }
+    
+    /*
+     * Prevent the situation to override our handler when it is enabled.
+     * Condition below must be inline with `snapshotErrorsSignals` array
+     */
+    if ((snapshotEnabled) && (
+        signum == SIGSEGV ||
+        signum == SIGBUS ||
+        signum == SIGILL ||
+        signum == SIGFPE)) {
         return 0;
     }
 
@@ -5512,6 +5543,7 @@ wrap_scope_dlsym(void *handle, const char *name, void *who)
 
 static got_list_t inject_hook_list[] = {
     {"sigaction",   sigaction, &g_fn.sigaction},
+    {"signal",      signal, &g_fn.signal},
     {"open",        open, &g_fn.open},
     {"openat",      openat, &g_fn.openat},
     {"fopen",       fopen, &g_fn.fopen},
