@@ -454,4 +454,12 @@ services:
       context: .
       dockerfile: ./terraform/Dockerfile
     <<: *scope-common
+  namespace:
+    image: ghcr.io/criblio/appscope-test-namespace:${TAG:?Missing TAG environment variable}
+    build:
+      cache_from:
+        - ghcr.io/criblio/appscope-test-namespace:${TAG:?Missing TAG environment variable}
+      context: .
+      dockerfile: ./namespace/Dockerfile
+    <<: *scope-common
 
