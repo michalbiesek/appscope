@@ -11,6 +11,9 @@ TEST_CFLAGS=-g -Wall -Wno-nonnull -O0 -coverage -Wno-format-security -Wno-format
 ifdef FSAN
 TEST_CFLAGS+=-fsanitize=address
 endif
+ifdef UBSAN
+TEST_CFLAGS+=-fsanitize=undefined
+endif
 YAML_DEFINES=-DYAML_VERSION_MAJOR="0" -DYAML_VERSION_MINOR="2" -DYAML_VERSION_PATCH="2" -DYAML_VERSION_STRING="\"0.2.2\""
 CJSON_DEFINES=-DENABLE_LOCALES
 YAML_SRC=$(wildcard contrib/libyaml/src/*.c)
