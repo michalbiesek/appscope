@@ -43,6 +43,14 @@ package main
 // -r, --starthost                   execute the scope start command in a host context (must be run in the container)
 // -x, --stophost                    execute the scope stop command in a host context (must be run in the container)
 
+#ifndef LIBSCOPE_SO_SIZE
+#define LIBSCOPE_SO_SIZE "10932952"
+#endif
+
+#ifndef SCOPEDYN_SIZE
+#define SCOPEDYN_SIZE "156992"
+#endif
+
 // Long aliases for short options
 // NOTE: Be sure to align these with the options listed in the call to getopt_long
 // NOTE: These must not conflict with the cli options specified in the cmd/ package
