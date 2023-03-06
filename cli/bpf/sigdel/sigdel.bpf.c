@@ -1,5 +1,7 @@
 #include "../vmlinux.h"
 #include <bpf/bpf_helpers.h>
+#include <bpf/bpf_tracing.h>
+#include <bpf/bpf_core_read.h>
 
 #define FILTER_SIGS 1
 #define COMM_LEN 128
@@ -134,6 +136,45 @@ int sig_deliver(struct sigdel_args_t *args)
                               &sigdel_data, sizeof(sigdel_data)) != 0) {
         bpf_printk("ERROR:sigdel:bpf_perf_event_output\n");
     }
+
+    return 0;
+}
+
+
+struct {
+	__uint(type, BPF_MAP_TYPE_RINGBUF);
+	__uint(max_entries, 1 << 24);
+} oom_events SEC_GO(".maps");
+
+struct oom_data_t {
+    u32 pid;
+    unsigned char comm[COMM_LEN];
+};
+
+
+SEC_GO("kprobe/oom_kill_process")
+int kprobe__oom_kill_process(struct pt_regs *ctx)
+{   
+    struct oom_control *oc = (struct oom_control*)PT_REGS_PARM1(ctx);
+
+    u32 pid = FIRST_32_BITS(bpf_get_current_pid_tgid());
+    struct oom_data_t *oom_data;
+    oom_data = bpf_ringbuf_reserve(&oom_events, sizeof(struct oom_data_t), 0);
+    if (!oom_data) {
+        bpf_printk("ERROR:oom_kill_process:reserve fails\n");
+        return 0;
+    }
+
+    oom_data->pid = pid;
+    if (bpf_get_current_comm(oom_data->comm, COMM_LEN) != 0) {
+        bpf_printk("ERROR:oom_kill_process:bpf_get_current_comm\n");
+        oom_data->comm[0] = 'X';
+        oom_data->comm[1] = 'Y';
+        oom_data->comm[2] = 'Z';
+        oom_data->comm[3] = '\0';
+    }
+
+    bpf_ringbuf_submit(oom_data, 0);
 
     return 0;
 }
