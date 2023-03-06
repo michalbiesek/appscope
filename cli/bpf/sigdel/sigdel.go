@@ -15,7 +15,6 @@ import (
 
 	"github.com/cilium/ebpf/link"
 	"github.com/cilium/ebpf/perf"
-	"github.com/cilium/ebpf/ringbuf"
 	"github.com/cilium/ebpf/rlimit"
 	"golang.org/x/sys/unix"
 )
@@ -129,20 +128,22 @@ func OOMProc(oomEventChan chan<- OomEvent) error {
 	}
 	defer kp.Close()
 
-	rd, err := ringbuf.NewReader(objs.OomEvents)
+	rd, err := perf.NewReader(objs.Events, os.Getpagesize())
 	if err != nil {
 		log.Error().Err(err)
 		return err
 	}
-
 	defer rd.Close()
+
 	for {
 		record, err := rd.Read()
 		if err != nil {
-			if errors.Is(err, ringbuf.ErrClosed) {
-				log.Error().Err(err)
-				return err
-			}
+			log.Error().Err(err)
+			return err
+		}
+
+		if record.LostSamples != 0 {
+			log.Warn().Msgf("*** The perf event array buffer is full, dropped %d samples ****", record.LostSamples)
 			continue
 		}
 

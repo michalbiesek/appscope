@@ -142,8 +142,9 @@ int sig_deliver(struct sigdel_args_t *args)
 
 
 struct {
-	__uint(type, BPF_MAP_TYPE_RINGBUF);
-	__uint(max_entries, 1 << 24);
+    __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
+    __uint(key_size, sizeof(u32));
+    __uint(value_size, sizeof(u32));
 } oom_events SEC_GO(".maps");
 
 struct oom_data_t {
@@ -158,23 +159,19 @@ int kprobe__oom_kill_process(struct pt_regs *ctx)
     struct oom_control *oc = (struct oom_control*)PT_REGS_PARM1(ctx);
 
     u32 pid = FIRST_32_BITS(bpf_get_current_pid_tgid());
-    struct oom_data_t *oom_data;
-    oom_data = bpf_ringbuf_reserve(&oom_events, sizeof(struct oom_data_t), 0);
-    if (!oom_data) {
-        bpf_printk("ERROR:oom_kill_process:reserve fails\n");
-        return 0;
-    }
-
-    oom_data->pid = pid;
-    if (bpf_get_current_comm(oom_data->comm, COMM_LEN) != 0) {
+    struct oom_data_t oom_data = {};
+    oom_data.pid = pid;
+    if (bpf_get_current_comm(oom_data.comm, COMM_LEN) != 0) {
         bpf_printk("ERROR:oom_kill_process:bpf_get_current_comm\n");
-        oom_data->comm[0] = 'X';
-        oom_data->comm[1] = 'Y';
-        oom_data->comm[2] = 'Z';
-        oom_data->comm[3] = '\0';
+        oom_data.comm[0] = 'X';
+        oom_data.comm[1] = 'Y';
+        oom_data.comm[2] = 'Z';
+        oom_data.comm[3] = '\0';
     }
 
-    bpf_ringbuf_submit(oom_data, 0);
+    if (bpf_perf_event_output(ctx, &oom_events, BPF_F_CURRENT_CPU, &oom_data, sizeof(oom_data)) != 0) {
+        bpf_printk("ERROR:oom_kill_process:bpf_perf_event_output\n");
+    }
 
     return 0;
 }
