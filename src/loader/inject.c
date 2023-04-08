@@ -55,6 +55,15 @@ typedef struct {
     #define SECOND_ARG_REG regs.regs[1]
     #define RET_REG regs.regs[0]
     #define DBG_TRAP "brk #0 \n"
+#elif defined(__riscv)
+    #define IP_REG regs.pc
+    #define FUNC_REG regs.regs[2]
+    #define FIRST_ARG_REG regs.regs[0]
+    #define SECOND_ARG_REG regs.regs[1]
+    #define RET_REG regs.regs[0]
+    #define DBG_TRAP "ebreak \n"
+#else
+   #error Bad arch defined
 #endif
 
 static int
@@ -155,6 +164,13 @@ call_remfunc(void)
         "blr x2 \n"
         DBG_TRAP
     );
+#elif defined(__riscv)
+    __asm__ volatile(
+        "jalr x2 \n"
+        DBG_TRAP
+    );
+#else
+   #error Bad arch defined
 #endif
 }
 

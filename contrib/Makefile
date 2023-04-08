@@ -60,6 +60,8 @@ build/funchook/libfunchook.a:
 		cd build/funchook && cmake -DCMAKE_BUILD_TYPE=Release -DFUNCHOOK_DISASM=capstone ../../funchook; \
 	elif [ "aarch64" = "$(ARCH)" ]; then \
 		cd build/funchook && cmake -DCMAKE_BUILD_TYPE=Release ../../funchook; \
+	elif [ "riscv64" = "$(ARCH)" ]; then \
+		cd build/funchook && cmake -DCMAKE_BUILD_TYPE=Release ../../funchook; \
 	else \
 		echo >&2 "error: unsupported ARCH; \"$(ARCH)\""; \
 		exit 1; \

@@ -34,7 +34,8 @@
 
 enum go_arch_t {
     X86_64,
-    AARCH64
+    AARCH64,
+    RISCV64
 };
 
 #if defined (__x86_64__)
@@ -56,6 +57,17 @@ enum go_arch_t {
    #define CS_ARCH CS_ARCH_ARM64
    #define CS_MODE CS_MODE_LITTLE_ENDIAN
    #define ARCH AARCH64
+   #define RET_SIZE 4
+   #define CALL_SIZE 4
+   #define G_STACK 0x10
+#elif defined (__riscv)
+   #define MIN_SUPPORTED_GO_VER (19)
+   #define END_INST "udf"
+   #define CALL_INST "bl"
+   #define SYSCALL_INST "svc"
+   #define CS_ARCH CS_ARCH_RISCV
+   #define CS_MODE CS_MODE_RISCV64
+   #define ARCH RISCV64
    #define RET_SIZE 4
    #define CALL_SIZE 4
    #define G_STACK 0x10
