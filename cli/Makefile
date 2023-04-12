@@ -39,7 +39,7 @@ TRIVY := $(GOBIN)/trivy
 # fail if of Go is not meet version requirements
 require-go-version:
 	@if [ $(GO_MAJOR_VERSION) -gt $(MIN_REQ_GO_MAJOR_VERSION) ]; then \
-		exit 0 ;\
+		exit 0; \
 	elif [ $(GO_MAJOR_VERSION) -lt $(MIN_REQ_GO_MAJOR_VERSION) ]; then \
 		echo 'error: minimum supported version of Go is $(MIN_REQ_GO_MAJOR_VERSION).$(MIN_REQ_GO_MINOR_VERSION), detected is $(GO_MAJOR_VERSION).$(GO_MINOR_VERSION)';\
 		exit 1; \
@@ -73,6 +73,7 @@ clean:
 	$(RM) -rf -- .gomod/*/
 	$(RM) -rf -- .gobin/x86_64/go*
 	$(RM) -rf -- .gobin/aarch64/go*
+	$(RM) -rf -- .gobin/riscv64/go*
 	$(RM) -rf -- bpf/sigdel/gen_sigdel_bpfel.go
 	$(RM) -rf -- bpf/sigdel/*.o
 	$(RM) -rf -- bpf/vmlinux.h
@@ -87,8 +88,9 @@ $(GOLANGCI_LINT):
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
 		sh -s -- -b $(GOBIN) v1.42.1
 $(TRIVY):
-	curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | \
-		sh -s -- -b $(GOBIN) v0.38.3
+	if [ "riscv64" != "$(ARCH)" ]; then \
+		curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $(GOBIN) v0.38.3; \
+	fi
 
 rebuild: clean build 
 
@@ -102,7 +104,7 @@ $(SCOPEDYN): $(LOADER_C_FILES)
 
 # the -w go build flags remove the dwarf symbol table from the resulting executable
 # the -tags force os/user and netgo to use go and NOT cgo because a static exec can't resolve libc calls from cgo
-$(SCOPE): $(LIBSCOPE) $(LIBLOADER) $(SCOPEDYN) $(SIGDEL)
+$(SCOPE): $(LIBSCOPE) $(LIBLOADER) $(SCOPEDYN)
 $(SCOPE): export GOOS=linux
 $(SCOPE): export CGO_ENABLED=1
 $(SCOPE): $(GOVVV) $(filter-out %_test.go,$(shell find . -type f -name '*.go'))
@@ -117,7 +119,7 @@ $(SCOPE): $(GOVVV) $(filter-out %_test.go,$(shell find . -type f -name '*.go'))
 		-ldflags="$(shell $(GOVVV) -flags) -w -linkmode external -extldflags \"-lrt -ldl -lpthread -static\" " \
 		-buildmode=pie \
 		$(BUILD_OPTS) \
-	       	-o $(SCOPE)
+		-o $(SCOPE)
 	$(RM) -r $(SCOPEDYN)
 
 $(SIGDEL): bpf/sigdel/sigdel.bpf.c $(SYSHEADER)

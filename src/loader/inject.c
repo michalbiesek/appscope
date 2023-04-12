@@ -55,6 +55,25 @@ typedef struct {
     #define SECOND_ARG_REG regs.regs[1]
     #define RET_REG regs.regs[0]
     #define DBG_TRAP "brk #0 \n"
+#elif defined(__riscv)
+// Ugly hack my emulator does not contain user_regs_struct definition
+// in user.h
+    #include <asm/elf.h>
+
+    //TODO
+    static unsigned long dummy_ip_reg;
+    static unsigned long dummy_func_reg;
+    static unsigned long dummy_first_arg_reg;
+    static unsigned long dummy_second_arg_reg;
+    static unsigned long dummy_ret_reg;
+    #define IP_REG          dummy_ip_reg   
+    #define FUNC_REG        dummy_func_reg
+    #define FIRST_ARG_REG   dummy_first_arg_reg
+    #define SECOND_ARG_REG  dummy_second_arg_reg
+    #define RET_REG         dummy_ret_reg
+    #define DBG_TRAP "ebreak \n"
+#else
+   #error Bad arch defined
 #endif
 
 static int
@@ -155,6 +174,13 @@ call_remfunc(void)
         "blr x2 \n"
         DBG_TRAP
     );
+#elif defined(__riscv)
+    __asm__ volatile(
+        "jalr x2 \n"
+        DBG_TRAP
+    );
+#else
+   #error Bad arch defined
 #endif
 }
 

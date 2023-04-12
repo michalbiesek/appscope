@@ -408,7 +408,7 @@ osGetNumChildProcs(pid_t pid)
     return nchild - 3; // Not including the parent proc itself and ., ..
 }
 
-int
+bool
 osInitTimer(platform_time_t *cfg)
 {
     int fd;
@@ -418,7 +418,7 @@ osInitTimer(platform_time_t *cfg)
 
     if ((fd = scope_open(path, O_RDONLY)) == -1) {
         DBG(NULL);
-        return -1;
+        return FALSE;
     }
     
     /*
@@ -428,14 +428,14 @@ osInitTimer(platform_time_t *cfg)
     if ((buf = scope_calloc(1, MAX_PROC)) == NULL) {
         DBG(NULL);
         scope_close(fd);
-        return -1;
+        return FALSE;
     }
     
     if (scope_read(fd, buf, MAX_PROC) == -1) {
         DBG(NULL);
         scope_close(fd);
         scope_free(buf);
-        return -1;
+        return FALSE;
     }
 
     if (scope_strstr(buf, "rdtscp") == NULL) {
@@ -488,6 +488,8 @@ osInitTimer(platform_time_t *cfg)
     } else {
         cfg->gptimer_avail = FALSE;
     }
+#elif defined(__riscv)
+    cfg->gptimer_avail = TRUE;
 #else
 #error No architecture defined
 #endif
@@ -496,9 +498,9 @@ osInitTimer(platform_time_t *cfg)
     scope_free(buf);
     if (cfg->freq == (uint64_t)-1) {
         DBG(NULL);
-        return -1;
+        return FALSE;
     }
-    return 0;
+    return TRUE;
 }
 
 int

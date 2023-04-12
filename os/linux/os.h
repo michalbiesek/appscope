@@ -26,7 +26,6 @@
 #include <sys/mman.h>
 
 #include "../../src/plattime.h"
-#include "../../contrib/funchook/include/funchook.h"
 
 // Anecdotal evidence that a proc entry should be max 4096 bytes
 #define MAX_PROC 4096
@@ -49,7 +48,7 @@ extern int osGetProcUidGid(pid_t, uid_t *, gid_t *);
 extern int osGetNumThreads(pid_t);
 extern int osGetNumFds(pid_t);
 extern int osGetNumChildProcs(pid_t);
-extern int osInitTimer(platform_time_t *);
+extern bool osInitTimer(platform_time_t *);
 extern int osGetProcMemory(pid_t);
 extern int osIsFilePresent(const char *);
 extern int osGetCmdline(pid_t, char **);

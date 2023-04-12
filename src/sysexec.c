@@ -378,6 +378,11 @@ set_go(char *buf, int argc, const char **argv, const char **env, Elf64_Addr phad
         : "r"(start), "r"(sp)
         : "x17"                      //clobbered register
     );
+#elif defined(__riscv)
+    //TODO
+    (void)(res);
+    (void)(start);
+    (void)(res);
 #else
    #error Bad arch defined
 #endif
