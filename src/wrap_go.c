@@ -19,6 +19,7 @@
 #include "capstone/capstone.h"
 #include "scopestdlib.h"
 #include "snapshot.h"
+#include "fhook.h"
 
 #define GOPCLNTAB_MAGIC_112 0xfffffffb
 #define GOPCLNTAB_MAGIC_116 0xfffffffa
@@ -35,7 +36,8 @@
 
 enum go_arch_t {
     X86_64,
-    AARCH64
+    AARCH64,
+    RISCV64
 };
 
 #if defined (__x86_64__)
@@ -60,6 +62,17 @@ enum go_arch_t {
    #define RET_SIZE 4
    #define CALL_SIZE 4
    #define G_STACK 0x10
+#elif defined (__riscv)
+   #define MIN_SUPPORTED_GO_VER (20)
+   #define END_INST "deadbeef" //TODO
+   #define CALL_INST "jal"
+   #define SYSCALL_INST "deadbeef"
+   #define CS_ARCH CS_ARCH_RISCV
+   #define CS_MODE CS_MODE_RISCV64
+   #define ARCH RISCV64
+   #define RET_SIZE -1 //TODO
+   #define CALL_SIZE -1 //TODO
+   #define G_STACK -1 //TODO
 #else
    #error Bad arch defined
 #endif
@@ -92,6 +105,7 @@ uint64_t g_rawsyscall_return = 0;
 uint64_t g_syscall6_return = 0;
 
 tap_t g_tap[] = {
+#ifndef __riscv
     {tap_syscall,              "syscall.Syscall",       /* .abi0 */       go_hook_reg_syscall,              NULL, 0},
     {tap_rawsyscall,           "syscall.RawSyscall",    /* .abi0 */       go_hook_reg_rawsyscall,           NULL, 0},
     {tap_syscall6,             "syscall.Syscall6",      /* .abi0 */       go_hook_reg_syscall6,             NULL, 0},
@@ -107,6 +121,7 @@ tap_t g_tap[] = {
     {tap_exit,                 "runtime.exit",          /* .abi0 */       go_hook_exit,                     NULL, 0},
     {tap_die,                  "runtime.dieFromSignal", /* .abi0 */       go_hook_die,                      NULL, 0},
     {tap_sighandler,           "runtime.sighandler",    /* .abi0 */       go_hook_sighandler,               NULL, 0},
+#endif
     {tap_end,                  "",                                        NULL,                             NULL, 0},
 };
 
@@ -841,6 +856,9 @@ looks_like_first_inst_of_go_func(cs_insn* asm_inst)
     } else if (g_arch == AARCH64) {
         return ((!scope_strcmp((const char*)asm_inst->mnemonic, "ldr") &&
                  scope_strstr((const char*)asm_inst->op_str, "[x28, #")));
+    } else if (g_arch == RISCV64) {
+        // TODO
+        return FALSE;
     } else {
         return FALSE;
     }
@@ -884,11 +902,11 @@ add_argument(cs_insn* asm_inst)
 
 // Patch all intended addresses
 static void
-patch_addrs(funchook_t *funchook,
+patch_addrs(scope_funchook_t *funchook,
             cs_insn* asm_inst, unsigned int asm_count, tap_t* tap)
 {
     if (!funchook || !asm_inst || !asm_count || !tap) return;
-
+#ifndef __riscv
     uint32_t add_arg = 0;
     for (int i=0; i<asm_count; i++) {
         add_arg = 0;
@@ -918,7 +936,7 @@ patch_addrs(funchook_t *funchook,
             void *pre_patch_addr = (void*)asm_inst[i].address;
             void *patch_addr = (void*)asm_inst[i].address;
 
-            if (funchook_prepare(funchook, (void**)&patch_addr, tap->assembly_fn)) {
+            if (scope_funchook_prepare(funchook, (void**)&patch_addr, tap->assembly_fn)) {
                 patchprint("failed to patch 0x%p with frame size 0x%x\n", pre_patch_addr, add_arg);
                 continue;
             }
@@ -935,7 +953,7 @@ patch_addrs(funchook_t *funchook,
             void *pre_patch_addr = (void*)asm_inst[i].address;
             void *patch_addr = (void*)asm_inst[i].address;
 
-            if (funchook_prepare(funchook, (void**)&patch_addr, tap->assembly_fn)) {
+            if (scope_funchook_prepare(funchook, (void**)&patch_addr, tap->assembly_fn)) {
                 patchprint("failed to patch 0x%p with frame size 0x%x\n", pre_patch_addr, add_arg);
                 continue;
             }
@@ -976,7 +994,7 @@ patch_addrs(funchook_t *funchook,
                 void *pre_patch_addr = (void*)asm_inst[i+1].address;
                 void *patch_addr = (void*)asm_inst[i+1].address;
 
-                if (funchook_prepare(funchook, (void**)&patch_addr, tap->assembly_fn)) {
+                if (scope_funchook_prepare(funchook, (void**)&patch_addr, tap->assembly_fn)) {
                     patchprint("failed to patch 0x%p with frame size 0x%x\n", pre_patch_addr, add_arg);
                     continue;
                 }
@@ -1005,7 +1023,7 @@ patch_addrs(funchook_t *funchook,
                 patchprint("aborting patch of 0x%p due to mismatched frame size 0x%x\n", pre_patch_addr, add_arg);
                 break;
             }
-            if (funchook_prepare(funchook, (void**)&patch_addr, tap->assembly_fn)) {
+            if (scope_funchook_prepare(funchook, (void**)&patch_addr, tap->assembly_fn)) {
                 patchprint("failed to patch 0x%p with frame size 0x%x\n", pre_patch_addr, add_arg);
                 continue;
             }
@@ -1017,6 +1035,9 @@ patch_addrs(funchook_t *funchook,
         }
     }
     patchprint("\n\n");
+#else
+    patchprint("TODO\n");
+#endif
 }
 
 #if 0
@@ -1123,17 +1144,17 @@ initGoHook(elf_buf_t *ebuf)
     if (!ebuf || !ebuf->buf) return;
 
     int rc;
-    funchook_t *funchook;
+    scope_funchook_t *funchook;
     char *go_ver;
     char *go_runtime_version = NULL;
     uint64_t base = 0LL;
     //Elf64_Ehdr *ehdr = (Elf64_Ehdr *)ebuf->buf;
 
-    funchook = funchook_create();
+    funchook = scope_funchook_create();
 
     if (logLevel(g_log) <= CFG_LOG_DEBUG) {
         // TODO: add some mechanism to get the config'd log file path
-        funchook_set_debug_file(DEFAULT_LOG_PATH);
+        scope_funchook_set_debug_file(DEFAULT_LOG_PATH);
     }
 
     // check ELF type
@@ -1152,7 +1173,7 @@ initGoHook(elf_buf_t *ebuf)
     if (scopeGetGoAppStateStatic() == FALSE) {
         if (osGetBaseAddr(&base) == FALSE) {
             sysprint("ERROR: can't get the base address\n");
-            funchook_destroy(funchook);
+            scope_funchook_destroy(funchook);
             return; // don't install our hooks
         }
         Elf64_Shdr* textSec = getElfSection(ebuf->buf, ".text");
@@ -1192,11 +1213,11 @@ initGoHook(elf_buf_t *ebuf)
         } else {
             scopeLogWarn("%s was either compiled with a version of go older than go1.4, or symbols have been stripped.  AppScope can only instrument go1.%d or newer, and requires symbols if compiled with a version of go older than go1.13.  Continuing without AppScope.", ebuf->cmd, MIN_SUPPORTED_GO_VER);
         }
-        funchook_destroy(funchook);
+        scope_funchook_destroy(funchook);
         return; // don't install our hooks
     } else if (g_go_minor_ver > MAX_SUPPORTED_GO_VER) {
         scopeLogWarn("%s was compiled with go version `%s`. Versions newer than Go 1.%d are not yet supported. Continuing without AppScope.", ebuf->cmd, go_runtime_version, MAX_SUPPORTED_GO_VER);
-        funchook_destroy(funchook);
+        scope_funchook_destroy(funchook);
         return; // don't install our hooks
     }
 
@@ -1240,9 +1261,13 @@ initGoHook(elf_buf_t *ebuf)
             g_go_schema = &go_17_schema_x86;
         } else if (g_arch == AARCH64) {
             g_go_schema = &go_17_schema_arm;
+        } else if (g_arch == RISCV64) {
+            scopeLogWarn("TODO: RiscV not supported. Continuing without AppScope.");
+            scope_funchook_destroy(funchook);
+            return;
         } else {
             scopeLogWarn("Architecture not supported. Continuing without AppScope.");
-            funchook_destroy(funchook);
+            scope_funchook_destroy(funchook);
             return;
         }
     }
@@ -1299,11 +1324,11 @@ initGoHook(elf_buf_t *ebuf)
     cs_close(&disass_handle);
 
     // hook a few Go funcs
-    rc = funchook_install(funchook, 0);
+    rc = scope_funchook_install(funchook, 0);
     if (rc != 0) {
         sysprint("ERROR: funchook_install failed.  (%s)\n",
-                funchook_error_message(funchook));
-        funchook_destroy(funchook);
+                scope_funchook_error_message(funchook));
+        scope_funchook_destroy(funchook);
     }
 }
 
