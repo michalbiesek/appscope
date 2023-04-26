@@ -90,14 +90,47 @@ func (bl BpfLoader) NewSigdel() (SigDel, error) {
 		return sd, err
 	}
 
+	// progFd, err := findBpfObj(bl.pid, "bpf-prog")
+	// if err != nil {
+	// 	return sd, err
+	// }
+
 	// Copy the file descriptors
 	dupLinkFd, err := bl.pidFd.GetFd(linkFd)
 	if err != nil {
 		return sd, err
 	}
 
+	// Copy the file descriptors
+	// _, err = bl.pidFd.GetFd(progFd)
+	// if err != nil {
+	// 	return sd, err
+	// }
+
+	linkS, err := LinkGetInfo(dupLinkFd)
+	if err != nil {
+		return sd, err
+	}
+
+	fmt.Println("link info", linkS)
+
+	progFds, err := ProgFdFromId(linkS.ProgId)
+	if err != nil {
+		fmt.Println("link error", err)
+		return sd, err
+	}
+	fmt.Println("prog fd", progFds)
+
+	progStatus, err := ProgGetInfo(progFds)
+	if err != nil {
+		fmt.Println("link error", err)
+		return sd, err
+	}
+	fmt.Println("prog info", progStatus)
+
 	dupMapFd, err := bl.pidFd.GetFd(mapFd)
 	if err != nil {
+		fmt.Println("prog error", err)
 		return sd, err
 	}
 
