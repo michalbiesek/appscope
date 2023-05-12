@@ -324,16 +324,7 @@
 \= Expect no match
     fooabar
 
-# This one is here because Perl behaves differently; see also the following.
-
-/^(a\1?){4}$/I
-\= Expect no match
-    aaaa
-    aaaaaa
-
-# Perl does not fail these two for the final subjects. Neither did PCRE until
-# release 8.01. The problem is in backtracking into a subpattern that contains
-# a recursive reference to itself. PCRE has now made these into atomic patterns.
+# Perl does not fail these two for the final subjects.
 
 /^(xa|=?\1a){2}$/
     xa=xaa
@@ -2198,8 +2189,6 @@
 
 /a(*MARK)b/
 
-/(?i:A{1,}\6666666666)/
-
 /\g6666666666/
 
 /[\g6666666666]/B
@@ -3943,7 +3932,7 @@
 
 /[a[:<:]] should give error/
 
-/(?=ab\K)/aftertext
+/(?=ab\K)/aftertext,allow_lookaround_bsk
     abcd\=startchar
 
 /abcd/newline=lf,firstline
@@ -4196,7 +4185,7 @@
 /(a)(b)|(c)/
     XcX\=ovector=2,get=1,get=2,get=3,get=4,getall
 
-/x(?=ab\K)/
+/x(?=ab\K)/allow_lookaround_bsk
     xab\=get=0
     xab\=copy=0
     xab\=getall
@@ -4356,10 +4345,10 @@
 
 # Perl loops on this (PCRE2 used to!)
 
-/(?<=\Ka)/g,aftertext
+/(?<=\Ka)/g,aftertext,allow_lookaround_bsk
     aaaaa
 
-/(?<=\Ka)/altglobal,aftertext
+/(?<=\Ka)/altglobal,aftertext,allow_lookaround_bsk
     aaaaa
 
 /((?2){73}(?2))((?1))/info
@@ -4592,6 +4581,12 @@ B)x/alt_verbnames,mark
 /abcd/replace=w\rx\x82y\o{333}z(\Q12\$34$$\x34\E5$$),substitute_extended
     abcd
 
+/abcd/replace=w\rx\x82y\o{333}z(\Q12\$34$$\x34\E5$$),substitute_extended,substitute_literal
+    >>abcd<<
+    
+/abcd/g,replace=\$1$2\,substitute_literal
+    XabcdYabcdZ
+
 /a(bc)(DE)/replace=a\u$1\U$1\E$1\l$2\L$2\Eab\Uab\LYZ\EDone,substitute_extended
     abcDE
 
@@ -4603,6 +4598,7 @@ B)x/alt_verbnames,mark
     ac
     ab\=replace=${1:+$1\:$1:$2}
     ac\=replace=${1:+$1\:$1:$2}
+    >>ac<<\=replace=${1:+$1\:$1:$2},substitute_literal
 
 /a(?:(b)|(c))/substitute_extended,replace=X${1:-1:-1}X${2:-2:-2}
     ab
@@ -4642,6 +4638,13 @@ B)x/alt_verbnames,mark
 
 /(aa)(BB)/substitute_extended,replace=\U$1\L$2\E$1..\U$1\l$2$1
     aaBB
+    
+/abcd/replace=wxyz,substitute_matched
+    abcd
+    pqrs 
+
+/abcd/g
+    >abcd1234abcd5678<\=replace=wxyz,substitute_matched
 
 /^(o(\1{72}{\"{\\{00000059079}\d*){74}}){19}/I
 
@@ -4656,10 +4659,10 @@ B)x/alt_verbnames,mark
 
 /(?<!a{65535})x/I
 
-/(?=a\K)/replace=z
+/(?=a\K)/replace=z,allow_lookaround_bsk
     BaCaD
     
-/(?<=\K.)/g,replace=-
+/(?<=\K.)/g,replace=-,allow_lookaround_bsk
     ab
 
 /(?'abcdefghijklmnopqrstuvwxyzABCDEFG'toolong)/
@@ -5665,11 +5668,18 @@ a)"xI
 /\A(*napla:.*\b(\w++))(?>.*?\b\1\b){3}/
     word1 word3 word1 word2 word3 word2 word2 word1 word3 word4
 
+/\A(?*.*\b(\w++))(?>.*?\b\1\b){3}/
+    word1 word3 word1 word2 word3 word2 word2 word1 word3 word4
+
 /(*plb:(.)..|(.)...)(\1|\2)/
     abcdb\=offset=4 
     abcda\=offset=4 
 
 /(*naplb:(.)..|(.)...)(\1|\2)/
+    abcdb\=offset=4 
+    abcda\=offset=4 
+    
+/(?<*(.)..|(.)...)(\1|\2)/
     abcdb\=offset=4 
     abcda\=offset=4 
     
@@ -5757,7 +5767,7 @@ a)"xI
 
 /(?(DEFINE)b)((?<=b).*)/B
 
-/(?(VERSION=10.4)b)((?<=b).*)/B
+/(?(VERSION=10.3)b)((?<=b).*)/B
 
 /[aA]b[cC]/IB
 
@@ -5771,5 +5781,163 @@ a)"xI
 
 /(a)?a/I
     manm
+
+/^(?|(\*)(*napla:\S*_(\2?+.+))|(\w)(?=\S*_(\2?+\1)))+_\2$/
+    *abc_12345abc
+
+/^(?|(\*)(*napla:\S*_(\3?+.+))|(\w)(?=\S*_((\2?+\1))))+_\2$/
+    *abc_12345abc
+
+/^((\1+)(?C)|\d)+133X$/
+    111133X\=callout_capture
+
+/abc/replace=xyz,substitute_replacement_only
+    123abc456
+
+/a(?<ONE>b)c(?<TWO>d)e/g,replace=X$ONE+${TWO}Z,substitute_replacement_only
+    "abcde-abcde-"
+     
+/a(b)c|xyz/g,replace=<$0>,substitute_callout,substitute_replacement_only
+    abcdefabcpqr                
+    abxyzpqrabcxyz              
+    12abc34xyz99abc55\=substitute_stop=2                          
+    12abc34xyz99abc55\=substitute_skip=1
+    12abc34xyz99abc55\=substitute_skip=2
+
+/a(..)d/replace=>$1<,substitute_matched
+    xyzabcdxyzabcdxyz
+    xyzabcdxyzabcdxyz\=ovector=2
+\= Expect error     
+    xyzabcdxyzabcdxyz\=ovector=1
+
+/a(..)d/g,replace=>$1<,substitute_matched
+    xyzabcdxyzabcdxyz
+    xyzabcdxyzabcdxyz\=ovector=2
+\= Expect error     
+    xyzabcdxyzabcdxyz\=ovector=1
+    xyzabcdxyzabcdxyz\=ovector=1,substitute_unset_empty
+
+/55|a(..)d/g,replace=>$1<,substitute_matched
+    xyz55abcdxyzabcdxyz\=ovector=2,substitute_unset_empty
+\= Expect error     
+    xyz55abcdxyzabcdxyz\=ovector=2
+
+/55|a(..)d/replace=>$1<,substitute_matched
+    xyz55abcdxyzabcdxyz\=ovector=2,substitute_unset_empty
+
+/55|a(..)d/replace=>$1<
+    xyz55abcdxyzabcdxyz\=ovector=2,substitute_unset_empty
+
+/55|a(..)d/g,replace=>$1<
+    xyz55abcdxyzabcdxyz\=ovector=2,substitute_unset_empty
+    
+/abc/replace=,caseless
+    XabcY
+    XABCY 
+
+/abc/replace=[4],caseless
+    XabcY
+    XABCY 
+
+/abc/replace=*,caseless
+    XabcY
+    XABCY
+    XabcY\=replace=  
+
+# Expect non-fixed-length error
+
+"(?<=X(?(DEFINE)(.*))(?1))."
+
+/\sxxx\s/tables=1
+\= Expect no match
+    AB\x{85}xxx\x{a0}XYZ
+
+/\sxxx\s/tables=2
+    AB\x{85}xxx\x{a0}XYZ
+
+/^\w+/tables=2
+    École
+
+/^\w+/tables=3
+    École
+
+#loadtables ./testbtables
+
+/^\w+/tables=3
+    École
+
+/"(*MARK:>" 00 "<).."/hex,mark,no_start_optimize
+    AB
+    A\=ph 
+\= Expect no match
+    A
+
+/"(*MARK:>" 00 "<).(?C1)."/hex,mark,no_start_optimize
+    AB
+
+/(?(VERSION=0.0/
+
+# Perl has made \K in lookarounds an error. PCRE2 now rejects as well, unless
+# explicitly authorized.
+
+/(?=a\Kb)ab/
+
+/(?=a\Kb)ab/allow_lookaround_bsk
+    ab 
+
+/(?!a\Kb)ac/
+
+/(?!a\Kb)ac/allow_lookaround_bsk
+    ac 
+    
+/^abc(?<=b\Kc)d/
+
+/^abc(?<=b\Kc)d/allow_lookaround_bsk
+    abcd
+
+/^abc(?<!b\Kq)d/
+
+/^abc(?<!b\Kq)d/,allow_lookaround_bsk
+    abcd
+    
+# --------- 
+
+# Tests for zero-length NULL to be treated as an empty string.
+
+//
+    \=null_subject
+\= Expect error     
+    abc\=null_subject
+
+//replace=[20]
+    abc\=null_replacement
+    \=null_subject
+    \=null_replacement
+
+/X*/g,replace=xy
+\= Expect error
+    >X<\=null_replacement
+
+/X+/replace=[20]
+    >XX<\=null_replacement
+
+# --------- 
+
+/[Aa]{2}/BI
+    aabcd
+
+/A{2}/iBI
+    aabcd
+
+/[Aa]{2,3}/BI
+    aabcd
+
+--
+    \[X]{-10}
+    
+# Check imposition of maximum by match_data_create().
+
+/abcd/
+    abcd\=ovector=65536
 
 # End of testinput2

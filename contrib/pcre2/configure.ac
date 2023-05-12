@@ -9,21 +9,21 @@ dnl The PCRE2_PRERELEASE feature is for identifying release candidates. It might
 dnl be defined as -RC2, for example. For real releases, it should be empty.
 
 m4_define(pcre2_major, [10])
-m4_define(pcre2_minor, [34])
+m4_define(pcre2_minor, [42])
 m4_define(pcre2_prerelease, [])
-m4_define(pcre2_date, [2019-11-21])
+m4_define(pcre2_date, [2022-12-11])
+
+# Libtool shared library interface versions (current:revision:age)
+m4_define(libpcre2_8_version,     [11:2:11])
+m4_define(libpcre2_16_version,    [11:2:11])
+m4_define(libpcre2_32_version,    [11:2:11])
+m4_define(libpcre2_posix_version, [3:4:0])
 
 # NOTE: The CMakeLists.txt file searches for the above variables in the first
 # 50 lines of this file. Please update that if the variables above are moved.
 
-# Libtool shared library interface versions (current:revision:age)
-m4_define(libpcre2_8_version,     [9:0:9])
-m4_define(libpcre2_16_version,    [9:0:9])
-m4_define(libpcre2_32_version,    [9:0:9])
-m4_define(libpcre2_posix_version, [2:3:0])
-
-AC_PREREQ(2.57)
-AC_INIT(PCRE2, pcre2_major.pcre2_minor[]pcre2_prerelease, , pcre2)
+AC_PREREQ([2.60])
+AC_INIT([PCRE2],pcre2_major.pcre2_minor[]pcre2_prerelease,[],[pcre2])
 AC_CONFIG_SRCDIR([src/pcre2.h.in])
 AM_INIT_AUTOMAKE([dist-bzip2 dist-zip])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -64,13 +64,32 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 AC_TYPE_INT64_T
 
 AC_PROG_INSTALL
-AC_LIBTOOL_WIN32_DLL
-LT_INIT
+LT_INIT([win32-dll])
 AC_PROG_LN_S
+
+AC_SYS_LARGEFILE
 
 # Check for GCC visibility feature
 
 PCRE2_VISIBILITY
+
+# Check for Clang __attribute__((uninitialized)) feature
+
+AC_MSG_CHECKING([for __attribute__((uninitialized))])
+AC_LANG_PUSH([C])
+tmp_CFLAGS=$CFLAGS
+CFLAGS="$CFLAGS -Werror"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,
+                   [[char buf[128] __attribute__((uninitialized));(void)buf]])],
+                   [pcre2_cc_cv_attribute_uninitialized=yes],
+                   [pcre2_cc_cv_attribute_uninitialized=no])
+AC_MSG_RESULT([$pcre2_cc_cv_attribute_uninitialized])
+if test "$pcre2_cc_cv_attribute_uninitialized" = yes; then
+  AC_DEFINE([HAVE_ATTRIBUTE_UNINITIALIZED], 1, [Define this if your compiler
+             supports __attribute__((uninitialized))])
+fi
+CFLAGS=$tmp_CFLAGS
+AC_LANG_POP([C])
 
 # Versioning
 
@@ -158,11 +177,18 @@ if test "$enable_jit" = "auto"; then
   echo checking for JIT support on this hardware... $enable_jit
 fi
 
-# Handle --enable-jit-sealloc (disabled by default)
-AC_ARG_ENABLE(jit-sealloc,
-              AS_HELP_STRING([--enable-jit-sealloc],
-                             [enable SELinux compatible execmem allocator in JIT (experimental)]),
-              , enable_jit_sealloc=no)
+# Handle --enable-jit-sealloc (disabled by default and only experimental)
+case $host_os in
+  linux* | netbsd*)
+    AC_ARG_ENABLE(jit-sealloc,
+      AS_HELP_STRING([--enable-jit-sealloc],
+        [enable SELinux compatible execmem allocator in JIT (experimental)]),
+        ,enable_jit_sealloc=no)
+    ;;
+  *)
+    enable_jit_sealloc=unsupported
+    ;;
+esac
 
 # Handle --disable-pcre2grep-jit (enabled by default)
 AC_ARG_ENABLE(pcre2grep-jit,
@@ -399,7 +425,7 @@ case "$enable_newline" in
   anycrlf) ac_pcre2_newline_value=5 ;;
   nul)     ac_pcre2_newline_value=6 ;;
   *)
-  AC_MSG_ERROR([invalid argument \"$enable_newline\" to --enable-newline option])
+  AC_MSG_ERROR([invalid argument "$enable_newline" to --enable-newline option])
   ;;
 esac
 
@@ -428,7 +454,7 @@ fi
 case "$with_link_size" in
   2|3|4) ;;
   *)
-  AC_MSG_ERROR([invalid argument \"$with_link_size\" to --with-link-size option])
+  AC_MSG_ERROR([invalid argument "$with_link_size" to --with-link-size option])
   ;;
 esac
 
@@ -461,7 +487,6 @@ HAVE_BCOPY is defined. If your system has neither bcopy() nor memmove(), make
 sure both macros are undefined; an emulation function will then be used. */])
 
 # Checks for header files.
-AC_HEADER_STDC
 AC_CHECK_HEADERS(limits.h sys/types.h sys/stat.h dirent.h)
 AC_CHECK_HEADERS([windows.h], [HAVE_WINDOWS_H=1])
 AC_CHECK_HEADERS([sys/wait.h], [HAVE_SYS_WAIT_H=1])
@@ -489,7 +514,20 @@ AC_TYPE_SIZE_T
 
 # Checks for library functions.
 
-AC_CHECK_FUNCS(bcopy memmove strerror mkostemp secure_getenv)
+AC_CHECK_FUNCS(bcopy memfd_create memmove mkostemp secure_getenv strerror)
+AC_MSG_CHECKING([for realpath])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <stdlib.h>
+#include <limits.h>
+]],[[
+char buffer[PATH_MAX];
+realpath(".", buffer);
+]])],
+[AC_MSG_RESULT([yes])
+ AC_DEFINE([HAVE_REALPATH], 1,
+  [Define to 1 if you have the `realpath' function.])
+],
+AC_MSG_RESULT([no]))
 
 # Check for the availability of libz (aka zlib)
 
@@ -561,14 +599,14 @@ if test "$enable_pcre2test_libreadline" = "yes"; then
  fi
 fi
 
-
 # Check for the availability of libedit. Different distributions put its
 # headers in different places. Try to cover the most common ones.
 
 if test "$enable_pcre2test_libedit" = "yes"; then
-  AC_CHECK_HEADERS([editline/readline.h], [HAVE_EDITLINE_READLINE_H=1],
-    [AC_CHECK_HEADERS([edit/readline/readline.h], [HAVE_READLINE_READLINE_H=1],
-      [AC_CHECK_HEADERS([readline/readline.h], [HAVE_READLINE_READLINE_H=1])])])
+  AC_CHECK_HEADERS([editline/readline.h edit/readline/readline.h readline.h], [
+    HAVE_LIBEDIT_HEADER=1
+    break
+  ])
   AC_CHECK_LIB([edit], [readline], [LIBEDIT="-ledit"])
 fi
 
@@ -904,10 +942,9 @@ if test "$enable_pcre2test_libedit" = "yes"; then
     echo "** Cannot use both --enable-pcre2test-libedit and --enable-pcre2test-readline"
     exit 1
   fi
-  if test "$HAVE_EDITLINE_READLINE_H" != "1" -a \
-          "$HAVE_READLINE_READLINE_H" != "1"; then
-    echo "** Cannot --enable-pcre2test-libedit because neither editline/readline.h"
-    echo "** nor readline/readline.h was found."
+  if test -z "$HAVE_LIBEDIT_HEADER"; then
+    echo "** Cannot --enable-pcre2test-libedit because neither editline/readline.h,"
+    echo "** edit/readline/readline.h nor a compatible header was found."
     exit 1
   fi
   if test -z "$LIBEDIT"; then
@@ -981,7 +1018,27 @@ fi # enable_coverage
 
 AM_CONDITIONAL([WITH_GCOV],[test "x$enable_coverage" = "xyes"])
 
+AC_MSG_CHECKING([whether Intel CET is enabled])
+AC_LANG_PUSH([C])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,
+                   [[#ifndef __CET__
+# error CET is not enabled
+#endif]])],
+                   [pcre2_cc_cv_intel_cet_enabled=yes],
+                   [pcre2_cc_cv_intel_cet_enabled=no])
+AC_MSG_RESULT([$pcre2_cc_cv_intel_cet_enabled])
+if test "$pcre2_cc_cv_intel_cet_enabled" = yes; then
+  CET_CFLAGS="-mshstk"
+  AC_SUBST([CET_CFLAGS])
+fi
+AC_LANG_POP([C])
+
+# LIB_POSTFIX is used by CMakeLists.txt for Windows debug builds.
+# Pass empty LIB_POSTFIX to *.pc files and pcre2-config here.
+AC_SUBST(LIB_POSTFIX)
+
 # Produce these files, in addition to config.h.
+
 AC_CONFIG_FILES(
 	Makefile
 	libpcre2-8.pc

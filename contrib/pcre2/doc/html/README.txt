@@ -4,18 +4,20 @@ README file for PCRE2 (Perl-compatible regular expression library)
 PCRE2 is a re-working of the original PCRE1 library to provide an entirely new
 API. Since its initial release in 2015, there has been further development of
 the code and it now differs from PCRE1 in more than just the API. There are new
-features and the internals have been improved. The latest release of PCRE2 is
-available in three alternative formats from:
+features, and the internals have been improved. The original PCRE1 library is
+now obsolete and no longer maintained. The latest release of PCRE2 is available
+in .tar.gz, tar.bz2, or .zip form from this GitHub repository:
 
-https://ftp.pcre.org/pub/pcre/pcre2-10.xx.tar.gz
-https://ftp.pcre.org/pub/pcre/pcre2-10.xx.tar.bz2
-https://ftp.pcre.org/pub/pcre/pcre2-10.xx.tar.zip
+https://github.com/PCRE2Project/pcre2/releases
 
-There is a mailing list for discussion about the development of PCRE (both the
-original and new APIs) at pcre-dev@exim.org. You can access the archives and
-subscribe or manage your subscription here:
+There is a mailing list for discussion about the development of PCRE2 at
+pcre2-dev@googlegroups.com. You can subscribe by sending an email to
+pcre2-dev+subscribe@googlegroups.com.
 
-   https://lists.exim.org/mailman/listinfo/pcre-dev
+You can access the archives and also subscribe or manage your subscription
+here:
+
+https://groups.google.com/g/pcre2-dev
 
 Please read the NEWS file if you are upgrading from a previous release. The
 contents of this README file are:
@@ -112,11 +114,17 @@ Building PCRE2 using autotools
 The following instructions assume the use of the widely used "configure; make;
 make install" (autotools) process.
 
-To build PCRE2 on system that supports autotools, first run the "configure"
-command from the PCRE2 distribution directory, with your current directory set
+If you have downloaded and unpacked a PCRE2 release tarball, run the
+"configure" command from the PCRE2 directory, with your current directory set
 to the directory where you want the files to be created. This command is a
 standard GNU "autoconf" configuration script, for which generic instructions
 are supplied in the file INSTALL.
+
+The files in the GitHub repository do not contain "configure". If you have
+downloaded the PCRE2 source files from GitHub, before you can run "configure"
+you must run the shell script called autogen.sh. This runs a number of
+autotools to create a "configure" script (you must of course have the autotools
+commands installed in order to do this).
 
 Most commonly, people build PCRE2 within its own distribution directory, and in
 this case, on many systems, just running "./configure" is sufficient. However,
@@ -186,10 +194,10 @@ library. They are also documented in the pcre2build man page.
 
   As well as supporting UTF strings, Unicode support includes support for the
   \P, \p, and \X sequences that recognize Unicode character properties.
-  However, only the basic two-letter properties such as Lu are supported.
-  Escape sequences such as \d and \w in patterns do not by default make use of
-  Unicode properties, but can be made to do so by setting the PCRE2_UCP option
-  or starting a pattern with (*UCP).
+  However, only a subset of Unicode properties are supported; see the
+  pcre2pattern man page for details. Escape sequences such as \d and \w in
+  patterns do not by default make use of Unicode properties, but can be made to
+  do so by setting the PCRE2_UCP option or starting a pattern with (*UCP).
 
 . You can build PCRE2 to recognize either CR or LF or the sequence CRLF, or any
   of the preceding, or any of the Unicode newline sequences, or the NUL (zero)
@@ -269,9 +277,9 @@ library. They are also documented in the pcre2build man page.
 
   --enable-rebuild-chartables
 
-  a program called dftables is compiled and run in the default C locale when
-  you obey "make". It builds a source file called pcre2_chartables.c. If you do
-  not specify this option, pcre2_chartables.c is created as a copy of
+  a program called pcre2_dftables is compiled and run in the default C locale
+  when you obey "make". It builds a source file called pcre2_chartables.c. If
+  you do not specify this option, pcre2_chartables.c is created as a copy of
   pcre2_chartables.c.dist. See "Character tables" below for further
   information.
 
@@ -297,8 +305,8 @@ library. They are also documented in the pcre2build man page.
   unaddressable. This allows it to detect invalid memory accesses, and is
   mostly useful for debugging PCRE2 itself.
 
-. In environments where the gcc compiler is used and lcov version 1.6 or above
-  is installed, if you specify
+. In environments where the gcc compiler is used and lcov is installed, if you
+  specify
 
   --enable-coverage
 
@@ -367,19 +375,19 @@ library. They are also documented in the pcre2build man page.
   necessary to specify something like LIBS="-lncurses" as well. This is
   because, to quote the readline INSTALL, "Readline uses the termcap functions,
   but does not link with the termcap or curses library itself, allowing
-  applications which link with readline the to choose an appropriate library."
-  If you get error messages about missing functions tgetstr, tgetent, tputs,
-  tgetflag, or tgoto, this is the problem, and linking with the ncurses library
-  should fix it.
+  applications which link with readline the option to choose an appropriate
+  library." If you get error messages about missing functions tgetstr, tgetent,
+  tputs, tgetflag, or tgoto, this is the problem, and linking with the ncurses
+  library should fix it.
 
 . The C99 standard defines formatting modifiers z and t for size_t and
   ptrdiff_t values, respectively. By default, PCRE2 uses these modifiers in
-  environments other than Microsoft Visual Studio when __STDC_VERSION__ is
-  defined and has a value greater than or equal to 199901L (indicating C99).
-  However, there is at least one environment that claims to be C99 but does not
-  support these modifiers. If --disable-percent-zt is specified, no use is made
-  of the z or t modifiers. Instead or %td or %zu, %lu is used, with a cast for
-  size_t values.
+  environments other than Microsoft Visual Studio versions earlier than 2013
+  when __STDC_VERSION__ is defined and has a value greater than or equal to
+  199901L (indicating C99). However, there is at least one environment that
+  claims to be C99 but does not support these modifiers. If
+  --disable-percent-zt is specified, no use is made of the z or t modifiers.
+  Instead of %td or %zu, %lu is used, with a cast for size_t values.
 
 . There is a special option called --enable-fuzz-support for use by people who
   want to run fuzzing tests on PCRE2. At present this applies only to the 8-bit
@@ -392,24 +400,24 @@ library. They are also documented in the pcre2build man page.
   Setting --enable-fuzz-support also causes a binary called pcre2fuzzcheck to
   be created. This is normally run under valgrind or used when PCRE2 is
   compiled with address sanitizing enabled. It calls the fuzzing function and
-  outputs information about it is doing. The input strings are specified by
-  arguments: if an argument starts with "=" the rest of it is a literal input
-  string. Otherwise, it is assumed to be a file name, and the contents of the
-  file are the test string.
+  outputs information about what it is doing. The input strings are specified
+  by arguments: if an argument starts with "=" the rest of it is a literal
+  input string. Otherwise, it is assumed to be a file name, and the contents
+  of the file are the test string.
 
 . Releases before 10.30 could be compiled with --disable-stack-for-recursion,
   which caused pcre2_match() to use individual blocks on the heap for
   backtracking instead of recursive function calls (which use the stack). This
-  is now obsolete since pcre2_match() was refactored always to use the heap (in
-  a much more efficient way than before). This option is retained for backwards
-  compatibility, but has no effect other than to output a warning.
+  is now obsolete because pcre2_match() was refactored always to use the heap
+  (in a much more efficient way than before). This option is retained for
+  backwards compatibility, but has no effect other than to output a warning.
 
 The "configure" script builds the following files for the basic C library:
 
 . Makefile             the makefile that builds the library
 . src/config.h         build-time configuration options for the library
 . src/pcre2.h          the public PCRE2 header file
-. pcre2-config          script that shows the building settings such as CFLAGS
+. pcre2-config         script that shows the building settings such as CFLAGS
                          that were set for "configure"
 . libpcre2-8.pc        )
 . libpcre2-16.pc       ) data for the pkg-config command
@@ -430,8 +438,9 @@ Once "configure" has run, you can run "make". This builds whichever of the
 libraries libpcre2-8, libpcre2-16 and libpcre2-32 are configured, and a test
 program called pcre2test. If you enabled JIT support with --enable-jit, another
 test program called pcre2_jit_test is built as well. If the 8-bit library is
-built, libpcre2-posix and the pcre2grep command are also built. Running
-"make" with the -j option may speed up compilation on multiprocessor systems.
+built, libpcre2-posix, pcre2posix_test, and the pcre2grep command are also
+built. Running "make" with the -j option may speed up compilation on
+multiprocessor systems.
 
 The command "make check" runs all the appropriate tests. Details of the PCRE2
 tests are given below in a separate section of this document. The -j option of
@@ -548,11 +557,11 @@ Cross-compiling using autotools
 
 You can specify CC and CFLAGS in the normal way to the "configure" command, in
 order to cross-compile PCRE2 for some other host. However, you should NOT
-specify --enable-rebuild-chartables, because if you do, the dftables.c source
-file is compiled and run on the local host, in order to generate the inbuilt
-character tables (the pcre2_chartables.c file). This will probably not work,
-because dftables.c needs to be compiled with the local compiler, not the cross
-compiler.
+specify --enable-rebuild-chartables, because if you do, the pcre2_dftables.c
+source file is compiled and run on the local host, in order to generate the
+inbuilt character tables (the pcre2_chartables.c file). This will probably not
+work, because pcre2_dftables.c needs to be compiled with the local compiler,
+not the cross compiler.
 
 When --enable-rebuild-chartables is not specified, pcre2_chartables.c is
 created by making a copy of pcre2_chartables.c.dist, which is a default set of
@@ -560,9 +569,10 @@ tables that assumes ASCII code. Cross-compiling with the default tables should
 not be a problem.
 
 If you need to modify the character tables when cross-compiling, you should
-move pcre2_chartables.c.dist out of the way, then compile dftables.c by hand
-and run it on the local host to make a new version of pcre2_chartables.c.dist.
-Then when you cross-compile PCRE2 this new version of the tables will be used.
+move pcre2_chartables.c.dist out of the way, then compile pcre2_dftables.c by
+hand and run it on the local host to make a new version of
+pcre2_chartables.c.dist. See the pcre2build section "Creating character tables
+at build time" for more details.
 
 
 Making new tarballs
@@ -582,9 +592,11 @@ Testing PCRE2
 
 To test the basic PCRE2 library on a Unix-like system, run the RunTest script.
 There is another script called RunGrepTest that tests the pcre2grep command.
-When JIT support is enabled, a third test program called pcre2_jit_test is
-built. Both the scripts and all the program tests are run if you obey "make
-check". For other environments, see the instructions in NON-AUTOTOOLS-BUILD.
+When the 8-bit library is built, a test program for the POSIX wrapper, called
+pcre2posix_test, is compiled, and when JIT support is enabled, a test program
+called pcre2_jit_test is built. The scripts and the program tests are all run
+when you obey "make check". For other environments, see the instructions in
+NON-AUTOTOOLS-BUILD.
 
 The RunTest script runs the pcre2test test program (which is documented in its
 own man page) on each of the relevant testinput files in the testdata
@@ -599,13 +611,13 @@ is available. RunTest outputs a comment when it skips a test.
 
 Many (but not all) of the tests that are not skipped are run twice if JIT
 support is available. On the second run, JIT compilation is forced. This
-testing can be suppressed by putting "nojit" on the RunTest command line.
+testing can be suppressed by putting "-nojit" on the RunTest command line.
 
 The entire set of tests is run once for each of the 8-bit, 16-bit and 32-bit
 libraries that are enabled. If you want to run just one set of tests, call
 RunTest with either the -8, -16 or -32 option.
 
-If valgrind is installed, you can run the tests under it by putting "valgrind"
+If valgrind is installed, you can run the tests under it by putting "-valgrind"
 on the RunTest command line. To run pcre2test on just one or more specific test
 files, give their numbers as arguments to RunTest, for example:
 
@@ -686,7 +698,7 @@ Test 14 contains some special UTF and UCP tests that give different output for
 different code unit widths.
 
 Test 15 contains a number of tests that must not be run with JIT. They check,
-among other non-JIT things, the match-limiting features of the intepretive
+among other non-JIT things, the match-limiting features of the interpretive
 matcher.
 
 Test 16 is run only when JIT support is not available. It checks that an
@@ -707,6 +719,9 @@ and with UTF support, respectively. Test 23 tests \C when it is locked out.
 Tests 24 and 25 test the experimental pattern conversion functions, without and
 with UTF support, respectively.
 
+Test 26 checks Unicode property support using tests that are generated
+automatically from the Unicode data tables.
+
 
 Character tables
 ----------------
@@ -721,8 +736,8 @@ compile context.
 The source file called pcre2_chartables.c contains the default set of tables.
 By default, this is created as a copy of pcre2_chartables.c.dist, which
 contains tables for ASCII coding. However, if --enable-rebuild-chartables is
-specified for ./configure, a different version of pcre2_chartables.c is built
-by the program dftables (compiled from dftables.c), which uses the ANSI C
+specified for ./configure, a new version of pcre2_chartables.c is built by the
+program pcre2_dftables (compiled from pcre2_dftables.c), which uses the ANSI C
 character handling functions such as isalnum(), isalpha(), isupper(),
 islower(), etc. to build the table sources. This means that the default C
 locale that is set for your system will control the contents of these default
@@ -732,32 +747,40 @@ file does not get automatically re-generated. The best way to do this is to
 move pcre2_chartables.c.dist out of the way and replace it with your customized
 tables.
 
-When the dftables program is run as a result of --enable-rebuild-chartables,
-it uses the default C locale that is set on your system. It does not pay
-attention to the LC_xxx environment variables. In other words, it uses the
-system's default locale rather than whatever the compiling user happens to have
-set. If you really do want to build a source set of character tables in a
-locale that is specified by the LC_xxx variables, you can run the dftables
-program by hand with the -L option. For example:
+When the pcre2_dftables program is run as a result of specifying
+--enable-rebuild-chartables, it uses the default C locale that is set on your
+system. It does not pay attention to the LC_xxx environment variables. In other
+words, it uses the system's default locale rather than whatever the compiling
+user happens to have set. If you really do want to build a source set of
+character tables in a locale that is specified by the LC_xxx variables, you can
+run the pcre2_dftables program by hand with the -L option. For example:
 
-  ./dftables -L pcre2_chartables.c.special
+  ./pcre2_dftables -L pcre2_chartables.c.special
 
-The first two 256-byte tables provide lower casing and case flipping functions,
-respectively. The next table consists of three 32-byte bit maps which identify
-digits, "word" characters, and white space, respectively. These are used when
-building 32-byte bit maps that represent character classes for code points less
-than 256. The final 256-byte table has bits indicating various character types,
-as follows:
+The second argument names the file where the source code for the tables is
+written. The first two 256-byte tables provide lower casing and case flipping
+functions, respectively. The next table consists of a number of 32-byte bit
+maps which identify certain character classes such as digits, "word"
+characters, white space, etc. These are used when building 32-byte bit maps
+that represent character classes for code points less than 256. The final
+256-byte table has bits indicating various character types, as follows:
 
     1   white space character
     2   letter
-    4   decimal digit
-    8   hexadecimal digit
+    4   lower case letter
+    8   decimal digit
    16   alphanumeric or '_'
-  128   regular expression metacharacter or binary zero
 
-You should not alter the set of characters that contain the 128 bit, as that
-will cause PCRE2 to malfunction.
+You can also specify -b (with or without -L) when running pcre2_dftables. This
+causes the tables to be written in binary instead of as source code. A set of
+binary tables can be loaded into memory by an application and passed to
+pcre2_compile() in the same way as tables created dynamically by calling
+pcre2_maketables(). The tables are just a string of bytes, independent of
+hardware characteristics such as endianness. This means they can be bundled
+with an application that runs in different environments, to ensure consistent
+behaviour.
+
+See also the pcre2build section "Creating character tables at build time".
 
 
 File manifest
@@ -768,7 +791,7 @@ The distribution should contain the files listed below.
 (A) Source files for the PCRE2 library functions and their headers are found in
     the src directory:
 
-  src/dftables.c           auxiliary program for building pcre2_chartables.c
+  src/pcre2_dftables.c     auxiliary program for building pcre2_chartables.c
                            when --enable-rebuild-chartables is specified
 
   src/pcre2_chartables.c.dist  a default set of character tables that assume
@@ -802,6 +825,7 @@ The distribution should contain the files listed below.
   src/pcre2_substring.c    )
   src/pcre2_tables.c       )
   src/pcre2_ucd.c          )
+  src/pcre2_ucptables.c    )
   src/pcre2_valid_utf.c    )
   src/pcre2_xclass.c       )
 
@@ -813,6 +837,8 @@ The distribution should contain the files listed below.
   src/pcre2posix.h         header for the external POSIX wrapper API
   src/pcre2_internal.h     header for internal use
   src/pcre2_intmodedep.h   a mode-specific internal header
+  src/pcre2_jit_neon_inc.h header used by JIT
+  src/pcre2_jit_simd_inc.h header used by JIT
   src/pcre2_ucp.h          header for Unicode property handling
 
   sljit/*                  source files for the JIT compiler
@@ -823,6 +849,7 @@ The distribution should contain the files listed below.
   src/pcre2grep.c          source of a grep utility that uses PCRE2
   src/pcre2test.c          comprehensive test program
   src/pcre2_jit_test.c     JIT test program
+  src/pcre2posix_test.c    POSIX wrapper API test program
 
 (C) Auxiliary files:
 
@@ -892,6 +919,6 @@ The distribution should contain the files listed below.
                           )   environments
 
 Philip Hazel
-Email local part: ph10
-Email domain: cam.ac.uk
-Last updated: 16 April 2019
+Email local part: Philip.Hazel
+Email domain: gmail.com
+Last updated: 10 December 2022

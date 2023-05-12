@@ -325,18 +325,18 @@ include_HEADERS = src/pcre2posix.h
 bin_SCRIPTS = pcre2-config
 
 ## ---------------------------------------------------------------
-## The dftables program is used to rebuild character tables before compiling
-## PCRE2, if --enable-rebuild-chartables is specified. It is not a user-visible
-## program. The default (when --enable-rebuild-chartables is not specified) is
-## to copy a distributed set of tables that are defined for ASCII code. In this
-## case, dftables is not needed.
+## The pcre2_dftables program is used to rebuild character tables before
+## compiling PCRE2, if --enable-rebuild-chartables is specified. It is not an
+## installed program. The default (when --enable-rebuild-chartables is not
+## specified) is to copy a distributed set of tables that are defined for ASCII
+## code. In this case, pcre2_dftables is not needed.
 
 if WITH_REBUILD_CHARTABLES
-noinst_PROGRAMS += dftables
-dftables_SOURCES = src/dftables.c
-src/pcre2_chartables.c: dftables$(EXEEXT)
+noinst_PROGRAMS += pcre2_dftables
+pcre2_dftables_SOURCES = src/pcre2_dftables.c
+src/pcre2_chartables.c: pcre2_dftables$(EXEEXT)
 	rm -f $@
-	./dftables$(EXEEXT) $@
+	./pcre2_dftables$(EXEEXT) $@
 else
 src/pcre2_chartables.c: $(srcdir)/src/pcre2_chartables.c.dist
 	rm -f $@
@@ -382,6 +382,10 @@ COMMON_SOURCES = \
   src/pcre2_valid_utf.c \
   src/pcre2_xclass.c
 
+# The pcre2_ucptables.c file is #included by pcre2_tables.c
+
+EXTRA_DIST += src/pcre2_ucptables.c
+
 if WITH_PCRE2_8
 lib_LTLIBRARIES += libpcre2-8.la
 libpcre2_8_la_SOURCES = \
@@ -391,6 +395,7 @@ nodist_libpcre2_8_la_SOURCES = \
 libpcre2_8_la_CFLAGS = \
   -DPCRE2_CODE_UNIT_WIDTH=8 \
   $(VISIBILITY_CFLAGS) \
+  $(CET_CFLAGS) \
   $(AM_CFLAGS)
 libpcre2_8_la_LIBADD =
 endif # WITH_PCRE2_8
@@ -404,6 +409,7 @@ nodist_libpcre2_16_la_SOURCES = \
 libpcre2_16_la_CFLAGS = \
   -DPCRE2_CODE_UNIT_WIDTH=16 \
   $(VISIBILITY_CFLAGS) \
+  $(CET_CFLAGS) \
   $(AM_CFLAGS)
 libpcre2_16_la_LIBADD =
 endif # WITH_PCRE2_16
@@ -417,6 +423,7 @@ nodist_libpcre2_32_la_SOURCES = \
 libpcre2_32_la_CFLAGS = \
   -DPCRE2_CODE_UNIT_WIDTH=32 \
   $(VISIBILITY_CFLAGS) \
+  $(CET_CFLAGS) \
   $(AM_CFLAGS)
 libpcre2_32_la_LIBADD =
 endif # WITH_PCRE2_32
@@ -445,15 +452,16 @@ EXTRA_DIST += \
   src/sljit/sljitNativePPC_32.c \
   src/sljit/sljitNativePPC_64.c \
   src/sljit/sljitNativePPC_common.c \
-  src/sljit/sljitNativeSPARC_32.c \
-  src/sljit/sljitNativeSPARC_common.c \
-  src/sljit/sljitNativeTILEGX-encoder.c \
-  src/sljit/sljitNativeTILEGX_64.c \
+  src/sljit/sljitNativeRISCV_32.c \
+  src/sljit/sljitNativeRISCV_64.c \
+  src/sljit/sljitNativeRISCV_common.c \
+  src/sljit/sljitNativeS390X.c \
   src/sljit/sljitNativeX86_32.c \
   src/sljit/sljitNativeX86_64.c \
   src/sljit/sljitNativeX86_common.c \
   src/sljit/sljitProtExecAllocator.c \
-  src/sljit/sljitUtils.c
+  src/sljit/sljitUtils.c \
+  src/sljit/sljitWXExecAllocator.c
 
 # Some of the JIT sources are also in separate files that are #included.
 
@@ -546,6 +554,17 @@ endif # WITH_PCRE2_8
 
 ## -------- Testing ----------
 
+## If the 8-bit library is enabled, build the POSIX wrapper test program and
+## arrange for it to run.
+
+if WITH_PCRE2_8
+TESTS += pcre2posix_test
+noinst_PROGRAMS += pcre2posix_test
+pcre2posix_test_SOURCES = src/pcre2posix_test.c
+pcre2posix_test_CFLAGS = $(AM_CFLAGS)
+pcre2posix_test_LDADD = libpcre2-posix.la libpcre2-8.la
+endif # WITH_PCRE2_8
+
 ## If JIT support is enabled, arrange for the JIT test program to run.
 
 if WITH_JIT
@@ -624,16 +643,25 @@ EXTRA_DIST += \
   testdata/grepinput \
   testdata/grepinput3 \
   testdata/grepinput8 \
+  testdata/grepinputC.bz2 \
+  testdata/grepinputC.gz \
   testdata/grepinputM \
   testdata/grepinputv \
   testdata/grepinputx \
   testdata/greplist \
+  testdata/grepnot.bz2 \
   testdata/grepoutput \
   testdata/grepoutput8 \
   testdata/grepoutputC \
   testdata/grepoutputCN \
+  testdata/grepoutputCNU \
+  testdata/grepoutputCU \
+  testdata/grepoutputCbz2 \
+  testdata/grepoutputCgz \
   testdata/grepoutputN \
+  testdata/grepoutputUN \
   testdata/greppatN4 \
+  testdata/testbtables \
   testdata/testinput1 \
   testdata/testinput2 \
   testdata/testinput3 \
@@ -659,7 +687,9 @@ EXTRA_DIST += \
   testdata/testinput23 \
   testdata/testinput24 \
   testdata/testinput25 \
+  testdata/testinput26 \
   testdata/testinputEBC \
+  testdata/testinputheap \
   testdata/testoutput1 \
   testdata/testoutput2 \
   testdata/testoutput3 \
@@ -701,7 +731,11 @@ EXTRA_DIST += \
   testdata/testoutput23 \
   testdata/testoutput24 \
   testdata/testoutput25 \
+  testdata/testoutput26 \
   testdata/testoutputEBC \
+  testdata/testoutputheap-16 \
+  testdata/testoutputheap-32 \
+  testdata/testoutputheap-8 \
   testdata/valgrind-jit.supp \
   testdata/wintestinput3 \
   testdata/wintestoutput3 \
@@ -728,7 +762,7 @@ CLEANFILES += \
 ## ------------ End of testing -------------
 
 
-# PCRE2 demonstration program. Not built automatcally. The point is that the
+# PCRE2 demonstration program. Not built automatically. The point is that the
 # users should build it themselves. So just distribute the source.
 
 EXTRA_DIST += src/pcre2demo.c
@@ -855,9 +889,11 @@ endif # WITH_GCOV
 
 EXTRA_DIST += \
   cmake/COPYING-CMAKE-SCRIPTS \
+  cmake/FindEditline.cmake \
   cmake/FindPackageHandleStandardArgs.cmake \
   cmake/FindReadline.cmake \
-  cmake/FindEditline.cmake \
+  cmake/pcre2-config-version.cmake.in \
+  cmake/pcre2-config.cmake.in \
   CMakeLists.txt \
   config-cmake.h.in
 

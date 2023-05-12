@@ -19,7 +19,7 @@ UNICODE AND UTF SUPPORT
 PCRE2 is normally built with Unicode support, though if you do not need it, you
 can build it without, in which case the library will be smaller. With Unicode
 support, PCRE2 has knowledge of Unicode character properties and can process
-text strings in UTF-8, UTF-16, or UTF-32 format (depending on the code unit
+strings of text in UTF-8, UTF-16, and UTF-32 format (depending on the code unit
 width), but this is not the default. Unless specifically requested, PCRE2
 treats each code unit in a string as one character.
 </P>
@@ -50,17 +50,18 @@ UNICODE PROPERTY SUPPORT
 <P>
 When PCRE2 is built with Unicode support, the escape sequences \p{..},
 \P{..}, and \X can be used. This is not dependent on the PCRE2_UTF setting.
-The Unicode properties that can be tested are limited to the general category
-properties such as Lu for an upper case letter or Nd for a decimal number, the
-Unicode script names such as Arabic or Han, and the derived properties Any and
-L&. Full lists are given in the
+The Unicode properties that can be tested are a subset of those that Perl
+supports. Currently they are limited to the general category properties such as
+Lu for an upper case letter or Nd for a decimal number, the Unicode script
+names such as Arabic or Han, Bidi_Class, Bidi_Control, and the derived
+properties Any and LC (synonym L&). Full lists are given in the
 <a href="pcre2pattern.html"><b>pcre2pattern</b></a>
 and
 <a href="pcre2syntax.html"><b>pcre2syntax</b></a>
-documentation. Only the short names for properties are supported. For example,
-\p{L} matches a letter. Its Perl synonym, \p{Letter}, is not supported.
-Furthermore, in Perl, many properties may optionally be prefixed by "Is", for
-compatibility with Perl 5.6. PCRE2 does not support this.
+documentation. In general, only the short names for properties are supported.
+For example, \p{L} matches a letter. Its longer synonym, \p{Letter}, is not
+supported. Furthermore, in Perl, many properties may optionally be prefixed by
+"Is", for compatibility with Perl 5.6. PCRE2 does not support this.
 </P>
 <br><b>
 WIDE CHARACTERS AND UTF MODES
@@ -134,14 +135,16 @@ However, the special horizontal and vertical white space matching escapes (\h,
 not PCRE2_UCP is set.
 </P>
 <br><b>
-CASE-EQUIVALENCE IN UTF MODE
+UNICODE CASE-EQUIVALENCE
 </b><br>
 <P>
-Case-insensitive matching in UTF mode makes use of Unicode properties except
-for characters whose code points are less than 128 and that have at most two
-case-equivalent values. For these, a direct table lookup is used for speed. A
-few Unicode characters such as Greek sigma have more than two code points that
-are case-equivalent, and these are treated specially.
+If either PCRE2_UTF or PCRE2_UCP is set, upper/lower case processing makes use
+of Unicode properties except for characters whose code points are less than 128
+and that have at most two case-equivalent values. For these, a direct table
+lookup is used for speed. A few Unicode characters such as Greek sigma have
+more than two code points that are case-equivalent, and these are treated
+specially. Setting PCRE2_UCP without PCRE2_UTF allows Unicode-style case
+processing for non-UTF character encodings such as UCS-2.
 <a name="scriptruns"></a></P>
 <br><b>
 SCRIPT RUNS
@@ -475,7 +478,7 @@ AUTHOR
 <P>
 Philip Hazel
 <br>
-University Computing Service
+Retired from University Computing Service
 <br>
 Cambridge, England.
 <br>
@@ -484,9 +487,9 @@ Cambridge, England.
 REVISION
 </b><br>
 <P>
-Last updated: 24 May 2019
+Last updated: 22 December 2021
 <br>
-Copyright &copy; 1997-2019 University of Cambridge.
+Copyright &copy; 1997-2021 University of Cambridge.
 <br>
 <p>
 Return to the <a href="index.html">PCRE2 index page</a>.
