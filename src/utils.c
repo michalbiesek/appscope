@@ -51,7 +51,7 @@ sysprint(const char* fmt, ...)
 #if SYSPRINT_CONSOLE > 0
     scope_printf("%s", str);
 #endif
-    scopeLog(CFG_LOG_DEBUG, "%s", str);
+    scopeLog(CFG_LOG_ERROR, "%s", str);
 }
 
 unsigned int
