@@ -15,6 +15,7 @@
 
 #define SYMBOL_BT_NAME_LEN (256)
 
+// extern unw_scope_getcontext(unw_context_t *);
 /*
  * Prefix for snapshot directory
  * TODO: this can be configurable
