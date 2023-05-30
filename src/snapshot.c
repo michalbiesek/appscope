@@ -16,6 +16,33 @@
 #define SYMBOL_BT_NAME_LEN (256)
 
 /*
+ * The external references below are consequences of using 
+ * `prefix-symbols` during building the libunwind library.
+ */
+
+#ifdef __x86_64__
+extern int SCOPE_UNW_ULx86_64_init_local(unw_cursor_t *, unw_context_t *);
+extern int SCOPE_UNW_ULx86_64_step(unw_cursor_t *);
+extern int SCOPE_UNW_ULx86_64_get_reg(unw_cursor_t *, unw_regnum_t, unw_word_t *);
+extern int SCOPE_UNW_ULx86_64_get_proc_name(unw_cursor_t *, char *, size_t, unw_word_t *);
+#define scope_unw_init_local       SCOPE_UNW_ULx86_64_init_local
+#define scope_unw_step             SCOPE_UNW_ULx86_64_step
+#define scope_unw_get_reg          SCOPE_UNW_ULx86_64_get_reg
+#define scope_unw_get_proc_name    SCOPE_UNW_ULx86_64_get_proc_name
+#elif defined(__aarch64__)
+extern int SCOPE_UNW_ULaarch64_init_local(unw_cursor_t *, unw_context_t *);
+extern int SCOPE_UNW_ULaarch64_step(unw_cursor_t *);
+extern int SCOPE_UNW_ULaarch64_get_reg(unw_cursor_t *, unw_regnum_t, unw_word_t *);
+extern int SCOPE_UNW_ULaarch64_get_proc_name(unw_cursor_t *, char *, size_t, unw_word_t *);
+#define scope_unw_init_local       SCOPE_UNW_ULaarch64_init_local
+#define scope_unw_step             SCOPE_UNW_ULaarch64_step
+#define scope_unw_get_reg          SCOPE_UNW_ULaarch64_get_reg
+#define scope_unw_get_proc_name    SCOPE_UNW_ULaarch64_get_proc_name
+#else
+   #error Bad arch defined
+#endif
+
+/*
  * Prefix for snapshot directory
  * TODO: this can be configurable
  */
@@ -348,19 +375,19 @@ snapBacktrace(const char *dirPath, const char *epochStr, siginfo_t *info) {
     unw_word_t ip;
 
     unw_scope_getcontext(&uc);
-    unw_init_local(&cursor, &uc);
+    scope_unw_init_local(&cursor, &uc);
     int frame_count = 0;
     snapshotWriteConstStr(fd, "--- backtrace\n");
-    while(unw_step(&cursor) > 0) {
+    while(scope_unw_step(&cursor) > 0) {
         char symbol[SYMBOL_BT_NAME_LEN] = {0};
         unw_word_t offset;
 
-        int ret = unw_get_reg(&cursor, UNW_REG_IP, &ip);
+        int ret = scope_unw_get_reg(&cursor, UNW_REG_IP, &ip);
         if (ret) {
             continue;
         }
 
-        ret = unw_get_proc_name(&cursor, symbol, SYMBOL_BT_NAME_LEN, &offset);
+        ret = scope_unw_get_proc_name(&cursor, symbol, SYMBOL_BT_NAME_LEN, &offset);
         snapshotWriteConstStr(fd, "#");
         snapshotWriteNumberDec(fd, frame_count);
         snapshotWriteConstStr(fd, " 0x");
