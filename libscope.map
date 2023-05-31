@@ -23,6 +23,7 @@
     a2i_*;
     lshpack_*;     # hides ls-hpack symbols
     SCOPE_UNW*;    # hides our renamed libunwind symbols
+    unw_scope_getcontext;
     SCOPE_DlIteratePhdr;
     ACCESS_*;
     ADMISSIONS_*;

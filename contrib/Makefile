@@ -130,7 +130,7 @@ build/libunwind/src/.libs/libunwind.a:
 	cd build/coredumper && autoreconf -fvi ../../coredumper && ../../coredumper/configure CFLAGS=-fPIC --disable-shared && $(MAKE)
 	objcopy --redefine-syms redefine_syms.lst build/coredumper/.libs/libcoredumper.a
 	if [ "aarch64" = "$(ARCH)" ]; then \
-		objcopy --redefine-sym getcontext=SCOPE_UNWunw_scope_getcontext build/coredumper/.libs/libcoredumper.a; \
+		objcopy --redefine-sym getcontext=unw_scope_getcontext build/coredumper/.libs/libcoredumper.a; \
 	fi
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
