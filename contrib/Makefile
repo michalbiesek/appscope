@@ -113,10 +113,6 @@ build/libunwind/src/.libs/libunwind.a:
 	@mkdir build/libunwind
 # To enable debug please add below --enable-debug
 	cd build/libunwind && autoreconf -fvi ../../libunwind && ../../libunwind/configure --disable-pthread-api --disable-shared --disable-minidebuginfo --disable-documentation --disable-tests --enable-debug CFLAGS=-fPIC && $(MAKE)
-# To avoid naming conflicts, we distinguish all symbols since application can use libunwind independently
-	objcopy --prefix-symbols=SCOPE_UNW build/libunwind/src/.libs/libunwind.a
-# Restore the original names for stdlib functions to use `redefine_syms.lst` correctly
-	objcopy --redefine-syms unwind_syms.lst build/libunwind/src/.libs/libunwind.a
 	objcopy --redefine-syms redefine_syms.lst build/libunwind/src/.libs/libunwind.a
 	if [ "x86_64" = "$(ARCH)" ]; then \
 		objcopy --redefine-sym dl_iterate_phdr=SCOPE_DlIteratePhdr build/libunwind/src/.libs/libunwind.a; \
