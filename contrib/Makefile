@@ -112,7 +112,7 @@ build/libunwind/src/.libs/libunwind.a:
 	@$(RM) -r build/libunwind
 	@mkdir build/libunwind
 # To enable debug please add below --enable-debug
-	cd build/libunwind && autoreconf -fvi ../../libunwind && ../../libunwind/configure --disable-pthread-api --disable-shared --disable-minidebuginfo --disable-documentation --disable-tests CFLAGS=-fPIC && $(MAKE)
+	cd build/libunwind && autoreconf -fvi ../../libunwind && ../../libunwind/configure --disable-pthread-api --disable-shared --disable-minidebuginfo --disable-documentation --disable-tests --enable-debug CFLAGS=-fPIC && $(MAKE)
 # To avoid naming conflicts, we distinguish all symbols since application can use libunwind independently
 	objcopy --prefix-symbols=SCOPE_UNW build/libunwind/src/.libs/libunwind.a
 # Restore the original names for stdlib functions to use `redefine_syms.lst` correctly
