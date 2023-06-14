@@ -163,7 +163,7 @@ spec:
       serviceAccountName: scope-cert-sa
       containers:
         - name: {{ .App }}
-          image: cribl/scope:{{ .Version }}
+          image: mbiesekcribl/scope:{{ .Version }}
           command: ["/bin/bash"]
           args:
           - "-c"
