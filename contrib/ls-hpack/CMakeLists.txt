@@ -9,6 +9,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(ls-hpack C)
 
+include(CheckIncludeFiles)
+
 IF (SHARED EQUAL 1)
     ADD_LIBRARY(ls-hpack SHARED lshpack.c)
 ELSE()
@@ -30,7 +32,9 @@ IF (LSHPACK_XXH)
     TARGET_SOURCES(ls-hpack PRIVATE deps/xxhash/xxhash.c)
 ENDIF()
 
-IF (MSVC)
+check_include_files("sys/queue.h" HAVE_SYS_QUEUE_H)
+
+IF (NOT HAVE_SYS_QUEUE_H)
     INCLUDE_DIRECTORIES(wincompat)
 ENDIF()
 

@@ -125,11 +125,11 @@ build/libunwind/src/.libs/libunwind.a:
 	@echo "$${CI:+::group::}Building coredumper"
 	@$(RM) -r build/coredumper
 	@mkdir build/coredumper
-	cd build/coredumper && autoreconf -fvi ../../coredumper && ../../coredumper/configure CFLAGS=-fPIC --disable-shared && $(MAKE)
-	objcopy --redefine-syms redefine_syms.lst build/coredumper/.libs/libcoredumper.a
-	if [ "aarch64" = "$(ARCH)" ]; then \
-		objcopy --redefine-sym getcontext=unw_scope_getcontext build/coredumper/.libs/libcoredumper.a; \
-	fi
+#	cd build/coredumper && autoreconf -fvi ../../coredumper && ../../coredumper/configure CFLAGS=-fPIC --disable-shared && $(MAKE)
+#	objcopy --redefine-syms redefine_syms.lst build/coredumper/.libs/libcoredumper.a
+#	if [ "aarch64" = "$(ARCH)" ]; then \
+#		objcopy --redefine-sym getcontext=unw_scope_getcontext build/coredumper/.libs/libcoredumper.a; \
+#	fi
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 build/musl/lib/libc.a:

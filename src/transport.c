@@ -101,8 +101,8 @@ struct _transport_t
         struct {
             char *path;
             FILE *stream;
-            int stdout;  // Flag to indicate that stream is stdout
-            int stderr;  // Flag to indicate that stream is stderr
+            int stdoutFlag;  // Flag to indicate that stream is stdout
+            int stderrFlag;  // Flag to indicate that stream is stderr
             cfg_buffer_t buf_policy;
         } file;
     };
@@ -539,7 +539,7 @@ transportDisconnect(transport_t *trans)
             }
             break;
         case CFG_FILE:
-            if (!trans->file.stdout && !trans->file.stderr) {
+            if (!trans->file.stdoutFlag && !trans->file.stderrFlag) {
                 if (trans->file.stream) scope_fclose(trans->file.stream);
             }
             trans->file.stream = NULL;
@@ -954,10 +954,10 @@ transportConnectFile(transport_t *t)
     t->connect_attempts++;
 
     // if stdout/stderr, set stream and skip everything else in the function.
-    if (t->file.stdout) {
+    if (t->file.stdoutFlag) {
         t->file.stream = scope_stdout;
         goto out;
-    } else if (t->file.stderr) {
+    } else if (t->file.stderrFlag) {
         t->file.stream = scope_stderr;
         goto out;
     }
@@ -1010,8 +1010,8 @@ out:
     // successful attempt!
     {
         char *path = t->file.path;
-        if (t->file.stdout) path = "stdout";
-        if (t->file.stderr) path = "stderr";
+        if (t->file.stdoutFlag) path = "stdout";
+        if (t->file.stderrFlag) path = "stderr";
         scopeLogInfo("fd:%d (%s) file connect successful", scope_fileno(t->file.stream), path);
     }
     t->connect_attempts = 0;
@@ -1198,8 +1198,8 @@ transportCreateFile(const char* path, cfg_buffer_t buf_policy)
     t->file.buf_policy = buf_policy;
 
     // See if path is "stdout" or "stderr"
-    t->file.stdout = !scope_strcmp(path, "stdout");
-    t->file.stderr = !scope_strcmp(path, "stderr");
+    t->file.stdoutFlag = !scope_strcmp(path, "stdout");
+    t->file.stderrFlag = !scope_strcmp(path, "stderr");
 
     transportConnect(t);
 
@@ -1297,7 +1297,7 @@ transportDestroy(transport_t **transport)
             break;
         case CFG_FILE:
             if (trans->file.path) scope_free(trans->file.path);
-            if (!trans->file.stdout && !trans->file.stderr) {
+            if (!trans->file.stdoutFlag && !trans->file.stderrFlag) {
                 // if stdout/stderr, we didn't open stream, so don't close it
                 if (trans->file.stream) scope_fclose(trans->file.stream);
             }

@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 
+#include <dlfcn.h>
 #include <errno.h>
 #include <libgen.h>
 #include <stdio.h>

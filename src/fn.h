@@ -131,14 +131,24 @@ typedef struct {
     /*
      * We need to make these Linux only, but we're holding off until structiural changes are done.
      */
+#ifndef open64
     int (*open64)(const char *, int, ...);
+#endif
+#ifndef openat64
     int (*openat64)(int, const char *, int, ...);
+#endif
     int (*__open_2)(const char *, int);
     int (*__open64_2)(const char *, int);
     int (*__openat_2)(int, const char *, int);
+#ifndef fopen64
     FILE *(*fopen64)(const char *, const char *);
+#endif
+#ifndef freopen64
     FILE *(*freopen64)(const char *, const char *, FILE *);
+#endif
+#ifndef creat64
     int (*creat64)(const char *, mode_t);
+#endif
     ssize_t (*__read_chk)(int, void *, size_t, size_t);
     char *(*__fgets_chk)(char *, size_t, int, FILE *);
     char *(*fgets_unlocked)(char *, int, FILE *);
@@ -149,27 +159,49 @@ typedef struct {
     size_t (*fread_unlocked)(void *, size_t, size_t, FILE *);
     size_t (*__fread_unlocked_chk)(void *, size_t, size_t, size_t, FILE *);
     ssize_t (*__getdelim)(char **, size_t *, int, FILE *);
+#ifndef pread64
     ssize_t (*pread64)(int, void *, size_t, off_t);
+#endif
     ssize_t (*__pread64_chk)(int, void *, size_t, off_t, size_t);
     ssize_t (*preadv)(int, const struct iovec *, int, off_t);
     ssize_t (*preadv2)(int, const struct iovec *, int, off_t, int);
     ssize_t (*preadv64v2)(int, const struct iovec *, int, off_t, int);
     ssize_t (*__pread_chk)(int, void *, size_t, off_t, size_t);
+#ifndef pwrite64
     ssize_t (*pwrite64)(int, const void *, size_t, off_t);
+#endif
     ssize_t (*pwritev)(int, const struct iovec *, int, off_t);
     ssize_t (*pwritev64)(int, const struct iovec *, int, off64_t);
     ssize_t (*pwritev2)(int, const struct iovec *, int, off_t, int);
     ssize_t (*pwritev64v2)(int, const struct iovec *, int, off_t, int);
     size_t (*fwrite_unlocked)(const void *, size_t, size_t, FILE *);
+#ifndef sendfile64
     ssize_t (*sendfile64)(int, int, off64_t *, size_t);
+#endif
+#ifndef lseek64
     off64_t (*lseek64)(int, off64_t, int);
+#endif
+#ifndef fseeko64
     int (*fseeko64)(FILE *, off64_t, int);
+#endif
+#ifndef ftello64
     off64_t (*ftello64)(FILE *);
+#endif
+#ifndef fgetpos64
     int (*fgetpos64)(FILE *, fpos64_t *);
+#endif
+#ifndef fsetpos64
     int (*fsetpos64)(FILE *stream, const fpos64_t *pos);
+#endif
+#ifndef statfs64
     int (*statfs64)(const char *, struct statfs64 *);
+#endif
+#ifndef fstatfs64
     int (*fstatfs64)(int, struct statfs64 *);
+#endif
+#ifndef fstatat64
     int (*fstatat64)(int, const char *, struct stat64 *, int);
+#endif
     int (*__xstat)(int, const char *, struct stat *);
     int (*__xstat64)(int, const char *, struct stat64 *);
     int (*__fxstat)(int, int, struct stat *);
@@ -218,8 +250,12 @@ typedef struct {
     long int (*__fdelt_chk)(long int);
 #ifdef __linux__
     // Couldn't easily get struct definitions for these on mac
+#ifndef statvfs64
     int (*statvfs64)(const char *, struct statvfs64 *);
+#endif
+#ifndef fstatvfs64
     int (*fstatvfs64)(int, struct statvfs64 *);
+#endif
     int (*epoll_wait)(int, struct epoll_event *, int, int);
     int (*__overflow)(FILE *, int);
     ssize_t (*__write_libc)(int, const void *, size_t);
@@ -239,8 +275,8 @@ typedef struct {
     int (*clock_nanosleep)(clockid_t, int, const struct timespec *, struct timespec *);
     int (*usleep)(useconds_t);
     int (*io_getevents)(io_context_t, long, long, struct io_event *, struct timespec *);
-    int (*sendmmsg)(int, struct mmsghdr *, unsigned int, int);
-    int (*recvmmsg)(int, struct mmsghdr *, unsigned int, int, struct timespec *);
+    int (*sendmmsg)(int, struct mmsghdr *, unsigned int, unsigned int);
+    int (*recvmmsg)(int, struct mmsghdr *, unsigned int, unsigned int, struct timespec *);
     int (*pthread_create)(pthread_t *, const pthread_attr_t *,
                           void *(*)(void *), void *);
     int (*getentropy)(void *, size_t);
@@ -251,7 +287,7 @@ typedef struct {
     DIR *(*opendir)(const char *);
     int (*closedir)(DIR *);
     struct dirent *(*readdir)(DIR *);
-    int (*setrlimit)(__rlimit_resource_t, const struct rlimit *);
+    int (*setrlimit)(int, const struct rlimit *);
 #endif // __linux__
 
 #if defined(__linux__) && defined(__STATX__)

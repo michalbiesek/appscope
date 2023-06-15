@@ -11,6 +11,7 @@
 #include <asm/prctl.h>
 #endif
 #endif
+#include <sys/sendfile.h>
 #include <sys/syscall.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -2198,7 +2199,6 @@ freopen(const char *pathname, const char *mode, FILE *orig_stream)
     return stream;
 }
 
-#ifdef __linux__
 EXPORTOFF int
 nanosleep(const struct timespec *req, struct timespec *rem)
 {
@@ -2370,6 +2370,7 @@ io_getevents(io_context_t ctx_id, long min_nr, long nr,
     return g_fn.syscall(__NR_io_getevents, ctx_id, min_nr, nr, events, timeout);
 }
 
+#ifndef open64
 EXPORTOFF int
 open64(const char *pathname, int flags, ...)
 {
@@ -2383,7 +2384,9 @@ open64(const char *pathname, int flags, ...)
 
     return fd;
 }
+#endif
 
+#ifndef openat64
 EXPORTOFF int
 openat64(int dirfd, const char *pathname, int flags, ...)
 {
@@ -2397,6 +2400,7 @@ openat64(int dirfd, const char *pathname, int flags, ...)
 
     return fd;
 }
+#endif
 
 EXPORTOFF int
 __open_2(const char *file, int oflag)
@@ -2432,6 +2436,7 @@ __openat_2(int fd, const char *file, int oflag)
     return fd;
 }
 
+#ifndef creat64
 // Note: creat64 is defined to be obsolete
 EXPORTOFF int
 creat64(const char *pathname, mode_t mode)
@@ -2444,7 +2449,9 @@ creat64(const char *pathname, mode_t mode)
 
     return fd;
 }
+#endif
 
+#ifndef fopen64
 EXPORTOFF FILE *
 fopen64(const char *pathname, const char *mode)
 {
@@ -2457,7 +2464,9 @@ fopen64(const char *pathname, const char *mode)
 
     return stream;
 }
+#endif
 
+#ifndef freopen64
 EXPORTOFF FILE *
 freopen64(const char *pathname, const char *mode, FILE *orig_stream)
 {
@@ -2474,7 +2483,9 @@ freopen64(const char *pathname, const char *mode, FILE *orig_stream)
 
     return stream;
 }
+#endif
 
+#ifndef pread64
 EXPORTOFF ssize_t
 pread64(int fd, void *buf, size_t count, off_t offset)
 {
@@ -2487,6 +2498,7 @@ pread64(int fd, void *buf, size_t count, off_t offset)
 
     return rc;
 }
+#endif
 
 EXPORTOFF ssize_t
 __pread64_chk(int fd, void *buf, size_t count, off_t offset, size_t bufsize)
@@ -2582,6 +2594,7 @@ __fread_unlocked_chk(void *ptr, size_t ptrlen, size_t size, size_t nmemb, FILE *
     return rc;
 }
 
+#ifndef pwrite64
 EXPORTOFF ssize_t
 pwrite64(int fd, const void *buf, size_t nbyte, off_t offset)
 {
@@ -2594,6 +2607,7 @@ pwrite64(int fd, const void *buf, size_t nbyte, off_t offset)
 
     return rc;
 }
+#endif
 
 EXPORTOFF ssize_t
 pwritev(int fd, const struct iovec *iov, int iovcnt, off_t offset)
@@ -2647,6 +2661,7 @@ pwritev64v2(int fd, const struct iovec *iov, int iovcnt, off_t offset, int flags
     return rc;
 }
 
+#ifndef lseek64
 EXPORTOFF off64_t
 lseek64(int fd, off64_t offset, int whence)
 {
@@ -2658,7 +2673,9 @@ lseek64(int fd, off64_t offset, int whence)
 
     return rc;
 }
+#endif
 
+#ifndef fseeko64
 EXPORTOFF int
 fseeko64(FILE *stream, off64_t offset, int whence)
 {
@@ -2670,7 +2687,9 @@ fseeko64(FILE *stream, off64_t offset, int whence)
 
     return rc;
 }
+#endif
 
+#ifndef ftello64
 EXPORTOFF off64_t
 ftello64(FILE *stream)
 {
@@ -2682,7 +2701,9 @@ ftello64(FILE *stream)
 
     return rc;
 }
+#endif
 
+#ifndef statfs64
 EXPORTOFF int
 statfs64(const char *path, struct statfs64 *buf)
 {
@@ -2693,7 +2714,9 @@ statfs64(const char *path, struct statfs64 *buf)
 
     return rc;
 }
+#endif
 
+#ifndef fstatfs64
 EXPORTOFF int
 fstatfs64(int fd, struct statfs64 *buf)
 {
@@ -2704,7 +2727,9 @@ fstatfs64(int fd, struct statfs64 *buf)
 
     return rc;
 }
+#endif
 
+#ifndef fsetpos64
 EXPORTOFF int
 fsetpos64(FILE *stream, const fpos64_t *pos)
 {
@@ -2715,6 +2740,7 @@ fsetpos64(FILE *stream, const fpos64_t *pos)
 
     return rc;
 }
+#endif
 
 EXPORTOFF int
 __xstat(int ver, const char *path, struct stat *stat_buf)
@@ -2851,6 +2877,7 @@ statvfs(const char *path, struct statvfs *buf)
     return rc;
 }
 
+#ifndef statvfs64
 EXPORTOFF int
 statvfs64(const char *path, struct statvfs64 *buf)
 {
@@ -2861,6 +2888,7 @@ statvfs64(const char *path, struct statvfs64 *buf)
 
     return rc;
 }
+#endif
 
 EXPORTOFF int
 fstatvfs(int fd, struct statvfs *buf)
@@ -2873,6 +2901,7 @@ fstatvfs(int fd, struct statvfs *buf)
     return rc;
 }
 
+#ifndef fstatvfs64
 EXPORTOFF int
 fstatvfs64(int fd, struct statvfs64 *buf)
 {
@@ -3178,20 +3207,7 @@ __write_pthread(int fd, const void *buf, size_t size)
     return rc;
 }
 
-static bool
-isAnAppScopeConnection(int fd)
-{
-    if (fd == -1) return FALSE;
 
-    if ((fd == ctlConnection(g_ctl, CFG_CTL)) ||
-        (fd == ctlConnection(g_ctl, CFG_LS)) ||
-        (fd == mtcConnection(g_mtc)) ||
-        (fd == logConnection(g_log))) {
-        return TRUE;
-    }
-
-    return FALSE;
-}
 
 /*
  * Note:
@@ -3293,24 +3309,6 @@ wrap_scope_write(int fd, const void* buf, size_t size)
     return (ssize_t)syscall(SYS_write, fd, buf, size);
 }
 
-static int
-wrap_scope_open(const char* pathname)
-{
-    // This implementation is largely based on transportConnectFile().
-    int fd = scope_open(pathname, O_CREAT|O_WRONLY|O_APPEND|O_CLOEXEC, 0666);
-    if (fd == -1) {
-        DBG("%s", pathname);
-        return fd;
-    }
-
-    // Since umask affects open permissions above...
-    if (scope_fchmod(fd, 0666) == -1) {
-        DBG("%d %s", fd, pathname);
-    }
-    return fd;
-}
-
-
 EXPORTOFF size_t
 fwrite_unlocked(const void *ptr, size_t size, size_t nitems, FILE *stream)
 {
@@ -3350,6 +3348,7 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
     return rc;
 }
 
+#ifndef sendfile64
 EXPORTOFF ssize_t
 sendfile64(int out_fd, int in_fd, off64_t *offset, size_t count)
 {
@@ -3362,6 +3361,7 @@ sendfile64(int out_fd, int in_fd, off64_t *offset, size_t count)
 
     return rc;
 }
+#endif
 
 EXPORTOFF int
 SSL_read(SSL *ssl, void *buf, int num)
@@ -3909,7 +3909,9 @@ dlopen(const char *filename, int flags)
     if (flags & RTLD_LOCAL) strcat(fbuf, "RTLD_LOCAL|");
     if (flags & RTLD_NODELETE) strcat(fbuf, "RTLD_NODELETE|");
     if (flags & RTLD_NOLOAD) strcat(fbuf, "RTLD_NOLOAD|");
+#ifdef RTLD_DEEPBIND
     if (flags & RTLD_DEEPBIND) strcat(fbuf, "RTLD_DEEPBIND|");
+#endif
     scopeLog(CFG_LOG_DEBUG, "dlopen called for %s with %s", filename, fbuf);
 
     WRAP_CHECK(dlopen, NULL);
@@ -3964,7 +3966,7 @@ _exit(int status)
 #endif // __linux__
 
 EXPORTOFF int
-setrlimit(__rlimit_resource_t resource, const struct rlimit *rlim)
+setrlimit(int resource, const struct rlimit *rlim)
 {
     WRAP_CHECK(setrlimit, -1);
 
@@ -3987,6 +3989,21 @@ setrlimit(__rlimit_resource_t resource, const struct rlimit *rlim)
     }
 
     return g_fn.setrlimit(resource, rlim);
+}
+
+static bool
+isAnAppScopeConnection(int fd)
+{
+    if (fd == -1) return FALSE;
+
+    if ((fd == ctlConnection(g_ctl, CFG_CTL)) ||
+        (fd == ctlConnection(g_ctl, CFG_LS)) ||
+        (fd == mtcConnection(g_mtc)) ||
+        (fd == logConnection(g_log))) {
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
 EXPORTOFF int
@@ -4258,6 +4275,7 @@ fgetpos(FILE *stream,  fpos_t *pos)
     return rc;
 }
 
+#ifndef fgetpos64
 EXPORTOFF int
 fgetpos64(FILE *stream,  fpos64_t *pos)
 {
@@ -4268,6 +4286,7 @@ fgetpos64(FILE *stream,  fpos64_t *pos)
 
     return rc;
 }
+#endif
 
 /*
  * This function, at this time, is specific to libmusl.
@@ -5168,7 +5187,7 @@ internal_sendmmsg(int sockfd, struct mmsghdr *msgvec, unsigned int vlen, int fla
 }
 
 EXPORTOFF int
-sendmmsg(int sockfd, struct mmsghdr *msgvec, unsigned int vlen, int flags)
+sendmmsg(int sockfd, struct mmsghdr *msgvec, unsigned int vlen, unsigned int flags)
 {
     return internal_sendmmsg(sockfd, msgvec, vlen, flags);
 }
@@ -5380,7 +5399,7 @@ recvmsg(int sockfd, struct msghdr *msg, int flags)
 #ifdef __linux__
 EXPORTOFF int
 recvmmsg(int sockfd, struct mmsghdr *msgvec, unsigned int vlen,
-         int flags, struct timespec *timeout)
+         unsigned int flags, struct timespec *timeout)
 {
     ssize_t rc;
 
@@ -5502,6 +5521,23 @@ getaddrinfo(const char *node, const char *service,
 #define LOG_BUF_SIZE 4096
 #define LOG_TIME_SIZE 23
 #define LOG_TZ_BUF_SIZE 7
+
+static int
+wrap_scope_open(const char* pathname)
+{
+    // This implementation is largely based on transportConnectFile().
+    int fd = scope_open(pathname, O_CREAT|O_WRONLY|O_APPEND|O_CLOEXEC, 0666);
+    if (fd == -1) {
+        DBG("%s", pathname);
+        return fd;
+    }
+
+    // Since umask affects open permissions above...
+    if (scope_fchmod(fd, 0666) == -1) {
+        DBG("%d %s", fd, pathname);
+    }
+    return fd;
+}
 
 // This overrides a weak definition in src/dbg.c
 void
@@ -5670,7 +5706,7 @@ __fdelt_chk(long int fdelt)
         abort();
     }
 
-    return fdelt / __NFDBITS;
+    return fdelt / NFDBITS;
 }
 
 /*
@@ -5762,14 +5798,20 @@ static got_list_t inject_hook_list[] = {
     {"clock_nanosleep", clock_nanosleep, &g_fn.clock_nanosleep},
     {"usleep", usleep, &g_fn.usleep},
     {"open64", open64, &g_fn.open64},
+#ifndef openat64
     {"openat64", openat64, &g_fn.openat64},
+#endif
     {"__open_2", __open_2, &g_fn.__open_2},
     {"__open64_2", __open64_2, &g_fn.__open64_2},
     {"__openat_2", __openat_2, &g_fn.__openat_2},
+#ifndef creat64
     {"creat64", creat64, &g_fn.creat64},
+#endif
     {"fopen64", fopen64, &g_fn.fopen64},
     {"freopen64", freopen64, &g_fn.freopen64},
+#ifndef pread64
     {"pread64", pread64, &g_fn.pread64},
+#endif
     {"__pread64_chk", __pread64_chk, &g_fn.__pread64_chk},
     {"preadv", preadv, &g_fn.preadv},
     {"preadv2", preadv2, &g_fn.preadv2},
@@ -5782,12 +5824,22 @@ static got_list_t inject_hook_list[] = {
     {"pwritev64", pwritev64, &g_fn.pwritev64},
     {"pwritev2", pwritev2, &g_fn.pwritev2},
     {"pwritev64v2", pwritev64v2, &g_fn.pwritev64v2},
+#ifndef lseek64
     {"lseek64", lseek64, &g_fn.lseek64},
+#endif
+#ifndef fseeko64
     {"fseeko64", fseeko64, &g_fn.fseeko64},
+#endif
+#ifndef ftello64
     {"ftello64", ftello64, &g_fn.ftello64},
+#endif
     {"statfs64", statfs64, &g_fn.statfs64},
+#ifndef fstatfs64
     {"fstatfs64", fstatfs64, &g_fn.fstatfs64},
+#endif
+#ifndef fsetpos64
     {"fsetpos64", fsetpos64, &g_fn.fsetpos64},
+#endif
     {"__xstat", __xstat, &g_fn.__xstat},
     {"__xstat64", __xstat64, &g_fn.__xstat64},
     {"__lxstat", __lxstat, &g_fn.__lxstat},
@@ -5798,7 +5850,9 @@ static got_list_t inject_hook_list[] = {
     {"statfs", statfs, &g_fn.statfs},
     {"fstatfs", fstatfs, &g_fn.fstatfs},
     {"statvfs", statvfs, &g_fn.statvfs},
+#ifndef statvfs64
     {"statvfs64", statvfs64, &g_fn.statvfs64},
+#endif
     {"fstatvfs", fstatvfs, &g_fn.fstatvfs},
     {"fstatvfs64", fstatvfs64, &g_fn.fstatvfs64},
     {"access", access, &g_fn.access},
@@ -5811,7 +5865,9 @@ static got_list_t inject_hook_list[] = {
     {"execv", execv, &g_fn.execv},
     {"syscall", syscall, &g_fn.syscall},
     {"sendfile", sendfile, &g_fn.sendfile},
+#ifndef sendfile64
     {"sendfile64", sendfile64, &g_fn.sendfile64},
+#endif
     {"SSL_read", SSL_read, &g_fn.SSL_read},
     {"SSL_write", SSL_write, &g_fn.SSL_write},
     {"gnutls_record_recv", gnutls_record_recv, &g_fn.gnutls_record_recv},

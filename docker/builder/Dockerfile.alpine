@@ -17,7 +17,8 @@ FROM $IMAGE
 #
 RUN apk add --no-cache \
     bash \
-    emacs \
+    bsd-compat-headers \
+    cmake \
     gdb \
     git \
     go  \

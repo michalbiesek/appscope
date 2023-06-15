@@ -194,7 +194,9 @@ initFn(void)
     GETADDR(g_fn.ftello, "ftello");
     GETADDR(g_fn.fgetpos, "fgetpos");
     GETADDR(g_fn.fsetpos, "fsetpos");
+#ifndef fsetpos64
     GETADDR(g_fn.fsetpos64, "fsetpos64");
+#endif
     GETADDR(g_fn.stat, "stat");
     GETADDR(g_fn.lstat, "lstat");
     GETADDR(g_fn.fstat, "fstat");
@@ -246,15 +248,27 @@ initFn(void)
     GETADDR(g_fn.__memcpy_chk, "__memcpy_chk");
     GETADDR(g_fn.__sprintf_chk, "__sprintf_chk");
     GETADDR(g_fn.__fdelt_chk, "__fdelt_chk");
+#ifndef open64
     GETADDR(g_fn.open64, "open64");
+#endif
+#ifndef openat64
     GETADDR(g_fn.openat64, "openat64");
+#endif
     GETADDR(g_fn.__open_2, "__open_2");
     GETADDR(g_fn.__open64_2, "__open64_2");
     GETADDR(g_fn.__openat_2, "__openat_2");
+#ifndef fopen64
     GETADDR(g_fn.fopen64, "fopen64");
+#endif
+#ifndef freopen64
     GETADDR(g_fn.freopen64, "freopen64");
+#endif
+#ifndef creat64
     GETADDR(g_fn.creat64, "creat64");
+#endif
+#ifndef pread64
     GETADDR(g_fn.pread64, "pread64");
+#endif
     GETADDR(g_fn.__pread64_chk, "__pread64_chk");
     GETADDR(g_fn.preadv, "preadv");
     GETADDR(g_fn.preadv2, "preadv2");
@@ -262,20 +276,34 @@ initFn(void)
     GETADDR(g_fn.__pread_chk, "__pread_chk");
     GETADDR(g_fn.__read_chk, "__read_chk");
     GETADDR(g_fn.__fread_unlocked_chk, "__fread_unlocked_chk");
+#ifndef pwrite64
     GETADDR(g_fn.pwrite64, "pwrite64");
+#endif
     GETADDR(g_fn.pwritev, "pwritev");
     GETADDR(g_fn.pwritev64, "pwritev64");
     GETADDR(g_fn.pwritev2, "pwritev2");
     GETADDR(g_fn.pwritev64v2, "pwritev64v2");
     GETADDR(g_fn.fwrite_unlocked, "fwrite_unlocked");
+#ifndef sendfile64
     GETADDR(g_fn.sendfile64, "sendfile64");
+#endif
+#ifndef lseek64
     GETADDR(g_fn.lseek64, "lseek64");
+#endif
+#ifndef fseeko64
     GETADDR(g_fn.fseeko64, "fseeko64");
+#endif
     GETADDR(g_fn.ftello64, "ftello64");
+#ifndef statfs64
     GETADDR(g_fn.statfs64, "statfs64");
+#endif
+#ifndef fstatfs64
     GETADDR(g_fn.fstatfs64, "fstatfs64");
+#endif
     GETADDR(g_fn.fstatvfs64, "fstatvfs64");
+#ifndef fgetpos64
     GETADDR(g_fn.fgetpos64, "fgetpos64");
+#endif
     GETADDR(g_fn.statvfs64, "statvfs64");
     GETADDR(g_fn.__lxstat, "__lxstat");
     GETADDR(g_fn.__lxstat64, "__lxstat64");

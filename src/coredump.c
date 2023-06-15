@@ -3,7 +3,6 @@
 #include "coredump.h"
 #include "scopestdlib.h"
 #include "utils.h"
-#include "google/coredumper.h"
 
 /*
  * Generates core dump in location specifed by path
@@ -17,5 +16,5 @@
  */
 bool
 coreDumpGenerate(const char *path) {
-    return (WriteCoreDump(path) == 0);
+    return -1;
 }
