@@ -467,7 +467,7 @@ free_go_str(char *str) {
  * Please look into opencontainers Linux runtime-spec for details about the exact JSON struct.
  * The following changes will be performed:
  * - Add a mount point
- *   `scope` will be mounted from the host ("ex: /usr/lib/appscope/<version>/scope") into the container ("ex: /opt/scope")
+ *   `appscope` directory will be mounted from the host "/usr/lib/appscope/" into the container: "/usr/lib/appscope/"
  * - Extend Environment variables
  *   `LD_PRELOAD` will contain the following entry `/opt/appscope/libscope.so`
  *   `SCOPE_SETUP_DONE=true` mark that configuration was processed
@@ -493,6 +493,22 @@ rewriteOpenContainersConfig(const char *cWorkDir)
 
     FILE *fp = scope_fopen(path, "r");
     if (!fp) {
+        goto exit;
+    }
+
+    // Filter file must exists
+    if (scope_stat("/usr/lib/appscope/scope_filter", &fileStat) == -1) {
+        scope_fclose(fp);
+        goto exit;
+    }
+
+    // Scope executable must exists
+    if (scope_snprintf(path, sizeof(path), "/usr/lib/appscope/%s/scope", SCOPE_VER) < 0) {
+        scope_fclose(fp);
+        goto exit;
+    }
+
+    if (scope_stat(path, &fileStat) == -1) {
         goto exit;
     }
 
@@ -625,9 +641,9 @@ rewriteOpenContainersConfig(const char *cWorkDir)
       },
       ...
       {
-         "destination":"/opt/scope",
+         "destination":"/usr/lib/appscope/",
          "type":"bind",
-         "source":"/tmp/appscope/dev/scope",
+         "source":"/usr/lib/appscope/",
          "options":[
             "rbind",
             "rprivate"
@@ -650,7 +666,7 @@ rewriteOpenContainersConfig(const char *cWorkDir)
         goto exit;
     }
 
-    if (!cJSON_AddStringToObjLN(mountNode, "destination", "/opt/scope")) {
+    if (!cJSON_AddStringToObjLN(mountNode, "destination", "/usr/lib/appscope/")) {
         cJSON_Delete(mountNode);
         cJSON_Delete(json);
         goto exit;
@@ -662,7 +678,7 @@ rewriteOpenContainersConfig(const char *cWorkDir)
         goto exit;
     }
 
-    if (!cJSON_AddStringToObjLN(mountNode, "source", "/tmp/appscope/dev/scope")) {
+    if (!cJSON_AddStringToObjLN(mountNode, "source", "/usr/lib/appscope/")) {
         cJSON_Delete(mountNode);
         cJSON_Delete(json);
         goto exit;
@@ -700,9 +716,9 @@ rewriteOpenContainersConfig(const char *cWorkDir)
       ],
       "startContainer":[
          {
-            "path":"/opt/scope"
+            "path":"/usr/lib/appscope/<version>/scope"
             "args":[
-               "/opt/scope",
+               "/usr/lib/appscope/<version>/scope",
                "extract",
                "-p",
                "/opt/appscope",
@@ -736,7 +752,7 @@ rewriteOpenContainersConfig(const char *cWorkDir)
         goto exit;
     }
 
-    if (!cJSON_AddStringToObjLN(startContainerNode, "path",  "/opt/scope")) {
+    if (!cJSON_AddStringToObjLN(startContainerNode, "path",  path)) {
         cJSON_Delete(startContainerNode);
         cJSON_Delete(json);
         goto exit;
@@ -744,7 +760,7 @@ rewriteOpenContainersConfig(const char *cWorkDir)
 
     const char *argsItems[4] =
     {
-        "/opt/scope",
+        path,
         "extract",
         "-p",
         "/opt/appscope"
