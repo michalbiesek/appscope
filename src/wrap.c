@@ -3136,6 +3136,47 @@ prctl(int option, ...)
     return g_fn.prctl(option, fArgs.arg[0], fArgs.arg[1], fArgs.arg[2], fArgs.arg[3]);
 }
 
+void scope_exec_log_message(const char* format, ...) {
+    int msec;
+    char timestamp[20];
+    struct tm time_info;
+    struct timeval tv;
+    scope_gettimeofday(&tv, NULL);
+    msec = tv.tv_usec / 1000;
+    if (msec > 999) {
+        tv.tv_sec++;
+        msec = 0;
+    }
+    scope_localtime_r(&tv.tv_sec, &time_info);
+    scope_strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &time_info);
+
+    FILE* log_file = scope_fopen("/tmp/scope_exec.txt", "a");
+    if (log_file == NULL) {
+        scope_printf("Error opening log file.\n");
+        return;
+    }
+
+    va_list args;
+    va_start(args, format);
+
+    scope_fprintf(log_file, "[%s] ", timestamp);
+    scope_vfprintf(log_file, format, args);
+    scope_fprintf(log_file, "\n");
+
+    va_end(args);
+
+    scope_fclose(log_file);
+
+    scope_printf("[%s] ", timestamp);
+
+    va_start(args, format);
+
+    scope_vprintf(format, args);
+    scope_printf("\n");
+
+    va_end(args);
+}
+
 static char *
 getScopeExec(const char *pathname)
 {
@@ -3152,6 +3193,9 @@ getScopeExec(const char *pathname)
         isstat = is_static(ebuf->buf);
         isgo = is_go(ebuf->buf);
     }
+    char *ldprel = fullGetEnv("LD_PRELOAD");
+
+    scope_exec_log_message("getScopeExec %s isstat %d isgo %d ldprel \n", pathname, isstat, isgo);
 
     // not really necessary since we're gonna exec
     if (ebuf) freeElf(ebuf->buf, ebuf->len);
@@ -3160,7 +3204,7 @@ getScopeExec(const char *pathname)
      * Note: the isgo check is strictly for Go dynamic execs.
      * In this case we use scope only to force the use of HTTP 1.1.
      */
-    if (fullGetEnv("LD_PRELOAD") && (isstat == FALSE) && (isgo == FALSE)) {
+    if (ldprel && (isstat == FALSE) && (isgo == FALSE)) {
         return NULL;
     }
 
@@ -3172,6 +3216,8 @@ getScopeExec(const char *pathname)
         scopeLogWarn("can't find a scope executable for %s", pathname);
         return NULL;
     }
+
+    scope_exec_log_message("scopexec = %s\n", scopexec);
 
     return scopexec;
 }
@@ -5670,7 +5716,7 @@ scopeLog(cfg_log_level_t level, const char *format, ...)
     if ((cfg_level == CFG_LOG_NONE) || (cfg_level > level)) return;
 
     scope_gettimeofday(&tv, NULL);
-    msec = tv.tv_usec / 1000; 
+    msec = tv.tv_usec / 1000;
     if (msec > 999) {
         tv.tv_sec++;
         msec = 0;

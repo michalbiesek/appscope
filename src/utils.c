@@ -197,33 +197,33 @@ getpath(const char *cmd)
     }
 
     // try to resolve the cmd from PATH env variable
-    char *path_env_ptr = fullGetEnv("PATH");
-    if (!path_env_ptr) goto out;
-    path_env = scope_strdup(path_env_ptr); // create a copy for strtok below
-    if (!path_env) goto out;
+    // char *path_env_ptr = fullGetEnv("PATH");
+    // if (!path_env_ptr) goto out;
+    // path_env = scope_strdup(path_env_ptr); // create a copy for strtok below
+    // if (!path_env) goto out;
 
-    char *saveptr = NULL;
-    char *strtok_path = scope_strtok_r(path_env, ":", &saveptr);
-    if (!strtok_path) goto out;
+    // char *saveptr = NULL;
+    // char *strtok_path = scope_strtok_r(path_env, ":", &saveptr);
+    // if (!strtok_path) goto out;
 
-    do {
-        char *path = NULL;
-        if (scope_asprintf(&path, "%s/%s", strtok_path, cmd) < 0) {
-            break;
-        }
-        if ((scope_stat(path, &buf) == -1) ||    // path doesn't exist
-            (!S_ISREG(buf.st_mode)) ||     // path isn't a file
-            ((buf.st_mode & 0111) == 0)) { // path isn't executable
+    // do {
+    //     char *path = NULL;
+    //     if (scope_asprintf(&path, "%s/%s", strtok_path, cmd) < 0) {
+    //         break;
+    //     }
+    //     if ((scope_stat(path, &buf) == -1) ||    // path doesn't exist
+    //         (!S_ISREG(buf.st_mode)) ||     // path isn't a file
+    //         ((buf.st_mode & 0111) == 0)) { // path isn't executable
 
-            scope_free(path);
-            continue;
-        }
+    //         scope_free(path);
+    //         continue;
+    //     }
 
-        // We found the cmd, and it's an executable file
-        ret_val = path;
-        break;
+    //     // We found the cmd, and it's an executable file
+    //     ret_val = path;
+    //     break;
 
-    } while ((strtok_path = scope_strtok_r(NULL, ":", &saveptr)));
+    // } while ((strtok_path = scope_strtok_r(NULL, ":", &saveptr)));
 
 out:
     if (path_env) scope_free(path_env);

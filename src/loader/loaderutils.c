@@ -4,13 +4,16 @@
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "loader.h"
@@ -295,6 +298,48 @@ setPidEnv(int pid)
     }
 }
 
+void exec_log_message(const char* format, ...) {
+    int msec;
+    char timestamp[20];
+    struct tm time_info;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    msec = tv.tv_usec / 1000;
+    if (msec > 999) {
+        tv.tv_sec++;
+        msec = 0;
+    }
+    localtime_r(&tv.tv_sec, &time_info);
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &time_info);
+
+    FILE* log_file = fopen("/tmp/scope_exec_loader.txt", "a");
+    if (log_file == NULL) {
+        printf("Error opening log file.\n");
+        return;
+    }
+
+    va_list args;
+    va_start(args, format);
+
+    fprintf(log_file, "[%s] ", timestamp);
+    vfprintf(log_file, format, args);
+    fprintf(log_file, "\n");
+
+    va_end(args);
+
+    fclose(log_file);
+
+    printf("[%s] ", timestamp);
+
+    va_start(args, format);
+
+    vprintf(format, args);
+    printf("\n");
+
+    va_end(args);
+}
+
+
 // This tests to see if cmd can be resolved to an executable file.
 // If so it will return a malloc'd buffer containing an absolute path,
 // otherwise it will return NULL.
@@ -344,35 +389,36 @@ getpath(const char *cmd)
             free(path);
         }
     }
-
-    // try to resolve the cmd from PATH env variable
     char *path_env_ptr = getenv("PATH");
-    if (!path_env_ptr) goto out;
-    path_env = strdup(path_env_ptr); // create a copy for strtok below
-    if (!path_env) goto out;
+    exec_log_message("%s", path_env_ptr);
+    // try to resolve the cmd from PATH env variable
+    // char *path_env_ptr = getenv("PATH");
+    // if (!path_env_ptr) goto out;
+    // path_env = strdup(path_env_ptr); // create a copy for strtok below
+    // if (!path_env) goto out;
 
-    char *saveptr = NULL;
-    char *strtok_path = strtok_r(path_env, ":", &saveptr);
-    if (!strtok_path) goto out;
+    // char *saveptr = NULL;
+    // char *strtok_path = strtok_r(path_env, ":", &saveptr);
+    // if (!strtok_path) goto out;
 
-    do {
-        char *path = NULL;
-        if (asprintf(&path, "%s/%s", strtok_path, cmd) < 0) {
-            break;
-        }
-        if ((stat(path, &buf) == -1) ||    // path doesn't exist
-            (!S_ISREG(buf.st_mode)) ||     // path isn't a file
-            ((buf.st_mode & 0111) == 0)) { // path isn't executable
+    // do {
+    //     char *path = NULL;
+    //     if (asprintf(&path, "%s/%s", strtok_path, cmd) < 0) {
+    //         break;
+    //     }
+    //     if ((stat(path, &buf) == -1) ||    // path doesn't exist
+    //         (!S_ISREG(buf.st_mode)) ||     // path isn't a file
+    //         ((buf.st_mode & 0111) == 0)) { // path isn't executable
 
-            free(path);
-            continue;
-        }
+    //         free(path);
+    //         continue;
+    //     }
 
-        // We found the cmd, and it's an executable file
-        ret_val = path;
-        break;
+    //     // We found the cmd, and it's an executable file
+    //     ret_val = path;
+    //     break;
 
-    } while ((strtok_path = strtok_r(NULL, ":", &saveptr)));
+    // } while ((strtok_path = strtok_r(NULL, ":", &saveptr)));
 
 out:
     if (path_env) free(path_env);
