@@ -3159,7 +3159,7 @@ getPreload(char **envp)
             // LD_PRELOAD exists, done.
             return TRUE;
         }
-	}
+    }
 
     return FALSE;
 }
@@ -3188,7 +3188,7 @@ setPreload(char **envp)
             // LD_PRELOAD exists, done.
             return NULL;
         }
-	}
+    }
 
     plen = scope_strlen(lib_path) + ldplen + 2;
     if ((ldp = scope_calloc(1, plen)) == NULL) {
