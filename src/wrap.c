@@ -2029,6 +2029,11 @@ init(void)
     // contents of a rules file, env vars, scope.yml, etc.
     settings_t settings = getSettings(attachedFlag);
 
+    // Stop further processing if the process is on deny list
+    if ((settings.isActive == FALSE) && (doImplicitDeny() == FALSE)) {
+        return;
+    }
+
     // on aarch64, the crypto subsystem installs handlers for SIGILL
     // (contrib/openssl/crypto/armcap.c) to determine which version of
     // ARM processor we're on.  Do this before enableSnapshot() below.
