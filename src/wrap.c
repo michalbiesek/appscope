@@ -72,6 +72,7 @@ static got_list_t inject_hook_list[];
 extern unsigned long scope_fs;
 
 extern void initGoHook(elf_buf_t*);
+static bool doImplicitDeny(void);
 
 typedef struct
 {
@@ -1493,7 +1494,7 @@ hookInject()
     return FALSE;
 }
 
-static void
+static bool
 initHook(int attachedFlag, bool scopedFlag, elf_buf_t *ebuf, char *full_path)
 {
     int rc;
@@ -1508,12 +1509,17 @@ initHook(int attachedFlag, bool scopedFlag, elf_buf_t *ebuf, char *full_path)
         // Because we now execute scopedyn from memory it's path is memfd:...
         // If executed from the filesystem it's path will be scopedyn
         if (full_path && (scope_strstr(full_path, "scopedyn") == NULL) && (scope_strstr(full_path, "memfd") == NULL)) {
-            if (!ebuf) return;
+            if (!ebuf) return TRUE;
             initGoHook(ebuf);
             threadNow(0, NULL, NULL);
         }
-        return;
+        return TRUE;;
     }
+
+    // Stop further processing if the process is on deny list
+    // if ((scopedFlag == FALSE) && (doImplicitDeny() == FALSE)) {
+    //     return FALSE;
+    // }
 
     if (attachedFlag) {
         // responding to the inject command
@@ -1521,6 +1527,10 @@ initHook(int attachedFlag, bool scopedFlag, elf_buf_t *ebuf, char *full_path)
     } else {
         // GOT hooking all interposed funcs
         dl_iterate_phdr(hookAll, &scopedFlag);
+        // Stop further processing if the process is on deny list
+        if ((scopedFlag == FALSE) && (doImplicitDeny() == FALSE)) {
+            return FALSE;
+        }
         hookMain(scopedFlag);
     }
 
@@ -1550,12 +1560,12 @@ initHook(int attachedFlag, bool scopedFlag, elf_buf_t *ebuf, char *full_path)
     }
 
     // if we are not hooking all, then we're done
-    if (scopedFlag == FALSE) return;
+    if (scopedFlag == FALSE) return TRUE;
 
     if (full_path && dl_iterate_phdr(findLibscopePath, &full_path)) {
         void *handle = g_fn.dlopen(full_path, RTLD_NOW);
         if (handle == NULL) {
-            return;
+            return TRUE;
         }
 
         void *addr = dlsym(handle, "SSL_read");
@@ -1604,7 +1614,7 @@ initHook(int attachedFlag, bool scopedFlag, elf_buf_t *ebuf, char *full_path)
         if (osMemPermAllow(ptr, testSize, PROT_READ | PROT_WRITE, PROT_EXEC) == FALSE) {
             scope_free(ptr);
             scopeLogError("The system is not allowing processes related to DNS or console I/O to be scoped. Try setting MemoryDenyWriteExecute to false for the %s service.", g_proc.procname);
-            return;
+            return TRUE;
         }
         scope_free(ptr);
 
@@ -1668,9 +1678,10 @@ initHook(int attachedFlag, bool scopedFlag, elf_buf_t *ebuf, char *full_path)
             scopeLogError("ERROR: failed to install funchook. (%s)\n",
                         funchook_error_message(funchook));
             funchook_destroy(funchook);
-            return;
+            return TRUE;
         }
     }
+    return TRUE;
 }
 
 static void
@@ -2029,11 +2040,6 @@ init(void)
     // contents of a rules file, env vars, scope.yml, etc.
     settings_t settings = getSettings(attachedFlag);
 
-    // Stop further processing if the process is on deny list
-    if ((settings.isActive == FALSE) && (doImplicitDeny() == FALSE)) {
-        return;
-    }
-
     // on aarch64, the crypto subsystem installs handlers for SIGILL
     // (contrib/openssl/crypto/armcap.c) to determine which version of
     // ARM processor we're on.  Do this before enableSnapshot() below.
@@ -2059,7 +2065,9 @@ init(void)
     // of whether TLS is actually configured on any transport.
     transportRegisterForExitNotification(handleExit);
 
-    initHook(attachedFlag, settings.isActive, ebuf, full_path);
+    if (initHook(attachedFlag, settings.isActive, ebuf, full_path) == FALSE) {
+        return;
+    }
     
     /*
      * If we are interposing (scoping) this process, then proceed
