@@ -25,7 +25,7 @@
  */
 
 // Send message retry count
-#define RETRY_COUNT 50
+#define RETRY_COUNT 5000
 #define INPUT_MSG_ALLOC_LIMIT (1024*1024) // 1 MB
 
 /*
