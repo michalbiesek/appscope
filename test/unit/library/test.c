@@ -9,8 +9,15 @@
 * Following part of code is required to use memory sanitizers during unit tests
 * To correct instrument code we redirect allocations from our internal
 * library to allocator from standard library.
-* See details in:
+* The instrumentation is enabled by default on x86_64.
+*
+* make FSAN=true libtest
+*
+* Allows to instrumentation ona aarch64.
+* 
+See details in:
 * https://github.com/google/sanitizers/wiki/AddressSanitizerIncompatiblity
+*
 *
 * The memory leak instrumentation is done by "-fsanitize=address"
 */
